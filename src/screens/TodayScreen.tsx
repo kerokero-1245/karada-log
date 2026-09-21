@@ -2,10 +2,11 @@
  * F1: 今日のダッシュボード。
  * 一目で「あと何を摂ればいいか」が分かることが目的。
  * 表示するのは **記録されたものだけ**。固定ベースは開いて追加するまで入らない（原則1）。
+ * テキストで書いたものも、シートで確認して「記録する」を押すまで入らない。
  */
 import { useMemo, useState } from 'react';
 import { db } from '../db/db';
-import type { DayType, MealEntry, Nutrition, Settings, TrainingSession } from '../db/types';
+import type { DayType, MealEntry, Nutrition, PendingText, Settings, TrainingSession } from '../db/types';
 import { MENU_LABELS } from '../db/types';
 import { NutrientBar } from '../components/NutrientBar';
 import { Badge, Card, Note } from '../components/ui';
@@ -14,15 +15,25 @@ import { timeOf } from '../lib/date';
 import { buildBars, dayTargetKcal } from '../lib/goals';
 import { entryNutrition } from '../lib/meals';
 import { fmtNum, scaleNutrition, sumNutrition } from '../lib/nutrition';
+import { deletePendingText } from '../lib/quickRecord';
+import type { QuickCommitResult } from '../lib/quickRecord';
 import { useLiveQuery } from '../lib/useLiveQuery';
 import { DayHeader } from './today/DayHeader';
 import { MealList } from './today/MealList';
+import { PendingTextsCard } from './today/PendingTextsCard';
+import { QuickTextBar } from './today/QuickTextBar';
 import { MealAddSheet } from './meal/MealAddSheet';
 import { MealEditSheet } from './meal/MealEditSheet';
 import { ShortcutSheet } from './meal/ShortcutSheet';
 
 const NO_ENTRIES: MealEntry[] = [];
 const NO_SESSIONS: TrainingSession[] = [];
+const NO_PENDING: PendingText[] = [];
+
+interface AddSheetState {
+  text: string;
+  pendingId: number | null;
+}
 
 export function TodayScreen({ settings }: { settings: Settings }) {
   const boundaryHour = settings.dayBoundaryHour;
@@ -39,13 +50,17 @@ export function TodayScreen({ settings }: { settings: Settings }) {
   const dayMeta = useLiveQuery(() => db.dayMeta.get(logDate), [logDate]);
   const shortcutSets = useLiveQuery(() => db.shortcutSets.orderBy('order').toArray(), []);
   const foods = useLiveQuery(() => db.foods.toArray(), []);
+  // 未処理テキストは日付で絞らない。前の日のぶんが残っていても見えるようにする
+  const pendingTexts = useLiveQuery(() => db.pendingTexts.orderBy('recordedAt').toArray(), []);
 
-  const [addOpen, setAddOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState<AddSheetState | null>(null);
   const [shortcutId, setShortcutId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [flash, setFlash] = useState<QuickCommitResult | null>(null);
 
   const list = entries ?? NO_ENTRIES;
   const sessionList = sessions ?? NO_SESSIONS;
+  const pendingList = pendingTexts ?? NO_PENDING;
   const totals = useMemo(() => sumNutrition(list.map(entryNutrition)), [list]);
   const { dayType, source } = resolveDayType(dayMeta, sessionList.length);
   const bars = buildBars(totals, settings, dayType);
@@ -56,6 +71,11 @@ export function TodayScreen({ settings }: { settings: Settings }) {
 
   const selectDayType = (next: DayType) => {
     void setManualDayType(logDate, next);
+  };
+
+  const handleRecorded = (result: QuickCommitResult) => {
+    setAddOpen(null);
+    setFlash(result);
   };
 
   return (
@@ -71,6 +91,30 @@ export function TodayScreen({ settings }: { settings: Settings }) {
       />
 
       <main className="mx-auto max-w-md space-y-3 p-3">
+        {flash !== null && (
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3">
+            <div className="min-w-0 flex-1 space-y-0.5 text-sm text-emerald-900">
+              {flash.added > 0 && <p>{flash.added}件を記録しました。</p>}
+              {flash.pending > 0 && (
+                <p>{flash.pending}件は未処理として預かりました。集計には入っていません。</p>
+              )}
+              {flash.learned.map((item) => (
+                <p key={item.text}>
+                  次回から「{item.text}」はこの食品として認識します（{item.foodName}）。
+                </p>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setFlash(null)}
+              aria-label="お知らせを閉じる"
+              className="min-h-11 min-w-11 shrink-0 text-emerald-700"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <Card title="今日の進捗">
           <div className="divide-y divide-slate-100">
             {bars.map((bar) => (
@@ -78,6 +122,17 @@ export function TodayScreen({ settings }: { settings: Settings }) {
             ))}
           </div>
         </Card>
+
+        <QuickTextBar onSubmit={(text) => setAddOpen({ text, pendingId: null })} />
+
+        <PendingTextsCard
+          items={pendingList}
+          todayLogDate={logDate}
+          onOpen={(item) => setAddOpen({ text: item.text, pendingId: item.id ?? null })}
+          onDelete={(item) => {
+            if (item.id !== undefined) void deletePendingText(item.id);
+          }}
+        />
 
         {(shortcutSets ?? []).length > 0 && (
           <Card title="固定ベース（ショートカット）">
@@ -143,7 +198,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         <div className="mx-auto max-w-md">
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() => setAddOpen({ text: '', pendingId: null })}
             className="h-14 w-full rounded-full bg-emerald-600 text-base font-bold text-white shadow-lg active:bg-emerald-700"
           >
             ＋ 記録する
@@ -151,8 +206,15 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         </div>
       </div>
 
-      {addOpen && (
-        <MealAddSheet logDate={logDate} boundaryHour={boundaryHour} onClose={() => setAddOpen(false)} />
+      {addOpen !== null && (
+        <MealAddSheet
+          logDate={logDate}
+          boundaryHour={boundaryHour}
+          initialText={addOpen.text}
+          pendingId={addOpen.pendingId}
+          onClose={() => setAddOpen(null)}
+          onRecorded={handleRecorded}
+        />
       )}
       {shortcut && (
         <ShortcutSheet

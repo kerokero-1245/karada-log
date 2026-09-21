@@ -17,6 +17,11 @@ export interface NewMealInput {
   quantity: number;
   /** 'HH:mm'。その論理日付の中の時刻として解釈する */
   time: string;
+  /**
+   * 記録に残すメモ。チャット風テキストから入れたときは原文をそのまま渡す。
+   * 省略時は空文字（既存の呼び出しはこれまでどおり）。
+   */
+  note?: string;
 }
 
 export function snapshotOf(food: Food): MealSnapshot {
@@ -62,7 +67,7 @@ export async function addMealEntries(
         logDate: toLogDate(recordedAt, boundaryHour),
         snapshot: snapshotOf(input.food),
         fromShortcutSetId,
-        note: '',
+        note: input.note ?? '',
       };
       ids.push((await db.mealEntries.add(entry)) as number);
 

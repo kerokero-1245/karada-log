@@ -1,7 +1,10 @@
 /**
  * 食事記録のフルスクリーンシート。
- * 検索 → （バリアント選択）→ 数量・時刻 → 「記録に追加」の順で1本道にする。
- * 検索が空のときは「よく食べるもの」（useCount 降順）を上位10件だけ出す。
+ *
+ * 入力方法は2つ。既定は「テキスト」。
+ *  - テキスト: 食べたものをまとめて書いて、解釈した結果を確認してから記録する
+ *  - 検索: 検索 →（バリアント選択）→ 数量・時刻 → 「記録に追加」の1本道。
+ *    検索が空のときは「よく食べるもの」（useCount 降順）を上位10件だけ出す
  */
 import { useMemo, useState } from 'react';
 import { db } from '../../db/db';
@@ -10,10 +13,14 @@ import { Sheet } from '../../components/Sheet';
 import { Button, Note } from '../../components/ui';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { formatLogDateShort } from '../../lib/date';
+import type { QuickCommitResult } from '../../lib/quickRecord';
 import { FoodList } from './FoodList';
 import { NewFoodForm } from './NewFoodForm';
 import { QuantityStep } from './QuantityStep';
+import { QuickTextSheet } from './QuickTextSheet';
 import { VariantPicker } from './VariantPicker';
+import { ModeTabs } from './ModeTabs';
+import type { MealAddMode } from './ModeTabs';
 import type { FoodGroup } from './foodGroups';
 import { groupFoods, matchesQuery, sortByFrequency } from './foodGroups';
 
@@ -28,13 +35,22 @@ type Step =
 export function MealAddSheet({
   logDate,
   boundaryHour,
+  initialText = '',
+  pendingId = null,
   onClose,
+  onRecorded,
 }: {
   logDate: LogDate;
   boundaryHour: number;
+  /** テキストモードの初期値（ダッシュボードの入力欄・未処理テキストから開いたとき） */
+  initialText?: string;
+  /** 未処理テキストから開いたときの元の行。記録したら消す */
+  pendingId?: number | null;
   onClose: () => void;
+  onRecorded: (result: QuickCommitResult) => void;
 }) {
   const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const [mode, setMode] = useState<MealAddMode>('text');
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -51,6 +67,20 @@ export function MealAddSheet({
     if (group.foods.length > 1) setStep({ kind: 'variant', group });
     else setStep({ kind: 'quantity', food: group.foods[0], from: 'list' });
   };
+
+  if (mode === 'text') {
+    return (
+      <QuickTextSheet
+        logDate={logDate}
+        boundaryHour={boundaryHour}
+        initialText={initialText}
+        pendingId={pendingId}
+        onClose={onClose}
+        onRecorded={onRecorded}
+        onSwitchToSearch={() => setMode('search')}
+      />
+    );
+  }
 
   if (step.kind === 'variant') {
     return (
@@ -91,6 +121,8 @@ export function MealAddSheet({
   return (
     <Sheet title="記録する" subtitle={`${formatLogDateShort(logDate)} の記録`} onClose={onClose}>
       <div className="space-y-3">
+        <ModeTabs mode="search" onChange={setMode} />
+
         <input
           type="search"
           value={query}

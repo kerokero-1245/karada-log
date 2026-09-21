@@ -2,6 +2,9 @@
  * 初期データ投入（handover-20260914.md より）。
  *
  * DB が空のときだけ1回だけ走る。Settings.seedVersion で冪等性を担保する。
+ * すでに settings 行があるときは **フル投入はしない**。版数が古ければ差分だけ当てる
+ * （upgradeSeed）。フル投入をやり直すと食品マスタが二重になり、
+ * 「同じ食品が2行ある」状態からユーザーが手で直す羽目になる。
  *
  * ★ 食事記録（MealEntry）は投入しない。★
  *   handover §9 の日次実績は「その日の合計」であって品目単位の記録が揃っていない日がある
@@ -35,8 +38,13 @@ import type {
 } from './types';
 import { toIsoDateTime, toLogDate } from '../lib/date';
 import { evaluateConditions } from '../lib/measurement';
+import { aliasesOf, mergeAliases } from '../lib/aliases';
 
-export const SEED_VERSION = 1;
+/**
+ * 2: 呼び名（Food.aliases）と未処理テキスト（pendingTexts）を追加した版。
+ * 上げたら upgradeSeed に差分処理を足すこと。
+ */
+export const SEED_VERSION = 2;
 
 export interface SeedResult {
   /** すでに投入済みで何もしなかった */
@@ -318,6 +326,55 @@ const FOOD_SEEDS: FoodSeed[] = [
 ];
 
 /* ------------------------------------------------------------------ */
+/* 既定の呼び名（エイリアス）                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * チャット風テキストで実際に打つであろう短い言い方。
+ *
+ * 方針:
+ *  - 曖昧なままになる言葉（「ステーキ」など）は **既定では付けない**。
+ *    3種すべてに付けると、どれか1つを選んでも「他の食品がその呼び名を持っている」＝衝突
+ *    と判定されて学習が永久に効かない。付けなければ名前の部分一致（70）で3候補が出るので
+ *    候補選択の挙動は同じまま、一度手で選べばその食品に「ステーキ」が学習されて次から確定する。
+ *  - 1つに決まる言い方だけを付ける: ワイルドステーキ/ワイルド → ワイルド、
+ *    ブレードミート → ブレード、ヒレ → 特選ヒレ
+ *  - 「たまご」系は味付ゆで玉子だけ。セブンの半熟には付けない（片方に寄せて確定させる）
+ *  - バリアントを持つものは両方に同じ呼び名を付ける。候補は variantGroupId で束ねられ、
+ *    どちらを食べたかはプレビューのチップで選ぶ
+ *
+ * フル投入と、既存端末への差分適用（upgradeSeed）の両方から使う。
+ * ユーザーが付けた呼び名は消さず、足りないものだけ足す。
+ */
+export const DEFAULT_ALIASES: Record<string, string[]> = {
+  'zavas-milk-protein': ['ザバス', 'ザバスミルク'],
+  'ajitsuke-tamago': ['卵', 'ゆで卵', 'ゆでたまご', 'たまご', '味玉'],
+  'goldgym-smoothie': ['スムージー'],
+  macadamia: ['マカダミア', 'ナッツ'],
+  'high-protein-yogurt': ['ヨーグルト', '高タンパクヨーグルト'],
+  'zavas-yogurt-mango': ['ザバスヨーグルト', 'マンゴーヨーグルト'],
+  'seven-onigiri-kombu': ['おにぎり昆布', '昆布おにぎり'],
+  'seven-onigiri-okaka': ['おにぎりおかか', 'おかかおにぎり'],
+  'karaage-bento': ['から揚げ弁当', '唐揚げ弁当', 'からあげ弁当'],
+  peperoncino: ['ペペロンチーノ'],
+  'marugame-udon-tsuyunokoshi': ['つけ汁うどん', '旨辛豚', '丸亀'],
+  'marugame-udon-zenryo': ['つけ汁うどん', '旨辛豚', '丸亀'],
+  // 「ステーキ」は付けない（上のコメント参照）。3種とも名前に「ステーキ」を含むので
+  // 部分一致で候補3件は出る。手で選んだ時点でその食品の呼び名として学習される。
+  'ikinari-wild-300': ['ワイルドステーキ', 'ワイルド'],
+  'ikinari-blade-300': ['ブレードミート'],
+  'ikinari-hire-300': ['ヒレ'],
+  'cupnoodle-big-soup-left': ['カップヌードル', 'カップ麺'],
+  'cupnoodle-big-soup-all': ['カップヌードル', 'カップ麺'],
+  'iekei-ramen': ['家系', 'ラーメン'],
+  belegend: ['ビーレジェンド'],
+  'saijirushi-soy': ['SAIJIRUSHI', 'ソイ', 'ソイプロテイン'],
+  'mixfruit-protein': ['ミックスフルーツ'],
+  'protein-blend': ['ブレンド', 'プロテインブレンド'],
+  'metz-cola': ['メッツ', 'メッツコーラ', 'コーラ'],
+};
+
+/* ------------------------------------------------------------------ */
 /* 種目マスタ（handover §5）                                            */
 /* ------------------------------------------------------------------ */
 
@@ -541,8 +598,15 @@ const segmentFat: Record<SegmentKey, SegmentFat> = {
 
 export async function seedIfEmpty(): Promise<SeedResult> {
   const existing = await db.settings.get(1);
-  if (existing && existing.seedVersion >= SEED_VERSION) {
-    return { skipped: true, counts: await currentCounts(), notes: [] };
+
+  // settings 行があれば「もう投入済みの端末」。フル投入は二度と走らせない。
+  if (existing) {
+    if (existing.seedVersion >= SEED_VERSION) {
+      return { skipped: true, counts: await currentCounts(), notes: [] };
+    }
+    const notes = await upgradeSeed(existing.seedVersion);
+    await db.settings.update(1, { seedVersion: SEED_VERSION, updatedAt: toIsoDateTime(new Date()) });
+    return { skipped: false, counts: await currentCounts(), notes };
   }
 
   const now = toIsoDateTime(new Date());
@@ -573,6 +637,7 @@ export async function seedIfEmpty(): Promise<SeedResult> {
         basis: s.basis,
         category: s.category,
         note: s.note ?? '',
+        aliases: [...(DEFAULT_ALIASES[s.key] ?? [])],
         variantGroupId: s.variantGroupId ?? null,
         variantLabel: s.variantLabel ?? null,
         useCount: 0,
@@ -866,10 +931,60 @@ export async function seedIfEmpty(): Promise<SeedResult> {
   return { skipped: false, counts: await currentCounts(), notes };
 }
 
+/**
+ * すでにデータがある端末への差分適用。
+ *
+ * ★ 食品マスタ・記録・トレ記録は作り直さない。★
+ *   ユーザーが登録した食品・付けた呼び名・記録を消さないこと。
+ *   足りないものを足すだけにする。
+ */
+async function upgradeSeed(fromVersion: number): Promise<string[]> {
+  const notes: string[] = [];
+
+  if (fromVersion < 2) {
+    const updated = await applyDefaultAliases();
+    notes.push(
+      `既定の呼び名（エイリアス）を ${updated} 件の食品に追加した。ユーザーが付けた呼び名はそのまま残している`,
+    );
+  }
+
+  return notes;
+}
+
+/**
+ * 既定の呼び名を、名前（＋バリアント名）が一致する食品に足す。
+ * id は端末ごとに違うので、FOOD_SEEDS の名前で突き合わせる。
+ */
+async function applyDefaultAliases(): Promise<number> {
+  const foods = await db.foods.toArray();
+  let updated = 0;
+
+  for (const seed of FOOD_SEEDS) {
+    const defaults = DEFAULT_ALIASES[seed.key];
+    if (defaults === undefined || defaults.length === 0) continue;
+
+    for (const food of foods) {
+      if (food.id === undefined) continue;
+      if (food.name !== seed.name) continue;
+      if ((food.variantLabel ?? null) !== (seed.variantLabel ?? null)) continue;
+
+      const current = aliasesOf(food);
+      const merged = mergeAliases(current, defaults);
+      if (merged.length === current.length) continue;
+      await db.foods.update(food.id, { aliases: merged });
+      food.aliases = merged;
+      updated += 1;
+    }
+  }
+
+  return updated;
+}
+
 async function currentCounts(): Promise<Record<string, number>> {
   const [
     foods,
     mealEntries,
+    pendingTexts,
     shortcutSets,
     exercises,
     trainingSessions,
@@ -881,6 +996,7 @@ async function currentCounts(): Promise<Record<string, number>> {
   ] = await Promise.all([
     db.foods.count(),
     db.mealEntries.count(),
+    db.pendingTexts.count(),
     db.shortcutSets.count(),
     db.exercises.count(),
     db.trainingSessions.count(),
@@ -893,6 +1009,7 @@ async function currentCounts(): Promise<Record<string, number>> {
   return {
     foods,
     mealEntries,
+    pendingTexts,
     shortcutSets,
     exercises,
     trainingSessions,

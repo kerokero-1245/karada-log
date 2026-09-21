@@ -157,6 +157,8 @@ export function buildFood(values: FoodFormValues): FoodFormResult {
     basis,
     category: values.category,
     note: '',
+    // 呼び名は登録時には付けない。テキストで手で解決したときに増える（lib/aliases.ts）
+    aliases: [],
     variantGroupId: null,
     variantLabel: null,
     useCount: 0,

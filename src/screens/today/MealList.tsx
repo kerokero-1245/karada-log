@@ -1,6 +1,7 @@
 /**
  * その日に記録した食品の一覧（時刻順）。行をタップすると編集シートが開く。
  * 推定値・固定ベース由来はバッジで区別する（数字の出どころを隠さない）。
+ * テキストから入れたものは原文も出す（「何と書いたものが、何になったか」を追えるように）。
  */
 import type { MealEntry } from '../../db/types';
 import { timeOf } from '../../lib/date';
@@ -51,6 +52,9 @@ export function MealList({
                   {fmtNum(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
                   {fmtNum(value.saltG)}g
                 </span>
+                {entry.note !== '' && (
+                  <span className="mt-0.5 block text-[11px] text-slate-400">原文: 「{entry.note}」</span>
+                )}
               </span>
               <span className="pt-3 text-slate-300">›</span>
             </button>

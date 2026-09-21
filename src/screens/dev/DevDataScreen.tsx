@@ -7,6 +7,7 @@ import { db } from '../../db/db';
 import type { Settings } from '../../db/types';
 import { DAY_TYPE_LABELS } from '../../db/types';
 import { Badge, Card, Note, Row } from '../../components/ui';
+import { aliasesOf } from '../../lib/aliases';
 import { formatLogDate } from '../../lib/date';
 import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
 import { useLiveQuery } from '../../lib/useLiveQuery';
@@ -16,17 +17,35 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
   const foods = useLiveQuery(() => db.foods.toArray(), []);
   const shortcutSets = useLiveQuery(() => db.shortcutSets.orderBy('order').toArray(), []);
   const counts = useLiveQuery(async () => {
-    const [mealEntries, dayMeta, trainingSessions, bodyCompositions, boneDensities, supplements, exercises] =
-      await Promise.all([
-        db.mealEntries.count(),
-        db.dayMeta.count(),
-        db.trainingSessions.count(),
-        db.bodyCompositions.count(),
-        db.boneDensities.count(),
-        db.supplements.count(),
-        db.exercises.count(),
-      ]);
-    return { mealEntries, dayMeta, trainingSessions, bodyCompositions, boneDensities, supplements, exercises };
+    const [
+      mealEntries,
+      pendingTexts,
+      dayMeta,
+      trainingSessions,
+      bodyCompositions,
+      boneDensities,
+      supplements,
+      exercises,
+    ] = await Promise.all([
+      db.mealEntries.count(),
+      db.pendingTexts.count(),
+      db.dayMeta.count(),
+      db.trainingSessions.count(),
+      db.bodyCompositions.count(),
+      db.boneDensities.count(),
+      db.supplements.count(),
+      db.exercises.count(),
+    ]);
+    return {
+      mealEntries,
+      pendingTexts,
+      dayMeta,
+      trainingSessions,
+      bodyCompositions,
+      boneDensities,
+      supplements,
+      exercises,
+    };
   }, []);
   const foodById = new Map((foods ?? []).map((food) => [food.id, food]));
 
@@ -69,6 +88,7 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
         <Card title="このステップでできること">
           <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
             <li>「今日」タブ: 進捗バー・記録の一覧・固定ベースの追加・記録の編集と削除</li>
+            <li>テキストでまとめて記録（ダッシュボードの入力欄 / 記録シートの「テキスト」タブ）</li>
             <li>トレ / からだ / 週 タブは次のステップで作ります</li>
           </ul>
         </Card>
@@ -84,6 +104,7 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
               <dl className="grid grid-cols-2 gap-x-3 text-sm">
                 <Row label="食品マスタ" value={`${foods?.length ?? 0} 件`} />
                 <Row label="食事記録" value={`${counts?.mealEntries ?? 0} 件`} />
+                <Row label="未処理テキスト" value={`${counts?.pendingTexts ?? 0} 件`} />
                 <Row label="固定ベース" value={`${shortcutSets?.length ?? 0} 件`} />
                 <Row label="日の区分（手動）" value={`${counts?.dayMeta ?? 0} 件`} />
                 <Row label="種目マスタ" value={`${counts?.exercises ?? 0} 件`} />
@@ -128,22 +149,28 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
             <div>
               <h3 className="mb-1 text-xs font-bold text-slate-500">食品マスタ（1単位あたりに正規化済み）</h3>
               <ul className="divide-y divide-slate-100">
-                {(foods ?? []).map((food) => (
-                  <li key={food.id} className="py-2">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                      <span className="text-sm font-medium">{food.name}</span>
-                      {food.variantLabel && <Badge tone="blue">{food.variantLabel}</Badge>}
-                      {food.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
-                      {food.archived && <Badge tone="slate">在庫切れ</Badge>}
-                      {food.useCount > 0 && <span className="text-[11px] text-slate-400">{food.useCount}回</span>}
-                    </div>
-                    <div className="mt-0.5 text-xs tabular-nums text-slate-600">
-                      {food.unitLabel} / {fmtNum(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
-                      {fmtNum(food.per.fatG)}g / 炭水{fmtNum(food.per.carbG)}g / 塩分{fmtNum(food.per.saltG)}g
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-slate-400">入力時: {food.basis.label}</div>
-                  </li>
-                ))}
+                {(foods ?? []).map((food) => {
+                  const aliases = aliasesOf(food);
+                  return (
+                    <li key={food.id} className="py-2">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="text-sm font-medium">{food.name}</span>
+                        {food.variantLabel && <Badge tone="blue">{food.variantLabel}</Badge>}
+                        {food.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+                        {food.archived && <Badge tone="slate">在庫切れ</Badge>}
+                        {food.useCount > 0 && <span className="text-[11px] text-slate-400">{food.useCount}回</span>}
+                      </div>
+                      <div className="mt-0.5 text-xs tabular-nums text-slate-600">
+                        {food.unitLabel} / {fmtNum(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
+                        {fmtNum(food.per.fatG)}g / 炭水{fmtNum(food.per.carbG)}g / 塩分{fmtNum(food.per.saltG)}g
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-400">入力時: {food.basis.label}</div>
+                      <div className="mt-0.5 text-[11px] text-slate-500">
+                        呼び名: {aliases.length > 0 ? aliases.join(' / ') : '—'}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 

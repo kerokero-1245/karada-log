@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+html {
+  /* iOS で入力欄にフォーカスしたときの拡大を防ぐ */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', sans-serif;
+  overscroll-behavior-y: none;
+}

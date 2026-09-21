@@ -1,10 +1,14 @@
 /**
  * 食事記録のフルスクリーンシート。
  *
- * 入力方法は2つ。既定は「テキスト」。
+ * 入力方法は3つ。既定は「テキスト」。
  *  - テキスト: 食べたものをまとめて書いて、解釈した結果を確認してから記録する
  *  - 検索: 検索 →（バリアント選択）→ 数量・時刻 → 「記録に追加」の1本道。
  *    検索が空のときは「よく食べるもの」（useCount 降順）を上位10件だけ出す
+ *  - 写真: 料理の写真 → プレビュー →「○件を記録」/ 栄養成分表示 → 登録フォーム → 数量
+ *    （APIキーが設定されているときだけ出す。未設定なら入口ごと出さない）
+ *
+ * ★ どの経路でも、記録に入るのはユーザーが最後のボタンを押したときだけ（原則1）。★
  */
 import { useMemo, useState } from 'react';
 import { db } from '../../db/db';
@@ -13,9 +17,14 @@ import { Sheet } from '../../components/Sheet';
 import { Button, Note } from '../../components/ui';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { formatLogDateShort } from '../../lib/date';
+import type { FoodFormValues } from '../../lib/foodForm';
+import { formValuesFromLabel, labelNotice } from '../../lib/photoLabel';
 import type { QuickCommitResult } from '../../lib/quickRecord';
+import type { MealPhotoRead } from '../../lib/vision';
 import { FoodList } from './FoodList';
 import { NewFoodForm } from './NewFoodForm';
+import { PhotoMealSheet } from './PhotoMealSheet';
+import { PhotoPickSheet } from './PhotoPickSheet';
 import { QuantityStep } from './QuantityStep';
 import { QuickTextSheet } from './QuickTextSheet';
 import { VariantPicker } from './VariantPicker';
@@ -30,11 +39,22 @@ type Step =
   | { kind: 'list' }
   | { kind: 'variant'; group: FoodGroup }
   | { kind: 'quantity'; food: Food; from: 'list' | 'variant' | 'new' }
-  | { kind: 'newFood'; name: string };
+  | {
+      kind: 'newFood';
+      name: string;
+      /** 写真から読み取った値で埋めて開くときだけ入る */
+      values: FoodFormValues | null;
+      notice: string | null;
+      /** 「戻る」の行き先 */
+      back: 'list' | 'photo';
+    }
+  | { kind: 'photo' }
+  | { kind: 'photoMeal'; read: MealPhotoRead };
 
 export function MealAddSheet({
   logDate,
   boundaryHour,
+  apiKey = null,
   initialText = '',
   pendingId = null,
   onClose,
@@ -42,6 +62,8 @@ export function MealAddSheet({
 }: {
   logDate: LogDate;
   boundaryHour: number;
+  /** 設定済みの Claude API キー。null なら写真の入口を出さない */
+  apiKey?: string | null;
   /** テキストモードの初期値（ダッシュボードの入力欄・未処理テキストから開いたとき） */
   initialText?: string;
   /** 未処理テキストから開いたときの元の行。記録したら消す */
@@ -68,16 +90,38 @@ export function MealAddSheet({
     else setStep({ kind: 'quantity', food: group.foods[0], from: 'list' });
   };
 
-  if (mode === 'text') {
+  /* --- 写真（テキスト／検索のどちらからでも入れる） --- */
+
+  if (step.kind === 'photo' && apiKey !== null) {
     return (
-      <QuickTextSheet
+      <PhotoPickSheet
+        apiKey={apiKey}
+        onLabel={(read) =>
+          setStep({
+            kind: 'newFood',
+            name: read.name ?? '',
+            // ★ 読み取った値で埋めるだけ。保存は「登録」を押してから
+            values: formValuesFromLabel(read),
+            notice: labelNotice(read),
+            back: 'photo',
+          })
+        }
+        onMeal={(read) => setStep({ kind: 'photoMeal', read })}
+        onBack={() => setStep({ kind: 'list' })}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (step.kind === 'photoMeal') {
+    return (
+      <PhotoMealSheet
+        read={step.read}
         logDate={logDate}
         boundaryHour={boundaryHour}
-        initialText={initialText}
-        pendingId={pendingId}
+        onBack={() => setStep({ kind: 'photo' })}
         onClose={onClose}
         onRecorded={onRecorded}
-        onSwitchToSearch={() => setMode('search')}
       />
     );
   }
@@ -108,12 +152,32 @@ export function MealAddSheet({
   }
 
   if (step.kind === 'newFood') {
+    const back = step.back;
     return (
       <NewFoodForm
         initialName={step.name}
+        initialValues={step.values}
+        initialNotice={step.notice}
+        apiKey={apiKey}
         onSaved={(food) => setStep({ kind: 'quantity', food, from: 'new' })}
-        onBack={() => setStep({ kind: 'list' })}
+        onBack={() => setStep(back === 'photo' ? { kind: 'photo' } : { kind: 'list' })}
         onClose={onClose}
+      />
+    );
+  }
+
+  if (mode === 'text') {
+    return (
+      <QuickTextSheet
+        logDate={logDate}
+        boundaryHour={boundaryHour}
+        apiKey={apiKey}
+        initialText={initialText}
+        pendingId={pendingId}
+        onClose={onClose}
+        onRecorded={onRecorded}
+        onSwitchToSearch={() => setMode('search')}
+        onPhoto={() => setStep({ kind: 'photo' })}
       />
     );
   }
@@ -122,6 +186,12 @@ export function MealAddSheet({
     <Sheet title="記録する" subtitle={`${formatLogDateShort(logDate)} の記録`} onClose={onClose}>
       <div className="space-y-3">
         <ModeTabs mode="search" onChange={setMode} />
+
+        {apiKey !== null && (
+          <Button className="w-full" onClick={() => setStep({ kind: 'photo' })}>
+            写真から
+          </Button>
+        )}
 
         <input
           type="search"
@@ -160,7 +230,9 @@ export function MealAddSheet({
             <Button
               variant="primary"
               className="mt-2 w-full"
-              onClick={() => setStep({ kind: 'newFood', name: query.trim() })}
+              onClick={() =>
+                setStep({ kind: 'newFood', name: query.trim(), values: null, notice: null, back: 'list' })
+              }
             >
               「{query.trim()}」をこの名前で新規登録
             </Button>
@@ -168,7 +240,12 @@ export function MealAddSheet({
         )}
 
         {!(searching && groups.length === 0) && (
-          <Button className="w-full" onClick={() => setStep({ kind: 'newFood', name: query.trim() })}>
+          <Button
+            className="w-full"
+            onClick={() =>
+              setStep({ kind: 'newFood', name: query.trim(), values: null, notice: null, back: 'list' })
+            }
+          >
             新しい食品を登録
           </Button>
         )}

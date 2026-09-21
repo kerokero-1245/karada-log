@@ -61,20 +61,25 @@ const STATUS_TONE: Record<QuickStatus, 'emerald' | 'amber' | 'red'> = {
 export function QuickTextSheet({
   logDate,
   boundaryHour,
+  apiKey = null,
   initialText,
   pendingId,
   onClose,
   onRecorded,
   onSwitchToSearch,
+  onPhoto,
 }: {
   logDate: LogDate;
   boundaryHour: number;
+  /** 設定済みの Claude API キー。null なら「写真から」は出さない */
+  apiKey?: string | null;
   initialText: string;
   /** 未処理テキストから開いたときの元の行。記録したら消す */
   pendingId: number | null;
   onClose: () => void;
   onRecorded: (result: QuickCommitResult) => void;
   onSwitchToSearch: () => void;
+  onPhoto?: () => void;
 }) {
   const foods = useLiveQuery(() => db.foods.toArray(), []);
   const foodList = foods ?? NO_FOODS;
@@ -181,6 +186,7 @@ export function QuickTextSheet({
     return (
       <NewFoodForm
         initialName={sub.name}
+        apiKey={apiKey}
         onSaved={(food) => choose(sub.index, food, true)}
         onBack={() => setSub({ kind: 'preview' })}
         onClose={onClose}
@@ -269,6 +275,12 @@ export function QuickTextSheet({
             if (next === 'search') onSwitchToSearch();
           }}
         />
+
+        {apiKey !== null && onPhoto !== undefined && (
+          <Button className="w-full" onClick={onPhoto}>
+            写真から
+          </Button>
+        )}
 
         <div className="rounded-xl bg-white p-3 shadow-sm">
           <label className="block">

@@ -11,6 +11,7 @@ import { aliasesOf } from '../../lib/aliases';
 import { formatLogDate } from '../../lib/date';
 import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
 import { useLiveQuery } from '../../lib/useLiveQuery';
+import { ApiKeyCard } from '../settings/ApiKeyCard';
 import { DevRecordsSection } from './DevRecordsSection';
 
 export function DevDataScreen({ settings }: { settings: Settings }) {
@@ -85,10 +86,13 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
           <Note>値の編集はまだできません。ダッシュボードの目標はここの値を読んでいます。</Note>
         </Card>
 
+        <ApiKeyCard settings={settings} />
+
         <Card title="このステップでできること">
           <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
             <li>「今日」タブ: 進捗バー・記録の一覧・固定ベースの追加・記録の編集と削除</li>
             <li>テキストでまとめて記録（ダッシュボードの入力欄 / 記録シートの「テキスト」タブ）</li>
+            <li>写真から記録（APIキーを入れると、記録シートに「写真から」が出ます）</li>
             <li>トレ / からだ / 週 タブは次のステップで作ります</li>
           </ul>
         </Card>

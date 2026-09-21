@@ -4,6 +4,11 @@
  *
  * 入力は「ラベルの表記そのまま」。保存時に1単位あたりへ正規化し、
  * 元の表記は Food.basis に残す。空欄は 0 ではなく null（未確認）として保存する。
+ *
+ * 写真からの読み取り（Claude API）は、このフォームを **埋めた状態で開く** だけ。
+ * ★ 読み取っただけでは保存しない。★ ユーザーが「登録して数量へ」を押して初めて、
+ * ここまでと同じ正規化を通って保存される（原則1）。
+ * 「ラベルを撮る」ボタンは、APIキーが設定されているときだけ出す。
  */
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -14,22 +19,61 @@ import { Sheet } from '../../components/Sheet';
 import { Badge, Button, Chip, NutritionGrid, Note } from '../../components/ui';
 import { BASIS_OPTIONS, NUTRIENT_FIELDS, buildFood, emptyFoodForm } from '../../lib/foodForm';
 import type { BasisKind, FoodFormValues } from '../../lib/foodForm';
+import { fileToPhoto } from '../../lib/photo';
+import { photoErrorMessage } from '../../lib/photoError';
+import { formValuesFromLabel, labelNotice } from '../../lib/photoLabel';
+import { useOnline } from '../../lib/useOnline';
+import { readNutritionLabel } from '../../lib/vision';
+import { PhotoFileButton } from './PhotoFileButton';
 
 export function NewFoodForm({
   initialName,
+  initialValues = null,
+  initialNotice = null,
+  apiKey = null,
   onSaved,
   onBack,
   onClose,
 }: {
   initialName: string;
+  /** 写真から読み取った値で埋めて開くときの初期値 */
+  initialValues?: FoodFormValues | null;
+  /** 読み取りの但し書き（自信が低い・ナトリウムから換算した、など） */
+  initialNotice?: string | null;
+  /** 設定済みの Claude API キー。null なら写真のボタンは出さない */
+  apiKey?: string | null;
   onSaved: (food: Food) => void;
   onBack: () => void;
   onClose: () => void;
 }) {
-  const [values, setValues] = useState<FoodFormValues>(() => emptyFoodForm(initialName));
+  const [values, setValues] = useState<FoodFormValues>(
+    () => initialValues ?? emptyFoodForm(initialName),
+  );
+  const [notice, setNotice] = useState<string | null>(initialNotice);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
+  const online = useOnline();
+
+  const readLabel = async (file: File) => {
+    if (apiKey === null) return;
+    setReading(true);
+    setReadError(null);
+    try {
+      const photo = await fileToPhoto(file);
+      const read = await readNutritionLabel(photo.base64, photo.mediaType, apiKey);
+      // ★ 埋めるだけ。保存はしない
+      setValues(formValuesFromLabel(read));
+      setNotice(labelNotice(read));
+      setSubmitted(false);
+    } catch (e) {
+      setReadError(photoErrorMessage(e));
+    } finally {
+      setReading(false);
+    }
+  };
 
   const result = useMemo(() => buildFood(values), [values]);
   const set = <K extends keyof FoodFormValues>(key: K, value: FoodFormValues[K]) =>
@@ -64,6 +108,32 @@ export function NewFoodForm({
       }
     >
       <div className="space-y-3">
+        {apiKey !== null && (
+          <div className="rounded-xl bg-white p-3 shadow-sm">
+            <PhotoFileButton
+              className="w-full"
+              label="ラベルを撮る"
+              inputLabel="栄養成分表示を撮る"
+              disabled={reading || !online}
+              onFile={(file) => void readLabel(file)}
+            />
+            {reading && (
+              <p className="mt-2 text-sm text-sky-800" role="status">
+                読み取っています…（10〜30秒ほどかかります）
+              </p>
+            )}
+            {!online && <p className="mt-2 text-xs text-amber-800">オフラインでは使えません。</p>}
+            {readError !== null && <p className="mt-2 text-sm text-red-700">{readError}</p>}
+            <Note>読み取った値はこの下の欄に入ります。「登録」を押すまでは保存されません。</Note>
+          </div>
+        )}
+
+        {notice !== null && (
+          <div className="whitespace-pre-line rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            {notice}
+          </div>
+        )}
+
         <div className="rounded-xl bg-white p-3 shadow-sm">
           <Field label="名前">
             <input

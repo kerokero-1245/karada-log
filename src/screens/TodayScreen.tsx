@@ -10,6 +10,7 @@ import type { DayType, MealEntry, Nutrition, PendingText, Settings, TrainingSess
 import { MENU_LABELS } from '../db/types';
 import { NutrientBar } from '../components/NutrientBar';
 import { Badge, Card, Note } from '../components/ui';
+import { apiKeyOf } from '../lib/apiKey';
 import { clearManualDayType, resolveDayType, setManualDayType, useTodayLogDate } from '../lib/day';
 import { timeOf } from '../lib/date';
 import { buildBars, dayTargetKcal } from '../lib/goals';
@@ -210,6 +211,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         <MealAddSheet
           logDate={logDate}
           boundaryHour={boundaryHour}
+          apiKey={apiKeyOf(settings)}
           initialText={addOpen.text}
           pendingId={addOpen.pendingId}
           onClose={() => setAddOpen(null)}

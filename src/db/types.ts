@@ -626,6 +626,15 @@ export interface Settings {
   goal: GoalLine;
   alerts: AlertThresholds;
 
+  /**
+   * Claude API キー（写真からの入力に使う）。
+   *
+   * ★ この端末の中だけに置く。★ 同期も送信もしない。
+   * 省略可能。既存の行には無いので、読むときは null として扱う（lib/apiKey.ts）。
+   * Dexie の索引は張らない（検索軸にならないうえ、索引に鍵を載せたくない）。
+   */
+  anthropicApiKey?: string | null;
+
   /** 初期データ投入のバージョン。冪等性の判定に使う */
   seedVersion: number;
   updatedAt: IsoDateTime;

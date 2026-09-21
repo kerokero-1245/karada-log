@@ -24,6 +24,6 @@ dist-ssr
 *.sw?
 
 # 仕様・引き継ぎ文書はローカル参照のみ（リポジトリに入れない）
-handover-20260914.md
+handover-*.md
 app-spec-prompt.md
 food-plan.md

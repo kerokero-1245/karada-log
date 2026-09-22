@@ -9,20 +9,25 @@
  *  - 原文を必ず左に出す。「何と書いたものが、何になったか」を隠さない
  *  - 確定できなかったものを「たぶんこれ」で埋めない。未処理として預かる
  *  - 数量を勝手に変えたとき（商品名の一部だった / g換算できない）は、その理由を書く
+ *  - 栄養値を書いた行（'ご飯 1杯=252/3.8/0.5/55.7/0'）は、マスタに無ければ「推定」として
+ *    その値のまま記録する。マスタに当たったときは **マスタの値** を使い、そう書く
  */
 import { useMemo, useState } from 'react';
 import { db } from '../../db/db';
 import type { Food, LogDate, Nutrition } from '../../db/types';
 import { Sheet } from '../../components/Sheet';
+import { CopyPromptButton } from '../../components/CopyPromptButton';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, Note } from '../../components/ui';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { formatLogDateShort, nowTime } from '../../lib/date';
+import { buildEntryView } from '../../lib/importText';
+import type { EntryView } from '../../lib/importText';
 import { formatQuantity } from '../../lib/meals';
 import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
 import { commitQuickText } from '../../lib/quickRecord';
 import type { QuickCommitResult, QuickEntryPlan, QuickPendingPlan } from '../../lib/quickRecord';
-import { QUICK_STATUS_LABELS, groupKeyOf, interpret, quantityFor, sortVariants } from '../../lib/quickText';
+import { QUICK_STATUS_LABELS, groupKeyOf, interpret, sortVariants } from '../../lib/quickText';
 import type { QuickResolution, QuickStatus } from '../../lib/quickText';
 import { ModeTabs } from './ModeTabs';
 import { FoodPickerSheet } from './FoodPickerSheet';
@@ -41,19 +46,14 @@ type Sub =
 interface Row {
   index: number;
   resolution: QuickResolution;
-  /** 確定した食品。決まっていなければ null */
-  food: Food | null;
-  status: QuickStatus;
-  /** 手で解決したか（呼び名を覚える対象） */
-  manual: boolean;
-  quantity: number;
-  notes: string[];
+  view: EntryView;
   /** 同じ variantGroupId の兄弟。2件以上ならチップで切り替えられる */
   variants: Food[];
 }
 
 const STATUS_TONE: Record<QuickStatus, 'emerald' | 'amber' | 'red'> = {
   confirmed: 'emerald',
+  estimated: 'amber',
   ambiguous: 'amber',
   missing: 'red',
 };
@@ -91,51 +91,60 @@ export function QuickTextSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resolutions = useMemo(() => interpret(text, foodList), [text, foodList]);
+  const resolutions = useMemo(() => interpret(text, foodList, logDate), [text, foodList, logDate]);
 
   const rows: Row[] = resolutions.map((resolution, index) => {
     const choice = choices[index];
-    const picked = choice === undefined ? undefined : foodList.find((food) => food.id === choice.foodId);
-    const food = picked ?? resolution.food;
-    const quantity = food === null ? null : quantityFor(resolution.parsed, food);
+    const picked =
+      choice === undefined ? null : (foodList.find((food) => food.id === choice.foodId) ?? null);
+    const view = buildEntryView(resolution, picked, choice?.manual ?? false);
     return {
       index,
       resolution,
-      food,
-      status: food === null ? resolution.status : 'confirmed',
-      manual: choice?.manual ?? false,
-      quantity: quantity === null ? 1 : quantity.quantity,
-      notes: quantity === null ? [] : quantity.notes,
+      view,
       variants:
-        food === null ? [] : sortVariants(foodList.filter((item) => groupKeyOf(item) === groupKeyOf(food))),
+        view.food === null
+          ? []
+          : sortVariants(foodList.filter((item) => groupKeyOf(item) === groupKeyOf(view.food as Food))),
     };
   });
+
+  // この画面は1日ぶんの記録なので、日付の行があっても日付は動かさない（取り込みシートの担当）
+  const otherDates = rows
+    .map((row) => row.resolution.parsed.logDate)
+    .filter((date): date is LogDate => date !== null && date !== logDate);
 
   const entries: QuickEntryPlan[] = [];
   const pending: QuickPendingPlan[] = [];
   for (const row of rows) {
-    const itemTime = row.resolution.parsed.time ?? time;
-    if (row.food === null) {
+    const parsed = row.resolution.parsed;
+    const itemTime = parsed.time ?? time;
+    if (row.view.food === null && row.view.estimated === null) {
       pending.push({
-        raw: row.resolution.parsed.raw,
-        reason: row.status === 'missing' ? '見つかりませんでした' : '候補から選べていません',
+        raw: parsed.raw,
+        reason: row.view.status === 'missing' ? '見つかりませんでした' : '候補から選べていません',
         time: itemTime,
       });
     } else {
       entries.push({
-        food: row.food,
-        quantity: row.quantity,
+        food: row.view.food,
+        draft: row.view.estimated?.draft ?? null,
+        quantity: row.view.quantity,
         time: itemTime,
-        raw: row.resolution.parsed.raw,
-        manual: row.manual,
-        learnText: row.resolution.parsed.name,
+        raw: parsed.raw,
+        manual: row.view.manual,
+        learnText: parsed.name,
       });
     }
   }
 
   const total = sumNutrition(
     rows
-      .map((row) => (row.food === null ? null : scaleNutrition(row.food.per, row.quantity)))
+      .map((row) =>
+        row.view.food === null && row.view.estimated === null
+          ? null
+          : scaleNutrition(row.view.per, row.view.quantity),
+      )
       .filter((value): value is Nutrition => value !== null),
   );
 
@@ -297,8 +306,21 @@ export function QuickTextSheet({
           <Note>
             「/」「、」「＋」「・」改行 で区切ります。数量は「2本」「30g」「3玉」のように書けます。
             先頭に「21:30」と書くと、その項目だけ時刻を変えられます。
+            「ご飯 1杯=252/3.8/0.5/55.7/0」のように =kcal/P/脂質/炭水化物/塩分 を付けると、
+            マスタに無いものもその値で記録できます。
           </Note>
         </div>
+
+        <div className="rounded-xl bg-white p-3 shadow-sm">
+          <CopyPromptButton />
+        </div>
+
+        {otherDates.length > 0 && (
+          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900">
+            日付の行がありますが、この画面は{formatLogDateShort(logDate)}の記録として保存します。
+            何日ぶんかをまとめて入れるときは、設定タブの「記録を貼り付けて取り込む」を使ってください。
+          </div>
+        )}
 
         {rows.length === 0 ? (
           <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
@@ -363,8 +385,10 @@ function PreviewRow({
   onOpenNewFood: () => void;
 }) {
   const parsed = row.resolution.parsed;
-  const food = row.food;
-  const value = food === null ? null : scaleNutrition(food.per, row.quantity);
+  const view = row.view;
+  const food = view.food;
+  const resolved = food !== null || view.estimated !== null;
+  const value = resolved ? scaleNutrition(view.per, view.quantity) : null;
   const hasUnknown =
     value !== null &&
     (value.kcal === null || value.proteinG === null || value.fatG === null || value.saltG === null);
@@ -374,19 +398,20 @@ function PreviewRow({
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="text-xs tabular-nums text-slate-500">{parsed.time ?? fallbackTime}</span>
         <span className="text-xs text-slate-500">「{parsed.raw}」</span>
-        <Badge tone={STATUS_TONE[row.status]}>{QUICK_STATUS_LABELS[row.status]}</Badge>
-        {row.manual && <Badge tone="violet">選んだ</Badge>}
+        <Badge tone={STATUS_TONE[view.status]}>{QUICK_STATUS_LABELS[view.status]}</Badge>
+        {view.usesMasterValues && <Badge tone="blue">マスタの値</Badge>}
+        {view.manual && <Badge tone="violet">選んだ</Badge>}
       </div>
 
-      {food !== null && value !== null ? (
+      {resolved && value !== null ? (
         <>
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-            <span className="text-sm font-bold text-slate-800">{food.name}</span>
-            {food.variantLabel !== null && <Badge tone="blue">{food.variantLabel}</Badge>}
-            {food.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
-            {food.archived && <Badge tone="slate">在庫切れ</Badge>}
+            <span className="text-sm font-bold text-slate-800">{food?.name ?? parsed.name}</span>
+            {food?.variantLabel != null && <Badge tone="blue">{food.variantLabel}</Badge>}
+            {food?.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+            {food?.archived === true && <Badge tone="slate">在庫切れ</Badge>}
             <span className="text-sm tabular-nums text-slate-700">
-              × {formatQuantity(row.quantity)} {food.unitLabel}
+              × {formatQuantity(view.quantity)} {view.unitLabel}
             </span>
           </div>
 
@@ -396,7 +421,11 @@ function PreviewRow({
             {hasUnknown && <span className="ml-1 text-slate-500">（「—」は未確認）</span>}
           </p>
 
-          {row.variants.length > 1 && (
+          {view.usesMasterValues && (
+            <p className="mt-0.5 text-[11px] text-slate-500">マスタの値を使います。</p>
+          )}
+
+          {row.variants.length > 1 && food !== null && (
             <div className="mt-1 flex flex-wrap gap-1.5">
               {row.variants.map((variant) => (
                 <button
@@ -417,13 +446,13 @@ function PreviewRow({
         </>
       ) : (
         <p className="mt-0.5 text-sm text-slate-700">
-          {row.status === 'missing'
+          {view.status === 'missing'
             ? '食品マスタに見つかりませんでした。'
             : `候補が${row.resolution.candidates.length}件あります。どれか選んでください。`}
         </p>
       )}
 
-      {row.notes.map((note) => (
+      {view.notes.map((note) => (
         <p key={note} className="mt-0.5 text-[11px] text-amber-700">
           ※ {note}
         </p>
@@ -438,7 +467,7 @@ function PreviewRow({
         <Button className="px-3 text-xs" onClick={onOpenPicker}>
           食品を選ぶ
         </Button>
-        {row.status === 'missing' && (
+        {view.status === 'missing' && (
           <Button className="px-3 text-xs" onClick={onOpenNewFood}>
             この名前で新規登録
           </Button>

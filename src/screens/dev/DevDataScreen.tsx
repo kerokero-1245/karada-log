@@ -13,6 +13,7 @@ import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { ApiKeyCard } from '../settings/ApiKeyCard';
 import { ExportCard } from '../settings/ExportCard';
+import { ImportCard } from '../settings/ImportCard';
 import { RestoreCard } from '../settings/RestoreCard';
 import { DevRecordsSection } from './DevRecordsSection';
 
@@ -92,6 +93,8 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
 
         <ExportCard settings={settings} />
 
+        <ImportCard settings={settings} />
+
         <RestoreCard />
 
         <Card title="このステップでできること">
@@ -100,6 +103,7 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
             <li>テキストでまとめて記録（ダッシュボードの入力欄 / 記録シートの「テキスト」タブ）</li>
             <li>写真から記録（APIキーを入れると、記録シートに「写真から」が出ます）</li>
             <li>期間を選んで Markdown を書き出す（チャットに貼る用）。全データの JSON バックアップと復元</li>
+            <li>記録を貼り付けて取り込む（設定タブ）。日付ごとに確認してから、まとめて記録できます</li>
             <li>トレ / からだ / 週 タブは次のステップで作ります</li>
           </ul>
         </Card>

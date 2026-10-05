@@ -15,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'karada-log 減量・トレーニング管理',
         short_name: 'karada-log',
-        description: '食事・トレーニング・体組成を端末内だけで管理する個人用アプリ',
+        description: '食事・トレーニング・体組成を記録する個人用アプリ。記録は端末のブラウザ内（IndexedDB）に保存し、写真の読み取りを使うときだけ画像を Claude API に送る',
         lang: 'ja',
         start_url: '/karada-log/',
         scope: '/karada-log/',

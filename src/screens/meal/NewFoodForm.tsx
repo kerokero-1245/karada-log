@@ -158,7 +158,8 @@ export function NewFoodForm({
                 ))}
               </select>
             </Field>
-            <Field label="単位ラベル" hint="記録するときの1回分">
+            {/* 補足は入力欄の下に出す。ラベルの横だと 360 幅で折り返して、隣の「カテゴリ」と欄の高さがずれる */}
+            <Field label="単位ラベル" note="記録するときの1回分">
               <input
                 type="text"
                 value={values.unitLabel}
@@ -255,7 +256,18 @@ export function NewFoodForm({
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({
+  label,
+  hint,
+  note,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** 入力欄の下に出す補足 */
+  note?: string;
+  children: ReactNode;
+}) {
   return (
     <label className="block">
       <span className="block text-xs font-bold text-slate-600">
@@ -263,6 +275,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         {hint && <span className="ml-1 font-normal text-slate-400">{hint}</span>}
       </span>
       <span className="mt-1 block">{children}</span>
+      {note && <span className="mt-1 block text-[11px] text-slate-400">{note}</span>}
     </label>
   );
 }
@@ -285,7 +298,8 @@ function NumberInput({
         onChange={(e) => onChange(e.target.value)}
         className="h-12 w-full min-w-0 rounded-lg border border-slate-300 px-3 text-base tabular-nums"
       />
-      {suffix && <span className="shrink-0 text-xs text-slate-500">{suffix}</span>}
+      {/* 単位の幅をそろえて、「kcal」と「g」の欄で入力欄の幅がずれないようにする */}
+      {suffix && <span className="w-8 shrink-0 text-xs text-slate-500">{suffix}</span>}
     </span>
   );
 }

@@ -7,6 +7,7 @@ import type { FoodGroup } from './foodGroups';
 import { Sheet } from '../../components/Sheet';
 import { Badge } from '../../components/ui';
 import { fmtNum } from '../../lib/nutrition';
+import { fmtKcalItem } from '../../lib/formatKcal';
 
 export function VariantPicker({
   group,
@@ -36,7 +37,7 @@ export function VariantPicker({
                   {food.archived && <Badge tone="slate">在庫切れ</Badge>}
                 </span>
                 <span className="mt-1 block text-xs tabular-nums text-slate-500">
-                  {food.unitLabel} / {fmtNum(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
+                  {food.unitLabel} / {fmtKcalItem(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
                   {fmtNum(food.per.fatG)}g
                 </span>
               </span>

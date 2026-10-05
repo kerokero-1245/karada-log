@@ -17,7 +17,7 @@ import { Sheet } from '../../components/Sheet';
 import { QuantityStepper } from '../../components/QuantityStepper';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, Note } from '../../components/ui';
-import { formatLogDateShort, nowTime } from '../../lib/date';
+import { formatLogDateShort, hasTime, nowTime } from '../../lib/date';
 import { formatQuantity } from '../../lib/meals';
 import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
 import { buildPhotoRows } from '../../lib/photoMeal';
@@ -28,6 +28,7 @@ import type { PhotoCommitResult, PhotoEntryPlan } from '../../lib/photoRecord';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { CONFIDENCE_LABELS } from '../../lib/vision';
 import type { MealPhotoRead } from '../../lib/vision';
+import { fmtKcal, fmtKcalItem } from '../../lib/formatKcal';
 
 const NO_FOODS: Food[] = [];
 
@@ -61,7 +62,7 @@ export function PhotoMealSheet({
   );
 
   const record = async () => {
-    if (rows.length === 0) return;
+    if (rows.length === 0 || !hasTime(time)) return;
     setSaving(true);
     setError(null);
     try {
@@ -88,14 +89,14 @@ export function PhotoMealSheet({
           <div>
             <p className="text-xs text-slate-500">記録する{rows.length}件の合計（概算）</p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtNum(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
+              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
               {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
             </p>
           </div>
           <Button
             variant="primary"
             className="h-14 w-full text-base"
-            disabled={saving || rows.length === 0}
+            disabled={saving || rows.length === 0 || !hasTime(time)}
             onClick={record}
           >
             {rows.length}件を記録
@@ -169,12 +170,12 @@ function PhotoRow({
         {food !== null && food.variantLabel !== null && <Badge tone="blue">{food.variantLabel}</Badge>}
         {food !== null && food.archived && <Badge tone="slate">在庫切れ</Badge>}
         <span className="text-sm tabular-nums text-slate-700">
-          × {formatQuantity(quantity)} {row.unitLabel}
+          {formatQuantity(quantity)} × {row.unitLabel}
         </span>
       </div>
 
       <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-        {fmtNum(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+        {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
         {fmtNum(value.saltG)}g
         {hasUnknown && <span className="ml-1 text-slate-500">（「—」は未確認）</span>}
       </p>

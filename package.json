@@ -2,11 +2,17 @@
   "name": "karada-log",
   "private": true,
   "version": "0.0.0",
+  "description": "食事を記録して、その日のカロリー・たんぱく質・脂質・塩分を目標と比べながら確認できる、個人用の減量管理 PWA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kerokero-1245/karada-log.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "node --test --import ./tests/setup.mjs \"tests/**/*.test.ts\"",
     "preview": "vite preview"
   },
   "dependencies": {

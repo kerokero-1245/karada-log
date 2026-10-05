@@ -20,7 +20,7 @@ import { CopyPromptButton } from '../../components/CopyPromptButton';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, Note } from '../../components/ui';
 import { useLiveQuery } from '../../lib/useLiveQuery';
-import { formatLogDateShort, nowTime } from '../../lib/date';
+import { formatLogDateShort, hasTime, nowTime } from '../../lib/date';
 import { buildEntryView } from '../../lib/importText';
 import type { EntryView } from '../../lib/importText';
 import { formatQuantity } from '../../lib/meals';
@@ -32,6 +32,7 @@ import type { QuickResolution, QuickStatus } from '../../lib/quickText';
 import { ModeTabs } from './ModeTabs';
 import { FoodPickerSheet } from './FoodPickerSheet';
 import { NewFoodForm } from './NewFoodForm';
+import { fmtKcal, fmtKcalItem } from '../../lib/formatKcal';
 
 const NO_FOODS: Food[] = [];
 
@@ -109,6 +110,11 @@ export function QuickTextSheet({
     };
   });
 
+  // 下の時刻欄の値を使う項目があるか（先頭に「21:30」と書いた項目はそちらを使う）。
+  // 使う項目があるのに時刻欄が空なら、時刻なしの記録にならないよう保存を止める
+  const fallbackTimeUsed = rows.length === 0 || rows.some((row) => row.resolution.parsed.time === null);
+  const timeMissing = fallbackTimeUsed && !hasTime(time);
+
   // この画面は1日ぶんの記録なので、日付の行があっても日付は動かさない（取り込みシートの担当）
   const otherDates = rows
     .map((row) => row.resolution.parsed.logDate)
@@ -163,6 +169,7 @@ export function QuickTextSheet({
 
   const record = async () => {
     if (entries.length === 0 && pending.length === 0) return;
+    if (timeMissing) return;
     setSaving(true);
     setError(null);
     try {
@@ -230,7 +237,7 @@ export function QuickTextSheet({
                     {first.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / {fmtNum(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
+                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
                     {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
                   </span>
                   <span className="mt-0.5 block text-[11px] text-slate-400">{candidate.reason}</span>
@@ -261,14 +268,14 @@ export function QuickTextSheet({
           <div>
             <p className="text-xs text-slate-500">記録する{entries.length}件の合計</p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtNum(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
+              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
               {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
             </p>
           </div>
           <Button
             variant="primary"
             className="h-14 w-full text-base"
-            disabled={saving || (entries.length === 0 && pending.length === 0)}
+            disabled={saving || timeMissing || (entries.length === 0 && pending.length === 0)}
             onClick={record}
           >
             {entries.length}件を記録
@@ -351,6 +358,7 @@ export function QuickTextSheet({
             logDate={logDate}
             boundaryHour={boundaryHour}
             label="時刻（時刻を書いた項目はそちらが優先されます）"
+            required={fallbackTimeUsed}
           />
         </div>
 
@@ -411,12 +419,12 @@ function PreviewRow({
             {food?.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
             {food?.archived === true && <Badge tone="slate">在庫切れ</Badge>}
             <span className="text-sm tabular-nums text-slate-700">
-              × {formatQuantity(view.quantity)} {view.unitLabel}
+              {formatQuantity(view.quantity)} × {view.unitLabel}
             </span>
           </div>
 
           <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            {fmtNum(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
             {fmtNum(value.saltG)}g
             {hasUnknown && <span className="ml-1 text-slate-500">（「—」は未確認）</span>}
           </p>

@@ -12,9 +12,10 @@ import { Sheet } from '../../components/Sheet';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, Note } from '../../components/ui';
 import { useLiveQuery } from '../../lib/useLiveQuery';
-import { nowTime } from '../../lib/date';
-import { addMealEntries } from '../../lib/meals';
+import { hasTime, nowTime } from '../../lib/date';
+import { addMealEntries, formatQuantity } from '../../lib/meals';
 import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
+import { fmtKcal, fmtKcalItem } from '../../lib/formatKcal';
 
 export function ShortcutSheet({
   set,
@@ -52,7 +53,7 @@ export function ShortcutSheet({
     setChecked((prev) => prev.map((value, i) => (i === index ? !value : value)));
 
   const add = async () => {
-    if (selected.length === 0) return;
+    if (selected.length === 0 || !hasTime(time)) return;
     setSaving(true);
     setError(null);
     try {
@@ -79,14 +80,14 @@ export function ShortcutSheet({
           <div>
             <p className="text-xs text-slate-500">選んだ{selected.length}件の合計</p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtNum(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
+              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
               {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
             </p>
           </div>
           <Button
             variant="primary"
             className="h-14 w-full text-base"
-            disabled={saving || selected.length === 0}
+            disabled={saving || selected.length === 0 || !hasTime(time)}
             onClick={add}
           >
             記録に追加（{selected.length}件）
@@ -124,10 +125,10 @@ export function ShortcutSheet({
                     </span>
                   </span>
                   <span className="mt-0.5 block text-xs text-slate-500">
-                    {row.item.quantity} × {row.food?.unitLabel ?? '—'}
+                    {formatQuantity(row.item.quantity)} × {row.food?.unitLabel ?? '—'}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-                    {fmtNum(row.value?.kcal ?? null)}kcal / P{fmtNum(row.value?.proteinG ?? null)}g / 脂質
+                    {fmtKcalItem(row.value?.kcal ?? null)}kcal / P{fmtNum(row.value?.proteinG ?? null)}g / 脂質
                     {fmtNum(row.value?.fatG ?? null)}g / 塩分{fmtNum(row.value?.saltG ?? null)}g
                   </span>
                 </span>

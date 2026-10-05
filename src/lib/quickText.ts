@@ -66,7 +66,7 @@ const LEADING_AMOUNT = new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_GROUP})?\\s*`,
 const TIME_AT_START = /^(\d{1,2}):(\d{2})(?![\d:])\s*/;
 
 /** 区切り。NFKC 後なので ／→/ ，→, ＋→+ になっている */
-const SEPARATORS = /[\n\/,、・+]/;
+const SEPARATORS = /[\n/,、・+]/;
 
 export interface ParsedItem {
   /** 分割後の原文（NFKC 済み・前後の空白だけ落としたもの）。記録の note に残す */

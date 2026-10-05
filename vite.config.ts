@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'favicon.svg'],
+      includeAssets: ['icon.svg', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'karada-log 減量・トレーニング管理',
         short_name: 'karada-log',
@@ -23,9 +23,12 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#0f172a',
         theme_color: '#0f172a',
+        // PNG は public/icon.svg を描画したもの（図案は同じ）。SVG を読めない環境向けに PNG を先に並べる
         icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
         ],
       },
       workbox: {

@@ -8,7 +8,7 @@ import { Sheet } from '../../components/Sheet';
 import { QuantityStepper } from '../../components/QuantityStepper';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, NutritionGrid } from '../../components/ui';
-import { nowTime } from '../../lib/date';
+import { hasTime, nowTime } from '../../lib/date';
 import { addMealEntries } from '../../lib/meals';
 import { scaleNutrition } from '../../lib/nutrition';
 
@@ -35,6 +35,7 @@ export function QuantityStep({
   const value = scaleNutrition(food.per, quantity);
 
   const add = async () => {
+    if (!hasTime(time)) return;
     setSaving(true);
     setError(null);
     try {
@@ -53,7 +54,7 @@ export function QuantityStep({
       onBack={onBack}
       onClose={onClose}
       footer={
-        <Button variant="primary" className="h-14 w-full text-base" disabled={saving} onClick={add}>
+        <Button variant="primary" className="h-14 w-full text-base" disabled={saving || !hasTime(time)} onClick={add}>
           記録に追加
         </Button>
       }

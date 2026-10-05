@@ -150,3 +150,12 @@ export function isoDateTimeIn(
   const calendarDate = Number.isFinite(hour) && hour < boundaryHour ? addDays(logDate, 1) : logDate;
   return `${calendarDate}T${hhmm}`;
 }
+
+/**
+ * 時刻欄に 'HH:mm' が入っているか。
+ * <input type="time"> は消すと '' になる。空のまま isoDateTimeIn に渡すと
+ * 時刻なしの日時（'2026-10-05T'）ができてしまうので、保存の前にこれで止める。
+ */
+export function hasTime(value: string): boolean {
+  return /^\d{2}:\d{2}/.test(value);
+}

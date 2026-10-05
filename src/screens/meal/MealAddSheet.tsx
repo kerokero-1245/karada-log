@@ -38,7 +38,9 @@ const FREQUENT_LIMIT = 10;
 type Step =
   | { kind: 'list' }
   | { kind: 'variant'; group: FoodGroup }
-  | { kind: 'quantity'; food: Food; from: 'list' | 'variant' | 'new' }
+  | { kind: 'quantity'; food: Food; from: 'list' | 'new' }
+  /** 食べ方の選択から来たときは、「戻る」で同じ食べ方の選択に戻す */
+  | { kind: 'quantity'; food: Food; from: 'variant'; group: FoodGroup }
   | {
       kind: 'newFood';
       name: string;
@@ -130,7 +132,7 @@ export function MealAddSheet({
     return (
       <VariantPicker
         group={step.group}
-        onSelect={(food) => setStep({ kind: 'quantity', food, from: 'variant' })}
+        onSelect={(food) => setStep({ kind: 'quantity', food, from: 'variant', group: step.group })}
         onBack={() => setStep({ kind: 'list' })}
         onClose={onClose}
       />
@@ -138,13 +140,13 @@ export function MealAddSheet({
   }
 
   if (step.kind === 'quantity') {
-    const back = step.from === 'list' || step.from === 'new' ? { kind: 'list' as const } : null;
+    const back: Step = step.from === 'variant' ? { kind: 'variant', group: step.group } : { kind: 'list' };
     return (
       <QuantityStep
         food={step.food}
         logDate={logDate}
         boundaryHour={boundaryHour}
-        onBack={() => setStep(back ?? { kind: 'list' })}
+        onBack={() => setStep(back)}
         onClose={onClose}
         onAdded={onClose}
       />

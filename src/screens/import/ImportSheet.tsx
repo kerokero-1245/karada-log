@@ -30,6 +30,7 @@ import type { QuickStatus } from '../../lib/quickText';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { FoodPickerSheet } from '../meal/FoodPickerSheet';
 import { NewFoodForm } from '../meal/NewFoodForm';
+import { fmtKcal, fmtKcalItem } from '../../lib/formatKcal';
 
 const NO_FOODS: Food[] = [];
 
@@ -284,7 +285,7 @@ export function ImportSheet({
                     {first.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / {fmtNum(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
+                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
                     {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
                   </span>
                   <span className="mt-0.5 block text-[11px] text-slate-400">{candidate.reason}</span>
@@ -400,7 +401,7 @@ export function ImportSheet({
             </ul>
 
             <p className="mt-1 border-t border-slate-200 pt-1 text-sm font-medium tabular-nums text-slate-800">
-              この日の合計 {fmtNum(day.total.value.kcal)}kcal / P{fmtNum(day.total.value.proteinG)}g / 脂質
+              この日の合計 {fmtKcal(day.total.value.kcal)}kcal / P{fmtNum(day.total.value.proteinG)}g / 脂質
               {fmtNum(day.total.value.fatG)}g / 塩分{fmtNum(day.total.value.saltG)}g
             </p>
             {day.unknown > 0 && (
@@ -489,12 +490,12 @@ function PreviewRow({
             {view.food?.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
             {view.food?.archived === true && <Badge tone="slate">在庫切れ</Badge>}
             <span className="text-sm tabular-nums text-slate-700">
-              × {formatQuantity(view.quantity)} {view.unitLabel}
+              {formatQuantity(view.quantity)} × {view.unitLabel}
             </span>
           </div>
 
           <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            {fmtNum(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
             {fmtNum(value.saltG)}g
             {hasUnknown && <span className="ml-1 text-slate-500">（「—」は未確認）</span>}
           </p>

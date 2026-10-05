@@ -2,6 +2,7 @@
 import type { FoodGroup } from './foodGroups';
 import { fmtNum } from '../../lib/nutrition';
 import { Badge } from '../../components/ui';
+import { fmtKcalItem } from '../../lib/formatKcal';
 
 export function FoodList({
   groups,
@@ -38,7 +39,7 @@ export function FoodList({
                     </>
                   ) : (
                     <>
-                      {first.unitLabel} / {fmtNum(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
+                      {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
                       {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
                     </>
                   )}

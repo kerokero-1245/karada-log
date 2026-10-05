@@ -8,7 +8,7 @@ import { Sheet } from '../../components/Sheet';
 import { QuantityStepper } from '../../components/QuantityStepper';
 import { TimeField } from '../../components/TimeField';
 import { Badge, Button, NutritionGrid } from '../../components/ui';
-import { formatLogDateShort, timeOf } from '../../lib/date';
+import { formatLogDateShort, hasTime, timeOf } from '../../lib/date';
 import { deleteMealEntry, updateMealEntry } from '../../lib/meals';
 import { scaleNutrition } from '../../lib/nutrition';
 
@@ -50,7 +50,7 @@ export function MealEditSheet({
         <Button
           variant="primary"
           className="h-14 w-full text-base"
-          disabled={busy}
+          disabled={busy || !hasTime(time)}
           onClick={() => run(() => updateMealEntry(entry, quantity, time, boundaryHour))}
         >
           保存する

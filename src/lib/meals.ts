@@ -9,7 +9,7 @@
  */
 import { db } from '../db/db';
 import type { Food, LogDate, MealEntry, MealSnapshot, Nutrition } from '../db/types';
-import { isoDateTimeIn, toIsoDateTime, toLogDate } from './date';
+import { hasTime, isoDateTimeIn, toIsoDateTime, toLogDate } from './date';
 import { scaleNutrition } from './nutrition';
 
 export interface NewMealInput {
@@ -35,6 +35,15 @@ export function snapshotOf(food: Food): MealSnapshot {
   };
 }
 
+/**
+ * 時刻が 'HH:mm' でなければ保存しない。
+ * 画面側でも止めているが、空の時刻が isoDateTimeIn に渡ると時刻なしの日時（'2026-10-05T'）が
+ * できてしまうので、保存の入口でも弾く（トランザクションごと取り消される）。
+ */
+export function assertTime(time: string): void {
+  if (!hasTime(time)) throw new Error('時刻が入っていません。時刻を入れてから保存してください');
+}
+
 /** その記録の栄養値（1単位あたり × 数量） */
 export function entryNutrition(entry: MealEntry): Nutrition {
   return scaleNutrition(entry.snapshot.per, entry.quantity);
@@ -51,6 +60,7 @@ export async function addMealEntries(
   fromShortcutSetId: number | null,
   boundaryHour?: number,
 ): Promise<number[]> {
+  for (const input of inputs) assertTime(input.time);
   const now = toIsoDateTime(new Date());
   const ids: number[] = [];
 
@@ -93,6 +103,7 @@ export async function updateMealEntry(
   boundaryHour?: number,
 ): Promise<void> {
   if (entry.id === undefined) return;
+  assertTime(time);
   await db.mealEntries.update(entry.id, {
     quantity,
     recordedAt: isoDateTimeIn(entry.logDate, time, boundaryHour),

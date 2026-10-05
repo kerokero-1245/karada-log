@@ -6,6 +6,8 @@
  * 頻度は行単位（= バリアントの合計）で数えるが、記録は必ず1バリアントに落ちる。
  */
 import type { Food, FoodCategory, IsoDateTime } from '../../db/types';
+import { aliasesOf } from '../../lib/aliases';
+import { normalize } from '../../lib/quickText';
 
 export interface FoodGroup {
   key: string;
@@ -19,12 +21,25 @@ export interface FoodGroup {
   archived: boolean;
 }
 
-/** 名前・バリアント名・カテゴリの部分一致 */
+/**
+ * 名前・バリアント名・カテゴリ・呼び名（Food.aliases）の部分一致。
+ *
+ * テキスト記録（lib/quickText.ts）と同じ normalize で比べるので、
+ * ひらがな / カタカナ・全角 / 半角・大文字 / 小文字・空白の違いを区別しない
+ * （「ざばす」で「ザバス MILK PROTEIN」、「ゆで卵」で呼び名に「ゆで卵」を持つ食品が当たる）。
+ */
 export function matchesQuery(food: Food, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (q === '') return true;
-  const haystack = `${food.name} ${food.variantLabel ?? ''} ${food.category}`.toLowerCase();
-  return haystack.includes(q);
+  const key = normalize(query);
+  if (key === '') return true;
+  const fields = [
+    // 名前とバリアント名をまたぐ書き方（'BIG スープ'）も、これまでどおり当てる
+    `${food.name}${food.variantLabel ?? ''}${food.category}`,
+    food.name,
+    food.variantLabel ?? '',
+    food.category,
+    ...aliasesOf(food),
+  ];
+  return fields.some((field) => normalize(field).includes(key));
 }
 
 export function groupFoods(foods: Food[]): FoodGroup[] {

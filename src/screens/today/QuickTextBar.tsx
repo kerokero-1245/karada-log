@@ -26,6 +26,8 @@ export function QuickTextBar({ onSubmit }: { onSubmit: (text: string) => void })
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
+            // 日本語入力の変換確定の Enter では何もしない（Safari は確定後に keyCode 229 で来る）
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
             if (e.key === 'Enter') {
               e.preventDefault();
               submit();

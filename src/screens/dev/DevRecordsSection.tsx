@@ -10,6 +10,7 @@ import { formatDateTime } from '../../lib/date';
 import { fmtNum } from '../../lib/nutrition';
 import { describeLoad, describeProgression } from '../../lib/weight';
 import { useLiveQuery } from '../../lib/useLiveQuery';
+import { fmtStored } from '../../lib/formatKcal';
 
 export function DevRecordsSection() {
   const data = useLiveQuery(async () => {
@@ -146,7 +147,7 @@ export function DevRecordsSection() {
             <Row label="脂肪量" value={`${fmtNum(body.fatMassKg)} kg`} />
             <Row label="除脂肪量" value={`${fmtNum(body.leanMassKg)} kg`} />
             <Row label="筋肉量" value={`${fmtNum(body.muscleMassKg)} kg`} />
-            <Row label="基礎代謝" value={`${fmtNum(body.bmrKcal)} kcal`} />
+            <Row label="基礎代謝" value={`${fmtStored(body.bmrKcal)} kcal`} />
             <Row label="内臓脂肪レベル" value={fmtNum(body.visceralFatLevel)} />
             <Row label="BMI" value={fmtNum(body.bmi)} />
           </dl>

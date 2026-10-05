@@ -30,7 +30,7 @@
  */
 import { db } from '../db/db';
 import type { Food, LogDate, PendingText } from '../db/types';
-import { addMealEntries } from './meals';
+import { addMealEntries, assertTime } from './meals';
 import type { NewMealInput } from './meals';
 import { aliasesOf, alreadyKnown, canLearnAlias, mergeAliases } from './aliases';
 import { isoDateTimeIn, toIsoDateTime } from './date';
@@ -87,6 +87,8 @@ export async function addEntryPlans(
   entries: QuickEntryPlan[],
   boundaryHour: number,
 ): Promise<{ added: number; createdFoods: number }> {
+  // 推定食品を作る前に止める（時刻なしの記録のために食品だけが増えないように）
+  for (const entry of entries) assertTime(entry.time);
   const inputs: NewMealInput[] = [];
   let createdFoods = 0;
 
@@ -140,6 +142,7 @@ export async function learnFromPlans(entries: QuickEntryPlan[]): Promise<Learned
 /** 解決できなかった原文を預ける。★ 栄養値は持たせない（集計に入れない）★ */
 export async function addPendingPlans(logDate: LogDate, pending: QuickPendingPlan[], boundaryHour: number): Promise<void> {
   if (pending.length === 0) return;
+  for (const item of pending) assertTime(item.time);
   const now = toIsoDateTime(new Date());
   const rows: PendingText[] = pending.map((item) => ({
     text: item.raw,

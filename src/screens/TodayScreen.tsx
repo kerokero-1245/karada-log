@@ -26,6 +26,7 @@ import { QuickTextBar } from './today/QuickTextBar';
 import { MealAddSheet } from './meal/MealAddSheet';
 import { MealEditSheet } from './meal/MealEditSheet';
 import { ShortcutSheet } from './meal/ShortcutSheet';
+import { fmtKcal } from '../lib/formatKcal';
 
 const NO_ENTRIES: MealEntry[] = [];
 const NO_SESSIONS: TrainingSession[] = [];
@@ -156,7 +157,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
                     >
                       <span className="block text-sm font-bold text-slate-800">{set.name}</span>
                       <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                        {set.items.length}品 ・ 全部で {fmtNum(planned.value.kcal)}kcal / P
+                        {set.items.length}品 ・ 全部で {fmtKcal(planned.value.kcal)}kcal / P
                         {fmtNum(planned.value.proteinG)}g / 脂質{fmtNum(planned.value.fatG)}g / 塩分
                         {fmtNum(planned.value.saltG)}g
                       </span>

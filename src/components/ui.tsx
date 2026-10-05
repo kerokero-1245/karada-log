@@ -5,6 +5,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import type { Nutrition } from '../db/types';
 import { fmtNum } from '../lib/nutrition';
+import { fmtKcalItem } from '../lib/formatKcal';
 
 const BADGE_TONES = {
   blue: 'bg-blue-100 text-blue-800',
@@ -103,7 +104,7 @@ export function Note({ children }: { children: ReactNode }) {
 /** 栄養値の内訳。数量を変えるたびにここがリアルタイムで動く */
 export function NutritionGrid({ value }: { value: Nutrition }) {
   const cells: { label: string; text: string }[] = [
-    { label: 'kcal', text: fmtNum(value.kcal) },
+    { label: 'kcal', text: fmtKcalItem(value.kcal) },
     { label: 'P', text: `${fmtNum(value.proteinG)}g` },
     { label: '脂質', text: `${fmtNum(value.fatG)}g` },
     { label: '塩分', text: `${fmtNum(value.saltG)}g` },

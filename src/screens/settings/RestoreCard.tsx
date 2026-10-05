@@ -97,11 +97,12 @@ export function RestoreCard() {
             <br />
             書き出した日時: {staged.backup.exportedAt === '' ? '—' : formatDateTime(staged.backup.exportedAt)}
           </p>
-          <dl className="mt-2 grid grid-cols-2 gap-x-3 text-xs">
+          {/* 1列にする。2列だと 360 幅で「固定ベース」「0 件（ファイルに無し）」が途中で折り返す */}
+          <dl className="mt-2 grid grid-cols-1 text-xs">
             {staged.counts.map((row) => (
               <div key={row.table} className="flex justify-between gap-2 border-b border-amber-200 py-0.5">
-                <dt className="text-amber-900">{row.label}</dt>
-                <dd className="text-right font-medium tabular-nums text-amber-900">
+                <dt className="whitespace-nowrap text-amber-900">{row.label}</dt>
+                <dd className="whitespace-nowrap text-right font-medium tabular-nums text-amber-900">
                   {row.count} 件{row.missing ? '（ファイルに無し）' : ''}
                 </dd>
               </div>

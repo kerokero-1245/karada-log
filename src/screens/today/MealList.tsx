@@ -8,6 +8,7 @@ import { timeOf } from '../../lib/date';
 import { entryNutrition, formatQuantity } from '../../lib/meals';
 import { fmtNum } from '../../lib/nutrition';
 import { Badge } from '../../components/ui';
+import { fmtKcalItem } from '../../lib/formatKcal';
 
 export function MealList({
   entries,
@@ -49,7 +50,7 @@ export function MealList({
                   {formatQuantity(entry.quantity)} × {entry.snapshot.unitLabel}
                 </span>
                 <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-                  {fmtNum(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+                  {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
                   {fmtNum(value.saltG)}g
                 </span>
                 {entry.note !== '' && (

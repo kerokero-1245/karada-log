@@ -16,6 +16,7 @@ import { ExportCard } from '../settings/ExportCard';
 import { ImportCard } from '../settings/ImportCard';
 import { RestoreCard } from '../settings/RestoreCard';
 import { DevRecordsSection } from './DevRecordsSection';
+import { fmtStored } from '../../lib/formatKcal';
 
 export function DevDataScreen({ settings }: { settings: Settings }) {
   const foods = useLiveQuery(() => db.foods.toArray(), []);
@@ -65,15 +66,15 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
       <main className="mx-auto max-w-md space-y-3 p-3">
         <Card title="目標値">
           <dl className="grid grid-cols-1 gap-x-3 text-sm">
-            <Row label="基礎代謝（下限）" value={`${settings.bmrKcal} kcal`} />
-            <Row label={DAY_TYPE_LABELS.rest} value={`${settings.restDayKcal} kcal`} />
-            <Row label={DAY_TYPE_LABELS.gym} value={`${settings.gymDayKcal} kcal`} />
+            <Row label="基礎代謝（下限）" value={`${fmtStored(settings.bmrKcal)} kcal`} />
+            <Row label={DAY_TYPE_LABELS.rest} value={`${fmtStored(settings.restDayKcal)} kcal`} />
+            <Row label={DAY_TYPE_LABELS.gym} value={`${fmtStored(settings.gymDayKcal)} kcal`} />
             <Row label="たんぱく質" value={`目標 ${settings.proteinTargetG}g / 上限 ${settings.proteinCapG}g`} />
             <Row label="脂質" value={`${settings.fatTargetG} g`} />
             <Row label="塩分" value={`${settings.saltLimitG}g以内 / 週平均${settings.weeklySaltAverageG}g`} />
             <Row
               label="週合計"
-              value={`${settings.weeklyKcalTarget.toLocaleString('ja-JP')} ± ${settings.weeklyKcalTolerance} kcal`}
+              value={`${fmtStored(settings.weeklyKcalTarget)} ± ${fmtStored(settings.weeklyKcalTolerance)} kcal`}
             />
             <Row label="日付の境界" value={`朝${settings.dayBoundaryHour}時`} />
             <Row label="週の起点" value={settings.weekStartsOn === 1 ? '月曜' : String(settings.weekStartsOn)} />
@@ -147,14 +148,14 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
                           {row.food?.name ?? '(不明な食品)'} × {row.item.quantity}
                         </span>
                         <span className="text-xs tabular-nums text-slate-600">
-                          {fmtNum(row.value?.kcal ?? null)}kcal / P{fmtNum(row.value?.proteinG ?? null)} / 脂質
+                          {fmtStored(row.value?.kcal ?? null)}kcal / P{fmtNum(row.value?.proteinG ?? null)} / 脂質
                           {fmtNum(row.value?.fatG ?? null)} / 塩分{fmtNum(row.value?.saltG ?? null)}
                         </span>
                       </li>
                     ))}
                   </ul>
                   <p className="mt-1 border-t border-slate-300 pt-1 text-sm font-medium tabular-nums">
-                    計 {fmtNum(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
+                    計 {fmtStored(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
                     {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
                   </p>
                 </div>
@@ -176,8 +177,9 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
                         {food.useCount > 0 && <span className="text-[11px] text-slate-400">{food.useCount}回</span>}
                       </div>
                       <div className="mt-0.5 text-xs tabular-nums text-slate-600">
-                        {food.unitLabel} / {fmtNum(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
-                        {fmtNum(food.per.fatG)}g / 炭水{fmtNum(food.per.carbG)}g / 塩分{fmtNum(food.per.saltG)}g
+                        {/* 保存値をそのままの精度で出す（開発用の確認なので丸めない） */}
+                        {food.unitLabel} / {fmtStored(food.per.kcal)}kcal / P{fmtStored(food.per.proteinG)}g / 脂質
+                        {fmtStored(food.per.fatG)}g / 炭水{fmtStored(food.per.carbG)}g / 塩分{fmtStored(food.per.saltG)}g
                       </div>
                       <div className="mt-0.5 text-[11px] text-slate-400">入力時: {food.basis.label}</div>
                       <div className="mt-0.5 text-[11px] text-slate-500">

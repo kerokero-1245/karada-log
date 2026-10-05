@@ -576,6 +576,13 @@ const EXERCISE_SEEDS: ExerciseSeed[] = [
 /* 体組成                                                               */
 /* ------------------------------------------------------------------ */
 
+/*
+ * ★ 体組成・骨密度・サプリ・設定（目標・身長・年齢）は、公開デモ用の架空のサンプル値。★
+ *   実在の人の測定値ではない。きりのよい値にして、内訳の和だけはそろえている
+ *   （部位別の筋肉量の和 = 筋肉量 53.0kg、部位別の脂肪量の和 = 脂肪量 14.0kg）。
+ *   ここを変えても、すでに設定行がある端末には書き込まれない（seedIfEmpty はフル投入を1回だけ行う）。
+ */
+
 const segmentMuscle: Record<SegmentKey, SegmentMuscle> = {
   trunk: { muscleKg: 27.0, score: 0 },
   rightArm: { muscleKg: 3.0, score: 0 },
@@ -807,6 +814,7 @@ export async function seedIfEmpty(): Promise<SeedResult> {
         { minRestDays: 3, previousDaySaltLimitG: 3 },
       );
 
+      // 架空のサンプル値（上の「★」のコメント）。BMI・SMI などは身長 170cm・体重 70kg から計算した値
       const body: BodyComposition = {
         measuredAt,
         place: '',

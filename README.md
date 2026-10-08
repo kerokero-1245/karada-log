@@ -36,7 +36,7 @@
 - **写真の読み取り**: `@anthropic-ai/sdk` でブラウザから Claude API を直接呼び出します
 - **PWA**: `vite-plugin-pwa` が Web App Manifest とサービスワーカー（Workbox）を生成し、ビルド成果物をプリキャッシュします。更新は `autoUpdate` で自動的に反映されます
 - **Lint**: oxlint
-- **デプロイ**: GitHub Actions で `main` への push ごとにビルドし、GitHub Pages に公開します
+- **デプロイ**: GitHub Actions で `main` への push ごとに lint・テスト・ビルドを回し、すべて通ったときだけ GitHub Pages に公開します。PR でも同じ lint・テスト・ビルドを回します（公開はしません）
 
 ## 開発
 

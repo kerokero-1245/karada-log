@@ -1,9 +1,11 @@
 name: GitHub Pages へデプロイ
 
-# main への push で Vite ビルドを書き出し、GitHub Pages へ公開する。
+# lint・テスト・ビルドを通ったときだけ、Vite ビルドを書き出して GitHub Pages へ公開する。
+# main への push と手動実行で公開する。PR では検査（lint・テスト・ビルド）だけを回し、公開はしない。
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -16,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - name: チェックアウト
@@ -31,7 +33,14 @@ jobs:
       - name: 依存関係をインストール
         run: npm ci
 
+      - name: Lint（oxlint）
+        run: npm run lint
+
+      - name: テスト（node --test）
+        run: npm test
+
       - name: Pages 設定（未有効なら有効化）
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: actions/configure-pages@v5
         with:
           enablement: true
@@ -40,12 +49,14 @@ jobs:
         run: npm run build
 
       - name: 成果物をアップロード
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    needs: build
+    needs: ci
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

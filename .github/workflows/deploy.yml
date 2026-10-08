@@ -2,7 +2,8 @@ name: GitHub Pages へデプロイ
 
 # lint・テスト・ビルドを通ったときだけ、Vite ビルドを書き出して GitHub Pages へ公開する。
 # main への push と手動実行（main のみ）で公開する。PR では検査（lint・テスト・ビルド）だけを回し、公開はしない。
-# 権限とデプロイの列（concurrency）は deploy ジョブだけに持たせ、PR の検査には書き込み権限を渡さず、列にも並ばせない。
+# 権限とデプロイの列（concurrency の pages）は deploy ジョブだけに持たせ、PR の検査には書き込み権限を渡さず、デプロイの列にも並ばせない。
+# ci ジョブは ref ごとの別の列（ci-<ref>）に並べ、同じブランチ・PR に新しい push が来たら古い検査を止める。
 on:
   push:
     branches: [main]
@@ -12,8 +13,12 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: チェックアウト
         uses: actions/checkout@v7
@@ -46,6 +51,7 @@ jobs:
     needs: ci
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pages: write

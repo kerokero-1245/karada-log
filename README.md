@@ -47,3 +47,7 @@ npm run preview  # ビルド結果をローカルで確認
 npm run lint     # oxlint を実行
 npm test         # 単体テスト（Node 22.18 以降の node --test。追加の依存なし）
 ```
+
+## ライセンス
+
+[MIT License](LICENSE) で公開しています。

@@ -321,7 +321,7 @@ function daySections(input: ExportInput): string {
 function daySection(day: ExportDay, settings: Settings): string {
   const totals = totalsOf(day);
   const bars = buildBars(totals.nutrition, settings, day.dayType);
-  const lines = [`## ${formatLogDateShort(day.logDate)}${DAY_TYPE_LABELS[day.dayType]}`, ''];
+  const lines = [`### ${formatLogDateShort(day.logDate)}${DAY_TYPE_LABELS[day.dayType]}`, ''];
 
   if (!totals.hasRecords) {
     lines.push(
@@ -379,7 +379,7 @@ function entryRow(entry: MealEntry): string[] {
 
 function trainingBlock(entry: ExportSession): string {
   const session = entry.session;
-  const head = `### トレーニング ${MENU_LABELS[session.menu]} ${timeOf(session.startedAt)} 開始${
+  const head = `#### トレーニング ${MENU_LABELS[session.menu]} ${timeOf(session.startedAt)} 開始${
     session.startedAtIsEstimated ? '（開始時刻は仮置き）' : ''
   }`;
 

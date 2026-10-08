@@ -1,0 +1,19 @@
+# 依存関係と GitHub Actions の更新を毎週受ける。
+# npm は minor と patch を 1 本の PR にまとめ、major は個別の PR にする。
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

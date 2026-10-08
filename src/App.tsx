@@ -55,19 +55,19 @@ export default function App() {
       {tab === 'training' && (
         <PlaceholderScreen
           title="トレーニング"
-          plan="A / B / C のローテーション、バー種別とセットでの重量記録、次回重量の自動判定（F4）。"
+          plan="A / B / C のメニューの順番に沿ったトレーニングの記録、セットごとの重量の記録、次回の重量の目安。"
         />
       )}
       {tab === 'body' && (
         <PlaceholderScreen
           title="からだ"
-          plan="体組成・骨密度の記録と、脂肪量／除脂肪量を主役にしたグラフ（F5）。"
+          plan="体組成・骨密度の記録と、脂肪量・除脂肪量の移り変わりのグラフ。"
         />
       )}
       {tab === 'week' && (
         <PlaceholderScreen
           title="週のまとめ"
-          plan="週合計カロリー、日別の達成状況、塩分の週平均、トレーニング回数（F8）。"
+          plan="1 週間のカロリーの合計、日ごとの目標の達成状況、塩分の週平均、トレーニングの回数。"
         />
       )}
       {tab === 'settings' && <DevDataScreen settings={settings} />}

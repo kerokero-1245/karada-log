@@ -1,25 +1,19 @@
 name: GitHub Pages へデプロイ
 
 # lint・テスト・ビルドを通ったときだけ、Vite ビルドを書き出して GitHub Pages へ公開する。
-# main への push と手動実行で公開する。PR では検査（lint・テスト・ビルド）だけを回し、公開はしない。
+# main への push と手動実行（main のみ）で公開する。PR では検査（lint・テスト・ビルド）だけを回し、公開はしない。
+# 権限とデプロイの列（concurrency）は deploy ジョブだけに持たせ、PR の検査には書き込み権限を渡さず、列にも並ばせない。
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: チェックアウト
         uses: actions/checkout@v4
@@ -39,29 +33,35 @@ jobs:
       - name: テスト（node --test）
         run: npm test
 
-      - name: Pages 設定（未有効なら有効化）
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
       - name: 型チェックとビルド（base は vite.config.ts の /karada-log/）
         run: npm run build
 
       - name: 成果物をアップロード
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: ci
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Pages 設定（未有効なら有効化）
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: デプロイ
         id: deployment
         uses: actions/deploy-pages@v4

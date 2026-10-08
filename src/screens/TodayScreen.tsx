@@ -20,6 +20,7 @@ import { deletePendingText } from '../lib/quickRecord';
 import type { QuickCommitResult } from '../lib/quickRecord';
 import { useLiveQuery } from '../lib/useLiveQuery';
 import { DayHeader } from './today/DayHeader';
+import { FirstRunGuideCard } from './today/FirstRunGuideCard';
 import { MealList } from './today/MealList';
 import { PendingTextsCard } from './today/PendingTextsCard';
 import { QuickTextBar } from './today/QuickTextBar';
@@ -93,6 +94,8 @@ export function TodayScreen({ settings }: { settings: Settings }) {
       />
 
       <main className="mx-auto max-w-md space-y-3 p-3">
+        <FirstRunGuideCard />
+
         {flash !== null && (
           <div className="flex items-start gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3">
             <div className="min-w-0 flex-1 space-y-0.5 text-sm text-emerald-900">

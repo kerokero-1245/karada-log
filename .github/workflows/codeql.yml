@@ -1,0 +1,37 @@
+name: CodeQL（コードの脆弱性スキャン）
+
+# JavaScript / TypeScript のコードを CodeQL で調べ、結果を Security タブの Code scanning に載せる。
+# main への push・PR・週 1 回（月曜 03:23 JST）に回す。手本は starter-workflows の code-scanning/codeql.yml。
+# リポジトリの既定セットアップ（default setup）が not-configured のときに置く advanced 構成。両方を有効にすると衝突する。
+# 権限はジョブ単位で最小にする（結果の書き込み security-events: write と、読み取りだけ）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 18 * * 0'
+
+jobs:
+  analyze:
+    name: 解析（javascript-typescript）
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+      packages: read
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v7
+
+      - name: CodeQL を初期化
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: CodeQL で解析
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:javascript-typescript

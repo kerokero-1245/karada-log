@@ -6,7 +6,7 @@ export type TabKey = 'today' | 'training' | 'body' | 'week' | 'settings';
 
 const TABS: { key: TabKey; label: string; soon?: boolean }[] = [
   { key: 'today', label: '今日' },
-  { key: 'training', label: 'トレ', soon: true },
+  { key: 'training', label: 'トレ' },
   { key: 'body', label: 'からだ', soon: true },
   { key: 'week', label: '週', soon: true },
   { key: 'settings', label: '設定' },

@@ -10,6 +10,7 @@ import { BottomNav } from './components/BottomNav';
 import type { TabKey } from './components/BottomNav';
 import { TodayScreen } from './screens/TodayScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
+import { TrainingScreen } from './screens/training/TrainingScreen';
 import { DevDataScreen } from './screens/dev/DevDataScreen';
 
 export default function App() {
@@ -52,12 +53,7 @@ export default function App() {
   return (
     <div className="bg-slate-100">
       {tab === 'today' && <TodayScreen settings={settings} />}
-      {tab === 'training' && (
-        <PlaceholderScreen
-          title="トレーニング"
-          plan="A / B / C のメニューの順番に沿ったトレーニングの記録、セットごとの重量の記録、次回の重量の目安。"
-        />
-      )}
+      {tab === 'training' && <TrainingScreen settings={settings} />}
       {tab === 'body' && (
         <PlaceholderScreen
           title="からだ"

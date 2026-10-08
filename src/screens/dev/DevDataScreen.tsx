@@ -98,17 +98,6 @@ export function DevDataScreen({ settings }: { settings: Settings }) {
 
         <RestoreCard />
 
-        <Card title="このステップでできること">
-          <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
-            <li>「今日」タブ: 進捗バー・記録の一覧・固定ベースの追加・記録の編集と削除</li>
-            <li>テキストでまとめて記録（ダッシュボードの入力欄 / 記録シートの「テキスト」タブ）</li>
-            <li>写真から記録（APIキーを入れると、記録シートに「写真から」が出ます）</li>
-            <li>期間を選んで Markdown を書き出す（チャットに貼る用）。全データの JSON バックアップと復元</li>
-            <li>記録を貼り付けて取り込む（設定タブ）。日付ごとに確認してから、まとめて記録できます</li>
-            <li>トレ / からだ / 週 タブは次のステップで作ります</li>
-          </ul>
-        </Card>
-
         <details className="rounded-xl bg-white p-3 shadow-sm">
           <summary className="min-h-11 cursor-pointer list-none py-2 text-sm font-bold text-slate-700">
             ▸ データ確認（開発用）

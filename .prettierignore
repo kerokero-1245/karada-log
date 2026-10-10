@@ -1,0 +1,7 @@
+# 生成物・ビルド出力・依存・ロックファイルは整形しない
+node_modules
+dist
+dist-ssr
+coverage
+package-lock.json
+*.min.*

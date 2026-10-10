@@ -6,6 +6,9 @@ import type { DayType, LogDate } from "../../db/types";
 import { DAY_TYPE_LABELS } from "../../db/types";
 import { formatLogDate } from "../../lib/date";
 
+/** 区分のチップを並べる順 */
+const DAY_TYPES: DayType[] = ["rest", "gym"];
+
 export function DayHeader({
   logDate,
   dayType,
@@ -32,7 +35,7 @@ export function DayHeader({
         </h1>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {(["rest", "gym"] as DayType[]).map((type) => {
+          {DAY_TYPES.map((type) => {
             const active = type === dayType;
             return (
               <button

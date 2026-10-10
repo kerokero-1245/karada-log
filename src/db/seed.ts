@@ -14,6 +14,7 @@
  *   固定ベース（§7）も計画なので MealEntry には入れない（原則1）。
  */
 import { db } from "./db";
+import { addedId } from "./keys";
 import type {
   BodyComposition,
   BoneDensity,
@@ -679,9 +680,9 @@ export async function seedIfEmpty(): Promise<void> {
         createdAt: now,
         updatedAt: now,
       }));
-      const foodIds = (await db.foods.bulkAdd(foods, {
-        allKeys: true,
-      })) as number[];
+      const foodIds = (await db.foods.bulkAdd(foods, { allKeys: true })).map(
+        addedId,
+      );
       const foodId = new Map(FOOD_SEEDS.map((s, i) => [s.key, foodIds[i]]));
       const fid = (key: string): number => {
         const id = foodId.get(key);
@@ -732,9 +733,9 @@ export async function seedIfEmpty(): Promise<void> {
       const exercises: Exercise[] = EXERCISE_SEEDS.map(
         ({ key: _key, ...rest }) => rest,
       );
-      const exerciseIds = (await db.exercises.bulkAdd(exercises, {
-        allKeys: true,
-      })) as number[];
+      const exerciseIds = (
+        await db.exercises.bulkAdd(exercises, { allKeys: true })
+      ).map(addedId);
       const exerciseId = new Map(
         EXERCISE_SEEDS.map((s, i) => [s.key, exerciseIds[i]]),
       );
@@ -769,12 +770,11 @@ export async function seedIfEmpty(): Promise<void> {
         logDate: toLogDate("2026-09-16T18:00"),
         note: "開始時刻は未記録のため仮置き。アブローラーは回数未記録のため種目記録なし",
       };
-      const [idB, idC, idA] = (await db.trainingSessions.bulkAdd(
-        [sessionB, sessionC, sessionA],
-        {
+      const [idB, idC, idA] = (
+        await db.trainingSessions.bulkAdd([sessionB, sessionC, sessionA], {
           allKeys: true,
-        },
-      )) as number[];
+        })
+      ).map(addedId);
       sessionB.id = idB;
       sessionC.id = idC;
       sessionA.id = idA;
@@ -837,9 +837,9 @@ export async function seedIfEmpty(): Promise<void> {
           note: "EZバー7kg + 2.5kg×2 = 12kg。規定回数に届かず据え置き。回数は未記録",
         },
       ];
-      const seIds = (await db.sessionExercises.bulkAdd(sessionExercises, {
-        allKeys: true,
-      })) as number[];
+      const seIds = (
+        await db.sessionExercises.bulkAdd(sessionExercises, { allKeys: true })
+      ).map(addedId);
       const seIdOf = (name: string, sessionId: number): number => {
         const idx = sessionExercises.findIndex(
           (s) => s.exerciseName === name && s.sessionId === sessionId,

@@ -15,7 +15,8 @@
  * トランザクションを使い回し、子がこけたら親ごと巻き戻る）。
  */
 import { db } from "../db/db";
-import type { Food, LogDate } from "../db/types";
+import { addedId } from "../db/keys";
+import type { LogDate } from "../db/types";
 import { addMealEntries } from "./meals";
 import type { NewMealInput } from "./meals";
 import { estimatedFoodOf, photoNoteOf } from "./photoMeal";
@@ -47,8 +48,8 @@ export async function commitPhotoMeal(
       let food = plan.row.matched;
       if (food === null) {
         const draft = estimatedFoodOf(plan.row.item);
-        const id = (await db.foods.add(draft as Food)) as number;
-        food = { ...(draft as Food), id };
+        const id = addedId(await db.foods.add(draft));
+        food = { ...draft, id };
         createdFoods += 1;
       }
       inputs.push({

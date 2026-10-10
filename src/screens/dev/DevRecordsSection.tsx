@@ -3,8 +3,8 @@
  * 旧 App.tsx の確認ページから移したもの。F4/F5 の画面ができたら不要になる。
  */
 import { db } from "../../db/db";
-import type { MenuId } from "../../db/types";
 import {
+  MENU_IDS,
   MENU_LABELS,
   OUTCOME_LABELS,
   SEGMENT_KEYS,
@@ -39,7 +39,7 @@ export function DevRecordsSection() {
         <h3 className="mb-1 text-xs font-bold text-slate-500">
           種目マスタ（{data.exercises.length}件）
         </h3>
-        {(["A", "B", "C"] as MenuId[]).map((menu) => (
+        {MENU_IDS.map((menu) => (
           <div key={menu} className="mb-2 last:mb-0">
             <h4 className="text-xs font-bold text-slate-600">
               {MENU_LABELS[menu]}

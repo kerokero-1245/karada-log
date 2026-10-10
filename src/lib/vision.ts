@@ -16,6 +16,7 @@
  * キーは端末内の Settings にだけ置く。
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { isPlainObject } from "./guards";
 import type { PhotoMediaType } from "./photo";
 import {
   FORMAT_MESSAGE,
@@ -77,7 +78,7 @@ function oneOf<T extends string>(
   allowed: readonly T[],
   fallback: T,
 ): T {
-  return allowed.includes(value as T) ? (value as T) : fallback;
+  return allowed.find((candidate) => candidate === value) ?? fallback;
 }
 
 export type Confidence = "high" | "medium" | "low";
@@ -182,7 +183,7 @@ export async function readNutritionLabel(
   mediaType: PhotoMediaType,
   apiKey: string,
 ): Promise<LabelRead> {
-  const data = await requestJson({
+  const row = await requestJson({
     apiKey,
     imageBase64,
     mediaType,
@@ -193,7 +194,6 @@ export async function readNutritionLabel(
     effort: "medium",
   });
 
-  const row = data as Record<string, unknown>;
   return {
     name: textOrNull(row.name),
     basis: oneOf(row.basis, LABEL_BASES, "per_unit"),
@@ -295,7 +295,7 @@ export async function estimateMealPhoto(
   mediaType: PhotoMediaType,
   apiKey: string,
 ): Promise<MealPhotoRead> {
-  const data = await requestJson({
+  const row = await requestJson({
     apiKey,
     imageBase64,
     mediaType,
@@ -306,12 +306,10 @@ export async function estimateMealPhoto(
     effort: "high",
   });
 
-  const row = data as Record<string, unknown>;
   const rawItems = Array.isArray(row.items) ? row.items : [];
   const items: MealPhotoItem[] = [];
-  for (const entry of rawItems) {
-    if (typeof entry !== "object" || entry === null) continue;
-    const item = entry as Record<string, unknown>;
+  for (const item of rawItems) {
+    if (!isPlainObject(item)) continue;
     const name = text(item.name).trim();
     if (name === "") continue;
     const quantity = numberOrNull(item.quantity);
@@ -376,7 +374,9 @@ interface JsonRequest {
  * thinking は指定しない（Opus 5 は既定で adaptive）。
  * fallbacks: 'default' を付けて、安全側の判定で止まったときは代替モデルに回してもらう。
  */
-async function requestJson(request: JsonRequest): Promise<unknown> {
+async function requestJson(
+  request: JsonRequest,
+): Promise<Record<string, unknown>> {
   requireOnline();
   const client = createClient(request.apiKey);
 
@@ -433,11 +433,7 @@ async function requestJson(request: JsonRequest): Promise<unknown> {
 
   try {
     const parsed: unknown = JSON.parse(body);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
+    if (!isPlainObject(parsed)) {
       throw new PhotoError("format", FORMAT_MESSAGE);
     }
     return parsed;

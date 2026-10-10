@@ -116,16 +116,17 @@ export function QuickTextSheet({
         ? null
         : (foodList.find((food) => food.id === choice.foodId) ?? null);
     const view = buildEntryView(resolution, picked, choice?.manual ?? false);
+    const viewFood = view.food;
     return {
       index,
       resolution,
       view,
       variants:
-        view.food === null
+        viewFood === null
           ? []
           : sortVariants(
               foodList.filter(
-                (item) => groupKeyOf(item) === groupKeyOf(view.food as Food),
+                (item) => groupKeyOf(item) === groupKeyOf(viewFood),
               ),
             ),
     };

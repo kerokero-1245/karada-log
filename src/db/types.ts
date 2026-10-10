@@ -274,6 +274,9 @@ export interface DayMeta {
 
 export type MenuId = "A" | "B" | "C";
 
+/** メニューの並び。A → B → C の順 */
+export const MENU_IDS: readonly MenuId[] = ["A", "B", "C"];
+
 export const MENU_LABELS: Record<MenuId, string> = {
   A: "A（押す）",
   B: "B（引く）",

@@ -7,7 +7,7 @@
  */
 import { useState } from "react";
 import { db } from "../../db/db";
-import type { LogDate, Nutrition, ShortcutSet } from "../../db/types";
+import type { Food, LogDate, Nutrition, ShortcutSet } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { TimeField } from "../../components/TimeField";
 import { Badge, Button, Note } from "../../components/ui";
@@ -51,7 +51,10 @@ export function ShortcutSheet({
       value: food ? scaleNutrition(food.per, item.quantity) : null,
     };
   });
-  const selected = rows.filter((row) => row.checked && row.food);
+  type Row = (typeof rows)[number];
+  const selected = rows.filter(
+    (row): row is Row & { food: Food } => row.checked && row.food !== undefined,
+  );
   const total = sumNutrition(
     selected.map((row) => row.value).filter((v): v is Nutrition => v !== null),
   );
@@ -69,7 +72,7 @@ export function ShortcutSheet({
       await addMealEntries(
         logDate,
         selected.map((row) => ({
-          food: row.food!,
+          food: row.food,
           quantity: row.item.quantity,
           time,
         })),

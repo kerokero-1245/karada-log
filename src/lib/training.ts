@@ -14,6 +14,7 @@
  *  - セットの回数は入力されたものだけを保存する。未入力のセットを作らない。
  */
 import { db } from "../db/db";
+import { addedId } from "../db/keys";
 import type {
   Exercise,
   ExerciseOutcome,
@@ -65,7 +66,7 @@ export async function startSession(
     logDate,
     note: "",
   };
-  return (await db.trainingSessions.add(session)) as number;
+  return addedId(await db.trainingSessions.add(session));
 }
 
 export interface SaveExerciseInput {
@@ -133,7 +134,7 @@ export async function saveExerciseRecord(
           outcome,
           note: input.note,
         };
-        sessionExerciseId = (await db.sessionExercises.add(item)) as number;
+        sessionExerciseId = addedId(await db.sessionExercises.add(item));
       }
 
       const records: SetRecord[] = filled.map((set, i) => ({

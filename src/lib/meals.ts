@@ -8,6 +8,7 @@
  * 同じトランザクションで Food.useCount を +1 し lastUsedAt を更新する（F2 の頻度順表示用）。
  */
 import { db } from "../db/db";
+import { addedId } from "../db/keys";
 import type {
   Food,
   LogDate,
@@ -86,7 +87,7 @@ export async function addMealEntries(
         fromShortcutSetId,
         note: input.note ?? "",
       };
-      ids.push((await db.mealEntries.add(entry)) as number);
+      ids.push(addedId(await db.mealEntries.add(entry)));
 
       // 頻度は「その時点の DB の値」を基準に増やす（渡された Food が古くても壊れない）
       const stored = await db.foods.get(foodId);

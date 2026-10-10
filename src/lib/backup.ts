@@ -12,6 +12,7 @@ import { db } from "../db/db";
 import type { IsoDateTime, Settings } from "../db/types";
 import { apiKeyOf } from "./apiKey";
 import { toIsoDateTime } from "./date";
+import { isPlainObject } from "./guards";
 
 export const BACKUP_APP = "karada-log";
 export const BACKUP_FORMAT_VERSION = 1;
@@ -119,13 +120,11 @@ export function parseBackup(text: string): ParsedBackup {
   } catch {
     raw = undefined;
   }
-  if (raw === undefined)
-    return { ok: false, reason: "JSON として読み取れません" };
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+  if (!isPlainObject(raw)) {
     return { ok: false, reason: "JSON として読み取れません" };
   }
 
-  const value = raw as Record<string, unknown>;
+  const value = raw;
   if (value.app !== BACKUP_APP) {
     return { ok: false, reason: "karada-log のバックアップではありません" };
   }
@@ -141,15 +140,10 @@ export function parseBackup(text: string): ParsedBackup {
     };
   }
 
-  const tablesValue = value.tables;
-  if (
-    typeof tablesValue !== "object" ||
-    tablesValue === null ||
-    Array.isArray(tablesValue)
-  ) {
+  const source = value.tables;
+  if (!isPlainObject(source)) {
     return { ok: false, reason: "tables がありません" };
   }
-  const source = tablesValue as Record<string, unknown>;
 
   const tables = {} as Record<BackupTable, unknown[]>;
   const counts: BackupCount[] = [];

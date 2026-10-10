@@ -12,9 +12,10 @@
  */
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { Food, FoodCategory } from "../../db/types";
+import type { Food } from "../../db/types";
 import { FOOD_CATEGORIES } from "../../db/types";
 import { db } from "../../db/db";
+import { addedId } from "../../db/keys";
 import { Sheet } from "../../components/Sheet";
 import { Badge, Button, Chip, NutritionGrid, Note } from "../../components/ui";
 import {
@@ -23,7 +24,7 @@ import {
   buildFood,
   emptyFoodForm,
 } from "../../lib/foodForm";
-import type { BasisKind, FoodFormValues } from "../../lib/foodForm";
+import type { FoodFormValues } from "../../lib/foodForm";
 import { fileToPhoto } from "../../lib/photo";
 import { photoErrorMessage } from "../../lib/photoError";
 import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
@@ -92,12 +93,13 @@ export function NewFoodForm({
 
   const save = async () => {
     setSubmitted(true);
-    if (!result.food) return;
+    const draft = result.food;
+    if (!draft) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const id = (await db.foods.add(result.food as Food)) as number;
-      onSaved({ ...(result.food as Food), id });
+      const id = addedId(await db.foods.add(draft));
+      onSaved({ ...draft, id });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
       setSaving(false);
@@ -172,9 +174,12 @@ export function NewFoodForm({
             <Field label="カテゴリ">
               <select
                 value={values.category}
-                onChange={(e) =>
-                  set("category", e.target.value as FoodCategory)
-                }
+                onChange={(e) => {
+                  const category = FOOD_CATEGORIES.find(
+                    (item) => item === e.target.value,
+                  );
+                  if (category !== undefined) set("category", category);
+                }}
                 className="h-12 w-full rounded-lg border border-slate-300 bg-white px-2 text-base"
               >
                 {FOOD_CATEGORIES.map((category) => (
@@ -204,7 +209,7 @@ export function NewFoodForm({
               <Chip
                 key={option.kind}
                 selected={values.basisKind === option.kind}
-                onClick={() => set("basisKind", option.kind as BasisKind)}
+                onClick={() => set("basisKind", option.kind)}
               >
                 {option.label}
               </Chip>

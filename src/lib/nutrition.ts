@@ -39,13 +39,13 @@ export function sumNutrition(list: Nutrition[]): NutritionTotal {
     carbG: 0,
     saltG: 0,
   };
-  const unknown = {
+  const unknown: Record<NutrientKey, number> = {
     kcal: 0,
     proteinG: 0,
     fatG: 0,
     carbG: 0,
     saltG: 0,
-  } as Record<NutrientKey, number>;
+  };
   for (const n of list) {
     for (const key of NUTRIENT_KEYS) {
       const v = n[key];

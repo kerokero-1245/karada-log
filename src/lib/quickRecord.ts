@@ -29,6 +29,7 @@
  * snapshot / logDate / useCount の作り方を二重に持ちたくないので、この形を採る。
  */
 import { db } from "../db/db";
+import { addedId } from "../db/keys";
 import type { Food, LogDate, PendingText } from "../db/types";
 import { addMealEntries, assertTime } from "./meals";
 import type { NewMealInput } from "./meals";
@@ -101,8 +102,8 @@ export async function addEntryPlans(
     let food = entry.food;
     if (food === null) {
       if (entry.draft === null) continue;
-      const id = (await db.foods.add(entry.draft as Food)) as number;
-      food = { ...(entry.draft as Food), id };
+      const id = addedId(await db.foods.add(entry.draft));
+      food = { ...entry.draft, id };
       createdFoods += 1;
     }
     inputs.push({

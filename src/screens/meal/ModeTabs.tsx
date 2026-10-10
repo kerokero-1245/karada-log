@@ -5,6 +5,9 @@
  */
 export type MealAddMode = "text" | "search";
 
+/** タブを並べる順 */
+const MODES: MealAddMode[] = ["text", "search"];
+
 const LABELS: Record<MealAddMode, string> = {
   text: "テキスト",
   search: "検索",
@@ -19,7 +22,7 @@ export function ModeTabs({
 }) {
   return (
     <div className="flex gap-1 rounded-xl bg-slate-200 p-1">
-      {(["text", "search"] as MealAddMode[]).map((key) => {
+      {MODES.map((key) => {
         const active = key === mode;
         return (
           <button

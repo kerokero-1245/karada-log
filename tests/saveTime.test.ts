@@ -21,6 +21,7 @@ import type {
   QuickEntryPlan,
   QuickPendingPlan,
 } from "../src/lib/quickRecord.ts";
+import { restoreStubs, stub } from "./helpers.ts";
 
 const TIME_ERROR = /時刻が入っていません/;
 
@@ -46,20 +47,6 @@ const food: Food = {
 
 /** 書き込みに進んだ呼び出しの記録 */
 let writes: string[] = [];
-const originals: { target: object; key: string; value: unknown }[] = [];
-
-function stub(
-  target: object,
-  key: string,
-  value: (...args: unknown[]) => unknown,
-) {
-  originals.push({
-    target,
-    key,
-    value: (target as Record<string, unknown>)[key],
-  });
-  (target as Record<string, unknown>)[key] = value;
-}
 
 beforeEach(() => {
   writes = [];
@@ -92,10 +79,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  while (originals.length > 0) {
-    const { target, key, value } = originals.pop()!;
-    (target as Record<string, unknown>)[key] = value;
-  }
+  restoreStubs();
 });
 
 test("assertTime: HH:mm 以外は弾く", () => {

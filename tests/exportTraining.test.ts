@@ -13,25 +13,11 @@ import type {
   Exercise,
   SessionExercise,
   SetRecord,
-  Settings,
   TrainingSession,
 } from "../src/db/types.ts";
 import { buildMarkdown } from "../src/lib/exportMarkdown.ts";
 import { saveExerciseRecord } from "../src/lib/training.ts";
-
-const originals: { target: object; key: string; value: unknown }[] = [];
-function stub(
-  target: object,
-  key: string,
-  value: (...args: unknown[]) => unknown,
-) {
-  originals.push({
-    target,
-    key,
-    value: (target as Record<string, unknown>)[key],
-  });
-  (target as Record<string, unknown>)[key] = value;
-}
+import { restoreStubs, settingsFixture, stub } from "./helpers.ts";
 
 let addedItems: SessionExercise[] = [];
 let addedSets: SetRecord[] = [];
@@ -65,10 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  while (originals.length > 0) {
-    const o = originals.pop()!;
-    (o.target as Record<string, unknown>)[o.key] = o.value;
-  }
+  restoreStubs();
 });
 
 const bench: Exercise = {
@@ -94,29 +77,7 @@ const bench: Exercise = {
   active: true,
 };
 
-const settings = {
-  id: 1,
-  bmrKcal: 1500,
-  restDayKcal: 2000,
-  gymDayKcal: 2200,
-  proteinTargetG: 130,
-  proteinCapG: 150,
-  fatTargetG: 50,
-  saltLimitG: 7,
-  weeklySaltAverageG: 6,
-  weeklyKcalTarget: 14600,
-  weeklyKcalTolerance: 300,
-  trainingPerWeek: 3,
-  weekStartsOn: 1,
-  dayBoundaryHour: 4,
-  goal: {
-    fatMassKg: 12,
-    leanMassKg: 55,
-    targetDate: "2026-12-31",
-    label: "年末",
-  },
-  alerts: { lowFatDayG: 20 },
-} as unknown as Settings;
+const settings = settingsFixture();
 
 test("トレ画面で保存した種目が、書き出しの「#### トレーニング」に内訳・回数・判定・メモつきで出る", async () => {
   const planned = bench.next!;

@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { fmtKcal, fmtKcalItem, fmtStored } from "../src/lib/formatKcal.ts";
 import { buildBars, formatAmount } from "../src/lib/goals.ts";
 import { scaleNutrition, sumNutrition } from "../src/lib/nutrition.ts";
-import type { Settings } from "../src/db/types.ts";
+import { settingsFixture } from "./helpers.ts";
 
 test("行の kcal は小数第 1 位まで出し、.0 は出さない", () => {
   assert.equal(fmtKcalItem(118.6), "118.6");
@@ -67,15 +67,7 @@ test("進捗バーの kcal は整数・桁区切り（lib/goals.ts）", () => {
     saltG: 0.11,
   };
   const total = sumNutrition([scaleNutrition(per, 1), scaleNutrition(per, 1)]);
-  const settings = {
-    restDayKcal: 2000,
-    gymDayKcal: 2200,
-    proteinTargetG: 130,
-    proteinCapG: 150,
-    fatTargetG: 50,
-    saltLimitG: 7,
-  } as Settings;
-  const kcalBar = buildBars(total, settings, "rest").find(
+  const kcalBar = buildBars(total, settingsFixture(), "rest").find(
     (bar) => bar.key === "kcal",
   );
   assert.ok(kcalBar);

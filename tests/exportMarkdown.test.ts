@@ -10,31 +10,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildMarkdown } from "../src/lib/exportMarkdown.ts";
 import type { ExportInput } from "../src/lib/exportMarkdown.ts";
-import type { MealEntry, Settings, TrainingSession } from "../src/db/types.ts";
+import type { MealEntry, TrainingSession } from "../src/db/types.ts";
+import { settingsFixture } from "./helpers.ts";
 
-const settings = {
-  id: 1,
-  bmrKcal: 1500,
-  restDayKcal: 2000,
-  gymDayKcal: 2200,
-  proteinTargetG: 130,
-  proteinCapG: 150,
-  fatTargetG: 50,
-  saltLimitG: 7,
-  weeklySaltAverageG: 6,
-  weeklyKcalTarget: 14600,
-  weeklyKcalTolerance: 300,
-  trainingPerWeek: 3,
-  weekStartsOn: 1,
-  dayBoundaryHour: 4,
-  goal: {
-    fatMassKg: 12,
-    leanMassKg: 55,
-    targetDate: "2026-12-31",
-    label: "年末",
-  },
-  alerts: { lowFatDayG: 20 },
-} as unknown as Settings;
+const settings = settingsFixture();
 
 const entry: MealEntry = {
   id: 1,

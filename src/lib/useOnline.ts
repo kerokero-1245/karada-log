@@ -7,14 +7,14 @@
  * ブラウザ側の値をそのまま読む purpose なので useSyncExternalStore を使う
  * （effect で setState して同期させると、余分な再レンダリングが1回増える）。
  */
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from "react";
 
 function subscribe(onChange: () => void): () => void {
-  window.addEventListener('online', onChange);
-  window.addEventListener('offline', onChange);
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
   return () => {
-    window.removeEventListener('online', onChange);
-    window.removeEventListener('offline', onChange);
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
   };
 }
 

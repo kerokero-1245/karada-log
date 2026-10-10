@@ -17,8 +17,8 @@
  *   6. 最上位の候補が2位より厳密に強いときだけ「確定」。同点なら候補から選んでもらう
  *      （ただし栄養値が書いてあれば「推定」として扱える。lib/importText.ts）
  */
-import type { Food, LogDate, Nutrition } from '../db/types';
-import { todayLogDate } from './date';
+import type { Food, LogDate, Nutrition } from "../db/types";
+import { todayLogDate } from "./date";
 
 /* ------------------------------------------------------------------ */
 /* 正規化                                                               */
@@ -35,10 +35,12 @@ const KATAKANA_OFFSET = 0x60;
  */
 export function normalize(text: string): string {
   return text
-    .normalize('NFKC')
-    .replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + KATAKANA_OFFSET))
+    .normalize("NFKC")
+    .replace(/[ぁ-ゖ]/g, (c) =>
+      String.fromCharCode(c.charCodeAt(0) + KATAKANA_OFFSET),
+    )
     .toLowerCase()
-    .replace(/\s+/g, '');
+    .replace(/\s+/g, "");
 }
 
 /* ------------------------------------------------------------------ */
@@ -49,19 +51,41 @@ export function normalize(text: string): string {
  * 単位。長いものから先に並べる（'杯分' は '杯' より先）。
  * 'つ'（ゆで卵2つ）まで拾う。g / グラム / ml だけは重さ指定として別扱いする。
  */
-const UNITS = ['杯分', 'グラム', 'パック', '切れ', '本', '杯', '個', '枚', '玉', '食', '袋', '缶', 'つ', 'ml', 'g'];
+const UNITS = [
+  "杯分",
+  "グラム",
+  "パック",
+  "切れ",
+  "本",
+  "杯",
+  "個",
+  "枚",
+  "玉",
+  "食",
+  "袋",
+  "缶",
+  "つ",
+  "ml",
+  "g",
+];
 
 /** 重さ・容量の指定。Food.gramsPerUnit で割って「単位いくつ分か」に直す */
-const GRAM_UNITS = new Set(['g', 'グラム', 'ml']);
+const GRAM_UNITS = new Set(["g", "グラム", "ml"]);
 
 /** その単位が重さ・容量の指定か（'100g' のような書き方かどうかの判定に使う） */
 export function isGramUnit(unit: string | null): boolean {
   return unit !== null && GRAM_UNITS.has(unit.toLowerCase());
 }
 
-const UNIT_GROUP = UNITS.join('|');
-const TRAILING_AMOUNT = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*(${UNIT_GROUP})?\\s*$`, 'i');
-const LEADING_AMOUNT = new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_GROUP})?\\s*`, 'i');
+const UNIT_GROUP = UNITS.join("|");
+const TRAILING_AMOUNT = new RegExp(
+  `(\\d+(?:\\.\\d+)?)\\s*(${UNIT_GROUP})?\\s*$`,
+  "i",
+);
+const LEADING_AMOUNT = new RegExp(
+  `^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_GROUP})?\\s*`,
+  "i",
+);
 /** 先頭の H:mm / HH:mm。'21:30 家系ラーメン' の 21:30 */
 const TIME_AT_START = /^(\d{1,2}):(\d{2})(?![\d:])\s*/;
 
@@ -93,10 +117,10 @@ export interface ParsedItem {
 /** 複数行・複数項目のテキストを項目ごとに割る */
 export function splitItems(text: string): string[] {
   return text
-    .normalize('NFKC')
+    .normalize("NFKC")
     .split(SEPARATORS)
     .map((part) => part.trim())
-    .filter((part) => part !== '');
+    .filter((part) => part !== "");
 }
 
 /**
@@ -106,7 +130,7 @@ export function splitItems(text: string): string[] {
  * （'2本' だけの入力を数量2の無名項目にしてしまわないため）。
  */
 export function parseItem(input: string): ParsedItem {
-  const raw = input.normalize('NFKC').trim();
+  const raw = input.normalize("NFKC").trim();
   let rest = raw;
 
   let time: string | null = null;
@@ -115,7 +139,7 @@ export function parseItem(input: string): ParsedItem {
     const hour = Number(timeMatch[1]);
     const minute = Number(timeMatch[2]);
     if (hour <= 23 && minute <= 59) {
-      time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       rest = rest.slice(timeMatch[0].length).trim();
     }
   }
@@ -127,15 +151,15 @@ export function parseItem(input: string): ParsedItem {
   const trailing = TRAILING_AMOUNT.exec(rest);
   const leading = trailing === null ? LEADING_AMOUNT.exec(rest) : null;
 
-  if (trailing !== null && rest.slice(0, trailing.index).trim() !== '') {
+  if (trailing !== null && rest.slice(0, trailing.index).trim() !== "") {
     amount = Number(trailing[1]);
     unit = trailing[2] ?? null;
-    amountToken = `${trailing[1]}${trailing[2] ?? ''}`;
+    amountToken = `${trailing[1]}${trailing[2] ?? ""}`;
     rest = rest.slice(0, trailing.index).trim();
-  } else if (leading !== null && rest.slice(leading[0].length).trim() !== '') {
+  } else if (leading !== null && rest.slice(leading[0].length).trim() !== "") {
     amount = Number(leading[1]);
     unit = leading[2] ?? null;
-    amountToken = `${leading[1]}${leading[2] ?? ''}`;
+    amountToken = `${leading[1]}${leading[2] ?? ""}`;
     rest = rest.slice(leading[0].length).trim();
   }
 
@@ -143,7 +167,7 @@ export function parseItem(input: string): ParsedItem {
 
   return {
     raw,
-    name: rest === '' ? raw : rest,
+    name: rest === "" ? raw : rest,
     amount,
     unit,
     amountToken,
@@ -166,23 +190,32 @@ const VALUE = String.raw`(?:-|\d+(?:\.\d+)?)`;
  * 値でない語が来たらそこで止まるので、'ご飯 1杯=252/3.8/0.5/55.7/0 / 卵2個' の
  * 後半の '/ 卵2個' は項目の区切りとして残る。
  */
-const NUTRITION_RE = new RegExp(`=\\s*${VALUE}(?:\\s*/\\s*${VALUE}){0,4}`, 'g');
+const NUTRITION_RE = new RegExp(`=\\s*${VALUE}(?:\\s*/\\s*${VALUE}){0,4}`, "g");
 
 /** 値を外へ逃がすときの目印（私用領域。入力に出てこない） */
-const MARK_START = '\uE000';
-const MARK_END = '\uE001';
+const MARK_START = "\uE000";
+const MARK_END = "\uE001";
 const MARK_RE = /\uE000(\d+)\uE001/;
 
 /** '=252/3.8/-' → { kcal: 252, proteinG: 3.8, fatG: null, ... }。足りない要素は null */
 export function parseNutritionText(text: string): Nutrition {
-  const parts = text.replace(/^=/, '').split('/').map((part) => part.trim());
+  const parts = text
+    .replace(/^=/, "")
+    .split("/")
+    .map((part) => part.trim());
   const at = (index: number): number | null => {
     const value = parts[index];
-    if (value === undefined || value === '' || value === '-') return null;
+    if (value === undefined || value === "" || value === "-") return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
   };
-  return { kcal: at(0), proteinG: at(1), fatG: at(2), carbG: at(3), saltG: at(4) };
+  return {
+    kcal: at(0),
+    proteinG: at(1),
+    fatG: at(2),
+    carbG: at(3),
+    saltG: at(4),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -200,26 +233,29 @@ const DATE_LINE_RE = new RegExp(
   String.raw`^(?:(\d{4})\s*[/\-.年]\s*)?(\d{1,2})\s*[/\-.月]\s*(\d{1,2})\s*日?\s*${WEEKDAY}?$`,
 );
 
-const pad2 = (value: number) => String(value).padStart(2, '0');
+const pad2 = (value: number) => String(value).padStart(2, "0");
 
 /**
  * 年が書かれていないときは「その日付が未来にならない直近の年」。
  * 9/22 が今日なら 9/22 は今年、12/31 は去年になる。
  */
 function recentYearFor(month: number, day: number, today: LogDate): number {
-  const [year, todayMonth, todayDay] = today.split('-').map(Number);
+  const [year, todayMonth, todayDay] = today.split("-").map(Number);
   const future = month > todayMonth || (month === todayMonth && day > todayDay);
   return future ? year - 1 : year;
 }
 
 /** 行全体が日付ならその論理日付。違えば null */
 export function parseDateLine(line: string, today: LogDate): LogDate | null {
-  const matched = DATE_LINE_RE.exec(line.normalize('NFKC').trim());
+  const matched = DATE_LINE_RE.exec(line.normalize("NFKC").trim());
   if (matched === null) return null;
   const month = Number(matched[2]);
   const day = Number(matched[3]);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  const year = matched[1] === undefined ? recentYearFor(month, day, today) : Number(matched[1]);
+  const year =
+    matched[1] === undefined
+      ? recentYearFor(month, day, today)
+      : Number(matched[1]);
   return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
@@ -242,10 +278,10 @@ function splitLine(line: string): ParsedItem[] {
   for (const part of masked.split(SEPARATORS)) {
     const mark = MARK_RE.exec(part);
     const text = mark === null ? null : (values[Number(mark[1])] ?? null);
-    const body = (mark === null ? part : part.replace(MARK_RE, '')).trim();
-    if (body === '') continue;
+    const body = (mark === null ? part : part.replace(MARK_RE, "")).trim();
+    if (body === "") continue;
     // 原文は値まで含めてそのまま残す（記録のメモに使う）
-    const raw = mark === null ? body : part.replace(MARK_RE, text ?? '').trim();
+    const raw = mark === null ? body : part.replace(MARK_RE, text ?? "").trim();
     items.push({
       ...parseItem(body),
       raw,
@@ -260,13 +296,16 @@ function splitLine(line: string): ParsedItem[] {
  * テキスト全体を項目に割る。日付行は以降の項目の論理日付になる。
  * 空行・``` の行・飾りだけの行は落とす。
  */
-export function parseItems(text: string, today: LogDate = todayLogDate()): ParsedItem[] {
+export function parseItems(
+  text: string,
+  today: LogDate = todayLogDate(),
+): ParsedItem[] {
   const items: ParsedItem[] = [];
   let logDate: LogDate | null = null;
 
-  for (const source of text.normalize('NFKC').split('\n')) {
-    const line = source.replace(DECORATION_RE, '').trim();
-    if (line === '' || FENCE_RE.test(line)) continue;
+  for (const source of text.normalize("NFKC").split("\n")) {
+    const line = source.replace(DECORATION_RE, "").trim();
+    if (line === "" || FENCE_RE.test(line)) continue;
 
     const date = parseDateLine(line, today);
     if (date !== null) {
@@ -294,15 +333,18 @@ export interface FoodScore {
 }
 
 export function scoreFood(food: Food, key: string): FoodScore {
-  if (key === '') return { score: 0, reason: '' };
+  if (key === "") return { score: 0, reason: "" };
 
   const name = normalize(food.name);
-  const variant = food.variantLabel === null ? '' : normalize(food.variantLabel);
+  const variant =
+    food.variantLabel === null ? "" : normalize(food.variantLabel);
   const category = normalize(food.category);
-  const aliases = (food.aliases ?? []).map(normalize).filter((alias) => alias !== '');
+  const aliases = (food.aliases ?? [])
+    .map(normalize)
+    .filter((alias) => alias !== "");
 
   let best = 0;
-  let reason = '';
+  let reason = "";
   const take = (score: number, why: string) => {
     if (score > best) {
       best = score;
@@ -310,17 +352,20 @@ export function scoreFood(food: Food, key: string): FoodScore {
     }
   };
 
-  if (name === key) take(100, '名前が一致');
-  if (aliases.some((alias) => alias === key)) take(90, '呼び名が一致');
-  if (variant !== '' && variant === key) take(85, '食べ方の名前が一致');
-  if (name.includes(key)) take(70, '名前に含まれる');
-  if (key.includes(name)) take(68, '入力に名前が含まれる');
-  if (aliases.some((alias) => alias.includes(key) || key.includes(alias))) take(60, '呼び名が部分一致');
-  if (variant !== '' && (variant.includes(key) || key.includes(variant))) take(55, '食べ方の名前が部分一致');
-  if (category === key) take(40, 'カテゴリが一致');
-  if (category.includes(key) || key.includes(category)) take(30, 'カテゴリが部分一致');
+  if (name === key) take(100, "名前が一致");
+  if (aliases.some((alias) => alias === key)) take(90, "呼び名が一致");
+  if (variant !== "" && variant === key) take(85, "食べ方の名前が一致");
+  if (name.includes(key)) take(70, "名前に含まれる");
+  if (key.includes(name)) take(68, "入力に名前が含まれる");
+  if (aliases.some((alias) => alias.includes(key) || key.includes(alias)))
+    take(60, "呼び名が部分一致");
+  if (variant !== "" && (variant.includes(key) || key.includes(variant)))
+    take(55, "食べ方の名前が部分一致");
+  if (category === key) take(40, "カテゴリが一致");
+  if (category.includes(key) || key.includes(category))
+    take(30, "カテゴリが部分一致");
 
-  if (best === 0) return { score: 0, reason: '' };
+  if (best === 0) return { score: 0, reason: "" };
   if (food.archived) return { score: best - 25, reason: `${reason}・在庫切れ` };
   return { score: best, reason };
 }
@@ -338,8 +383,9 @@ export function sortVariants(foods: Food[]): Food[] {
   return [...foods].sort(
     (a, b) =>
       b.useCount - a.useCount ||
-      (a.per.saltG ?? Number.POSITIVE_INFINITY) - (b.per.saltG ?? Number.POSITIVE_INFINITY) ||
-      (a.variantLabel ?? '').localeCompare(b.variantLabel ?? '', 'ja'),
+      (a.per.saltG ?? Number.POSITIVE_INFINITY) -
+        (b.per.saltG ?? Number.POSITIVE_INFINITY) ||
+      (a.variantLabel ?? "").localeCompare(b.variantLabel ?? "", "ja"),
   );
 }
 
@@ -356,9 +402,12 @@ export interface QuickCandidate {
 /** 名前部分に対する候補をスコア順で返す */
 export function findCandidates(name: string, foods: Food[]): QuickCandidate[] {
   const key = normalize(name);
-  if (key === '') return [];
+  if (key === "") return [];
 
-  const hits = new Map<string, { score: number; reason: string; name: string }>();
+  const hits = new Map<
+    string,
+    { score: number; reason: string; name: string }
+  >();
   for (const food of foods) {
     const { score, reason } = scoreFood(food, key);
     if (score <= 0) continue;
@@ -394,7 +443,7 @@ export function findCandidates(name: string, foods: Food[]): QuickCandidate[] {
     (a, b) =>
       b.score - a.score ||
       totalUseCount(b.foods) - totalUseCount(a.foods) ||
-      a.name.localeCompare(b.name, 'ja'),
+      a.name.localeCompare(b.name, "ja"),
   );
   return candidates;
 }
@@ -407,13 +456,13 @@ function totalUseCount(foods: Food[]): number {
 /* 1項目の解決                                                          */
 /* ------------------------------------------------------------------ */
 
-export type QuickStatus = 'confirmed' | 'estimated' | 'ambiguous' | 'missing';
+export type QuickStatus = "confirmed" | "estimated" | "ambiguous" | "missing";
 
 export const QUICK_STATUS_LABELS: Record<QuickStatus, string> = {
-  confirmed: '確定',
-  estimated: '推定',
-  ambiguous: '候補を選ぶ',
-  missing: '見つからない',
+  confirmed: "確定",
+  estimated: "推定",
+  ambiguous: "候補を選ぶ",
+  missing: "見つからない",
 };
 
 export interface QuickResolution {
@@ -432,18 +481,37 @@ export interface QuickResolution {
  * 「分からないから埋めない」のではなく「書いてある値をそのまま使う」ので、
  * 捏造にはならない。値が無ければ従来どおり 'missing'（未処理として預かる）。
  */
-export function resolveItem(parsed: ParsedItem, foods: Food[]): QuickResolution {
+export function resolveItem(
+  parsed: ParsedItem,
+  foods: Food[],
+): QuickResolution {
   const hasValues = parsed.inlineNutrition !== null;
   const candidates = findCandidates(parsed.name, foods);
   if (candidates.length === 0) {
-    return { parsed, candidates, status: hasValues ? 'estimated' : 'missing', food: null };
+    return {
+      parsed,
+      candidates,
+      status: hasValues ? "estimated" : "missing",
+      food: null,
+    };
   }
-  const confirmed = candidates.length === 1 || candidates[0].score > candidates[1].score;
+  const confirmed =
+    candidates.length === 1 || candidates[0].score > candidates[1].score;
   if (confirmed) {
     // マスタに当たったら、貼り付けた値ではなくマスタの値を使う
-    return { parsed, candidates, status: 'confirmed', food: candidates[0].foods[0] ?? null };
+    return {
+      parsed,
+      candidates,
+      status: "confirmed",
+      food: candidates[0].foods[0] ?? null,
+    };
   }
-  return { parsed, candidates, status: hasValues ? 'estimated' : 'ambiguous', food: null };
+  return {
+    parsed,
+    candidates,
+    status: hasValues ? "estimated" : "ambiguous",
+    food: null,
+  };
 }
 
 /** テキスト全体の解釈 */
@@ -478,7 +546,10 @@ export function quantityFor(parsed: ParsedItem, food: Food): QuickQuantity {
 
   if (parsed.amountToken !== null && parsed.amount !== 1) {
     const token = normalize(parsed.amountToken);
-    if (normalize(food.name).includes(token) || normalize(food.unitLabel).includes(token)) {
+    if (
+      normalize(food.name).includes(token) ||
+      normalize(food.unitLabel).includes(token)
+    ) {
       notes.push(`「${parsed.amountToken}」は商品名の一部として扱いました`);
       return { quantity: 1, notes };
     }
@@ -486,7 +557,7 @@ export function quantityFor(parsed: ParsedItem, food: Food): QuickQuantity {
 
   if (parsed.unit !== null && GRAM_UNITS.has(parsed.unit.toLowerCase())) {
     if (food.gramsPerUnit === null || food.gramsPerUnit <= 0) {
-      notes.push('g 換算できないので1単位として扱いました');
+      notes.push("g 換算できないので1単位として扱いました");
       return { quantity: 1, notes };
     }
     const quantity = round2(parsed.amount / food.gramsPerUnit);

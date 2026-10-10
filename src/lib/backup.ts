@@ -8,47 +8,47 @@
  *   キーは端末の中だけに置く約束（lib/apiKey.ts）。ファイルにして持ち出せる形にすると
  *   その約束が崩れる。復元でも上書きせず、今の端末の値をそのまま残す。
  */
-import { db } from '../db/db';
-import type { IsoDateTime, Settings } from '../db/types';
-import { apiKeyOf } from './apiKey';
-import { toIsoDateTime } from './date';
+import { db } from "../db/db";
+import type { IsoDateTime, Settings } from "../db/types";
+import { apiKeyOf } from "./apiKey";
+import { toIsoDateTime } from "./date";
 
-export const BACKUP_APP = 'karada-log';
+export const BACKUP_APP = "karada-log";
 export const BACKUP_FORMAT_VERSION = 1;
 
 /** 書き出す順。JSON のキーの並びもこの順になる */
 export const BACKUP_TABLES = [
-  'foods',
-  'mealEntries',
-  'shortcutSets',
-  'dayMeta',
-  'exercises',
-  'trainingSessions',
-  'sessionExercises',
-  'setRecords',
-  'bodyCompositions',
-  'boneDensities',
-  'supplements',
-  'pendingTexts',
-  'settings',
+  "foods",
+  "mealEntries",
+  "shortcutSets",
+  "dayMeta",
+  "exercises",
+  "trainingSessions",
+  "sessionExercises",
+  "setRecords",
+  "bodyCompositions",
+  "boneDensities",
+  "supplements",
+  "pendingTexts",
+  "settings",
 ] as const;
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
 export const BACKUP_TABLE_LABELS: Record<BackupTable, string> = {
-  foods: '食品マスタ',
-  mealEntries: '食事記録',
-  shortcutSets: '固定ベース',
-  dayMeta: '日の区分',
-  exercises: '種目マスタ',
-  trainingSessions: 'トレ記録',
-  sessionExercises: 'トレ種目',
-  setRecords: 'セット記録',
-  bodyCompositions: '体組成',
-  boneDensities: '骨密度',
-  supplements: 'サプリ',
-  pendingTexts: '未処理テキスト',
-  settings: '設定',
+  foods: "食品マスタ",
+  mealEntries: "食事記録",
+  shortcutSets: "固定ベース",
+  dayMeta: "日の区分",
+  exercises: "種目マスタ",
+  trainingSessions: "トレ記録",
+  sessionExercises: "トレ種目",
+  setRecords: "セット記録",
+  bodyCompositions: "体組成",
+  boneDensities: "骨密度",
+  supplements: "サプリ",
+  pendingTexts: "未処理テキスト",
+  settings: "設定",
 };
 
 export interface BackupFile {
@@ -101,7 +101,7 @@ export async function buildBackup(): Promise<BackupFile> {
 
 /** ファイル名。'karada-log-backup-20260922.json' */
 export function backupFileName(at: Date = new Date()): string {
-  return `karada-log-backup-${toIsoDateTime(at).slice(0, 10).replace(/-/g, '')}.json`;
+  return `karada-log-backup-${toIsoDateTime(at).slice(0, 10).replace(/-/g, "")}.json`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -119,19 +119,20 @@ export function parseBackup(text: string): ParsedBackup {
   } catch {
     raw = undefined;
   }
-  if (raw === undefined) return { ok: false, reason: 'JSON として読み取れません' };
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    return { ok: false, reason: 'JSON として読み取れません' };
+  if (raw === undefined)
+    return { ok: false, reason: "JSON として読み取れません" };
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return { ok: false, reason: "JSON として読み取れません" };
   }
 
   const value = raw as Record<string, unknown>;
   if (value.app !== BACKUP_APP) {
-    return { ok: false, reason: 'karada-log のバックアップではありません' };
+    return { ok: false, reason: "karada-log のバックアップではありません" };
   }
 
   const formatVersion = value.formatVersion;
-  if (typeof formatVersion !== 'number' || !Number.isFinite(formatVersion)) {
-    return { ok: false, reason: '形式のバージョンが書かれていません' };
+  if (typeof formatVersion !== "number" || !Number.isFinite(formatVersion)) {
+    return { ok: false, reason: "形式のバージョンが書かれていません" };
   }
   if (formatVersion > BACKUP_FORMAT_VERSION) {
     return {
@@ -141,8 +142,12 @@ export function parseBackup(text: string): ParsedBackup {
   }
 
   const tablesValue = value.tables;
-  if (typeof tablesValue !== 'object' || tablesValue === null || Array.isArray(tablesValue)) {
-    return { ok: false, reason: 'tables がありません' };
+  if (
+    typeof tablesValue !== "object" ||
+    tablesValue === null ||
+    Array.isArray(tablesValue)
+  ) {
+    return { ok: false, reason: "tables がありません" };
   }
   const source = tablesValue as Record<string, unknown>;
 
@@ -152,18 +157,30 @@ export function parseBackup(text: string): ParsedBackup {
     const rows = source[name];
     if (rows === undefined) {
       tables[name] = [];
-      counts.push({ table: name, label: BACKUP_TABLE_LABELS[name], count: 0, missing: true });
+      counts.push({
+        table: name,
+        label: BACKUP_TABLE_LABELS[name],
+        count: 0,
+        missing: true,
+      });
       continue;
     }
     if (!Array.isArray(rows)) {
       return { ok: false, reason: `tables.${name} が配列ではありません` };
     }
     tables[name] = rows;
-    counts.push({ table: name, label: BACKUP_TABLE_LABELS[name], count: rows.length, missing: false });
+    counts.push({
+      table: name,
+      label: BACKUP_TABLE_LABELS[name],
+      count: rows.length,
+      missing: false,
+    });
   }
 
-  const exportedAt = typeof value.exportedAt === 'string' ? value.exportedAt : '';
-  const seedVersion = typeof value.seedVersion === 'number' ? value.seedVersion : 0;
+  const exportedAt =
+    typeof value.exportedAt === "string" ? value.exportedAt : "";
+  const seedVersion =
+    typeof value.seedVersion === "number" ? value.seedVersion : 0;
 
   return {
     ok: true,
@@ -191,7 +208,9 @@ export interface RestoreResult {
  * API キーだけは、ファイルの内容ではなく **今の端末の値** を書き戻す。
  * 設定行がファイルに無かった場合は、今の設定行を残す（設定が消えるとアプリが開けない）。
  */
-export async function restoreBackup(backup: BackupFile): Promise<RestoreResult> {
+export async function restoreBackup(
+  backup: BackupFile,
+): Promise<RestoreResult> {
   const before = await db.settings.get(1);
   const currentKey = apiKeyOf(before);
   const fallbackSettings = before ? stripApiKey(before) : null;
@@ -199,7 +218,7 @@ export async function restoreBackup(backup: BackupFile): Promise<RestoreResult> 
   const restored = {} as Record<BackupTable, number>;
   let keptCurrentSettings = false;
 
-  await db.transaction('rw', db.tables, async () => {
+  await db.transaction("rw", db.tables, async () => {
     for (const table of db.tables) {
       await table.clear();
     }

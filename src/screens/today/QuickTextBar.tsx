@@ -5,17 +5,21 @@
  * ★ ここで確定しても記録には入らない。★
  *   開いたシートで内容を確認して「記録する」を押したときだけ入る（原則1）。
  */
-import { useState } from 'react';
-import { Button, Card, Note } from '../../components/ui';
+import { useState } from "react";
+import { Button, Card, Note } from "../../components/ui";
 
-export function QuickTextBar({ onSubmit }: { onSubmit: (text: string) => void }) {
-  const [text, setText] = useState('');
+export function QuickTextBar({
+  onSubmit,
+}: {
+  onSubmit: (text: string) => void;
+}) {
+  const [text, setText] = useState("");
 
   const submit = () => {
     const trimmed = text.trim();
-    if (trimmed === '') return;
+    if (trimmed === "") return;
     onSubmit(trimmed);
-    setText('');
+    setText("");
   };
 
   return (
@@ -28,7 +32,7 @@ export function QuickTextBar({ onSubmit }: { onSubmit: (text: string) => void })
           onKeyDown={(e) => {
             // 日本語入力の変換確定の Enter では何もしない（Safari は確定後に keyCode 229 で来る）
             if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
               e.preventDefault();
               submit();
             }
@@ -37,12 +41,18 @@ export function QuickTextBar({ onSubmit }: { onSubmit: (text: string) => void })
           aria-label="食べたものを書く"
           className="h-12 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-base"
         />
-        <Button variant="primary" className="h-12 shrink-0 px-4" disabled={text.trim() === ''} onClick={submit}>
+        <Button
+          variant="primary"
+          className="h-12 shrink-0 px-4"
+          disabled={text.trim() === ""}
+          onClick={submit}
+        >
           解釈する
         </Button>
       </div>
       <Note>
-        読み取った結果を一覧で確認してから記録します。<strong>確定しただけでは集計に入りません。</strong>
+        読み取った結果を一覧で確認してから記録します。
+        <strong>確定しただけでは集計に入りません。</strong>
       </Note>
     </Card>
   );

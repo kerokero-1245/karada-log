@@ -10,21 +10,26 @@
  * ここまでと同じ正規化を通って保存される（原則1）。
  * 「ラベルを撮る」ボタンは、APIキーが設定されているときだけ出す。
  */
-import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import type { Food, FoodCategory } from '../../db/types';
-import { FOOD_CATEGORIES } from '../../db/types';
-import { db } from '../../db/db';
-import { Sheet } from '../../components/Sheet';
-import { Badge, Button, Chip, NutritionGrid, Note } from '../../components/ui';
-import { BASIS_OPTIONS, NUTRIENT_FIELDS, buildFood, emptyFoodForm } from '../../lib/foodForm';
-import type { BasisKind, FoodFormValues } from '../../lib/foodForm';
-import { fileToPhoto } from '../../lib/photo';
-import { photoErrorMessage } from '../../lib/photoError';
-import { formValuesFromLabel, labelNotice } from '../../lib/photoLabel';
-import { useOnline } from '../../lib/useOnline';
-import { readNutritionLabel } from '../../lib/vision';
-import { PhotoFileButton } from './PhotoFileButton';
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import type { Food, FoodCategory } from "../../db/types";
+import { FOOD_CATEGORIES } from "../../db/types";
+import { db } from "../../db/db";
+import { Sheet } from "../../components/Sheet";
+import { Badge, Button, Chip, NutritionGrid, Note } from "../../components/ui";
+import {
+  BASIS_OPTIONS,
+  NUTRIENT_FIELDS,
+  buildFood,
+  emptyFoodForm,
+} from "../../lib/foodForm";
+import type { BasisKind, FoodFormValues } from "../../lib/foodForm";
+import { fileToPhoto } from "../../lib/photo";
+import { photoErrorMessage } from "../../lib/photoError";
+import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
+import { useOnline } from "../../lib/useOnline";
+import { readNutritionLabel } from "../../lib/vision";
+import { PhotoFileButton } from "./PhotoFileButton";
 
 export function NewFoodForm({
   initialName,
@@ -63,7 +68,11 @@ export function NewFoodForm({
     setReadError(null);
     try {
       const photo = await fileToPhoto(file);
-      const read = await readNutritionLabel(photo.base64, photo.mediaType, apiKey);
+      const read = await readNutritionLabel(
+        photo.base64,
+        photo.mediaType,
+        apiKey,
+      );
       // ★ 埋めるだけ。保存はしない
       setValues(formValuesFromLabel(read));
       setNotice(labelNotice(read));
@@ -76,8 +85,10 @@ export function NewFoodForm({
   };
 
   const result = useMemo(() => buildFood(values), [values]);
-  const set = <K extends keyof FoodFormValues>(key: K, value: FoodFormValues[K]) =>
-    setValues((prev) => ({ ...prev, [key]: value }));
+  const set = <K extends keyof FoodFormValues>(
+    key: K,
+    value: FoodFormValues[K],
+  ) => setValues((prev) => ({ ...prev, [key]: value }));
 
   const save = async () => {
     setSubmitted(true);
@@ -93,7 +104,7 @@ export function NewFoodForm({
     }
   };
 
-  const needsGrams = values.basisKind !== 'unit';
+  const needsGrams = values.basisKind !== "unit";
 
   return (
     <Sheet
@@ -102,7 +113,12 @@ export function NewFoodForm({
       onBack={onBack}
       onClose={onClose}
       footer={
-        <Button variant="primary" className="h-14 w-full text-base" disabled={saving} onClick={save}>
+        <Button
+          variant="primary"
+          className="h-14 w-full text-base"
+          disabled={saving}
+          onClick={save}
+        >
           登録して数量へ
         </Button>
       }
@@ -122,9 +138,17 @@ export function NewFoodForm({
                 読み取っています…（10〜30秒ほどかかります）
               </p>
             )}
-            {!online && <p className="mt-2 text-xs text-amber-800">オフラインでは使えません。</p>}
-            {readError !== null && <p className="mt-2 text-sm text-red-700">{readError}</p>}
-            <Note>読み取った値はこの下の欄に入ります。「登録」を押すまでは保存されません。</Note>
+            {!online && (
+              <p className="mt-2 text-xs text-amber-800">
+                オフラインでは使えません。
+              </p>
+            )}
+            {readError !== null && (
+              <p className="mt-2 text-sm text-red-700">{readError}</p>
+            )}
+            <Note>
+              読み取った値はこの下の欄に入ります。「登録」を押すまでは保存されません。
+            </Note>
           </div>
         )}
 
@@ -139,7 +163,7 @@ export function NewFoodForm({
             <input
               type="text"
               value={values.name}
-              onChange={(e) => set('name', e.target.value)}
+              onChange={(e) => set("name", e.target.value)}
               className="h-12 w-full rounded-lg border border-slate-300 px-3 text-base"
             />
           </Field>
@@ -148,7 +172,9 @@ export function NewFoodForm({
             <Field label="カテゴリ">
               <select
                 value={values.category}
-                onChange={(e) => set('category', e.target.value as FoodCategory)}
+                onChange={(e) =>
+                  set("category", e.target.value as FoodCategory)
+                }
                 className="h-12 w-full rounded-lg border border-slate-300 bg-white px-2 text-base"
               >
                 {FOOD_CATEGORIES.map((category) => (
@@ -163,7 +189,7 @@ export function NewFoodForm({
               <input
                 type="text"
                 value={values.unitLabel}
-                onChange={(e) => set('unitLabel', e.target.value)}
+                onChange={(e) => set("unitLabel", e.target.value)}
                 placeholder="1個"
                 className="h-12 w-full rounded-lg border border-slate-300 px-3 text-base"
               />
@@ -178,7 +204,7 @@ export function NewFoodForm({
               <Chip
                 key={option.kind}
                 selected={values.basisKind === option.kind}
-                onClick={() => set('basisKind', option.kind as BasisKind)}
+                onClick={() => set("basisKind", option.kind as BasisKind)}
               >
                 {option.label}
               </Chip>
@@ -187,11 +213,19 @@ export function NewFoodForm({
           {needsGrams && (
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Field label="1単位のグラム数" hint="必須">
-                <NumberInput value={values.gramsPerUnit} onChange={(v) => set('gramsPerUnit', v)} suffix="g" />
+                <NumberInput
+                  value={values.gramsPerUnit}
+                  onChange={(v) => set("gramsPerUnit", v)}
+                  suffix="g"
+                />
               </Field>
-              {values.basisKind === 'bag' && (
+              {values.basisKind === "bag" && (
                 <Field label="1袋のグラム数" hint="必須">
-                  <NumberInput value={values.bagGrams} onChange={(v) => set('bagGrams', v)} suffix="g" />
+                  <NumberInput
+                    value={values.bagGrams}
+                    onChange={(v) => set("bagGrams", v)}
+                    suffix="g"
+                  />
                 </Field>
               )}
             </div>
@@ -199,7 +233,11 @@ export function NewFoodForm({
           {!needsGrams && (
             <div className="mt-3">
               <Field label="1単位のグラム数" hint="分かれば（任意）">
-                <NumberInput value={values.gramsPerUnit} onChange={(v) => set('gramsPerUnit', v)} suffix="g" />
+                <NumberInput
+                  value={values.gramsPerUnit}
+                  onChange={(v) => set("gramsPerUnit", v)}
+                  suffix="g"
+                />
               </Field>
             </div>
           )}
@@ -209,7 +247,9 @@ export function NewFoodForm({
           <p className="text-xs font-bold text-slate-600">
             栄養成分（{result.basisLabel}）
           </p>
-          <Note>空欄のままにすると「未確認」として保存します。0 にはしません。</Note>
+          <Note>
+            空欄のままにすると「未確認」として保存します。0 にはしません。
+          </Note>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {NUTRIENT_FIELDS.map((field) => (
               <Field key={field.key} label={field.label}>
@@ -222,10 +262,16 @@ export function NewFoodForm({
             ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Chip selected={values.source === 'label'} onClick={() => set('source', 'label')}>
+            <Chip
+              selected={values.source === "label"}
+              onClick={() => set("source", "label")}
+            >
               ラベル実測値
             </Chip>
-            <Chip selected={values.source === 'estimated'} onClick={() => set('source', 'estimated')}>
+            <Chip
+              selected={values.source === "estimated"}
+              onClick={() => set("source", "estimated")}
+            >
               推定値
             </Chip>
           </div>
@@ -234,10 +280,12 @@ export function NewFoodForm({
         <div className="rounded-xl bg-white p-3 shadow-sm">
           <div className="mb-2 flex items-baseline justify-between">
             <p className="text-xs font-bold text-slate-600">
-              保存する値（{values.unitLabel || '1単位'} あたり）
+              保存する値（{values.unitLabel || "1単位"} あたり）
             </p>
             {result.unitsPerBasis !== null && result.unitsPerBasis !== 1 && (
-              <Badge tone="blue">÷{Math.round(result.unitsPerBasis * 1000) / 1000} で換算</Badge>
+              <Badge tone="blue">
+                ÷{Math.round(result.unitsPerBasis * 1000) / 1000} で換算
+              </Badge>
             )}
           </div>
           <NutritionGrid value={result.preview} />
@@ -250,7 +298,11 @@ export function NewFoodForm({
             ))}
           </ul>
         )}
-        {saveError && <p className="text-sm text-red-700">保存できませんでした: {saveError}</p>}
+        {saveError && (
+          <p className="text-sm text-red-700">
+            保存できませんでした: {saveError}
+          </p>
+        )}
       </div>
     </Sheet>
   );
@@ -272,10 +324,14 @@ function Field({
     <label className="block">
       <span className="block text-xs font-bold text-slate-600">
         {label}
-        {hint && <span className="ml-1 font-normal text-slate-400">{hint}</span>}
+        {hint && (
+          <span className="ml-1 font-normal text-slate-400">{hint}</span>
+        )}
       </span>
       <span className="mt-1 block">{children}</span>
-      {note && <span className="mt-1 block text-[11px] text-slate-400">{note}</span>}
+      {note && (
+        <span className="mt-1 block text-[11px] text-slate-400">{note}</span>
+      )}
     </label>
   );
 }
@@ -299,7 +355,9 @@ function NumberInput({
         className="h-12 w-full min-w-0 rounded-lg border border-slate-300 px-3 text-base tabular-nums"
       />
       {/* 単位の幅をそろえて、「kcal」と「g」の欄で入力欄の幅がずれないようにする */}
-      {suffix && <span className="w-8 shrink-0 text-xs text-slate-500">{suffix}</span>}
+      {suffix && (
+        <span className="w-8 shrink-0 text-xs text-slate-500">{suffix}</span>
+      )}
     </span>
   );
 }

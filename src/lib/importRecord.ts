@@ -14,10 +14,15 @@
  * 途中でこけたら全部戻る。半分だけ消えて半分だけ入る、が起きないようにしている。
  * 部品（addEntryPlans / learnFromPlans / addPendingPlans）はテキスト記録と共有。
  */
-import { db } from '../db/db';
-import type { LogDate } from '../db/types';
-import { addEntryPlans, addPendingPlans, learnFromPlans } from './quickRecord';
-import type { LearnedAlias, QuickCommitResult, QuickEntryPlan, QuickPendingPlan } from './quickRecord';
+import { db } from "../db/db";
+import type { LogDate } from "../db/types";
+import { addEntryPlans, addPendingPlans, learnFromPlans } from "./quickRecord";
+import type {
+  LearnedAlias,
+  QuickCommitResult,
+  QuickEntryPlan,
+  QuickPendingPlan,
+} from "./quickRecord";
 
 export interface ImportDayPlan {
   logDate: LogDate;
@@ -48,26 +53,37 @@ export async function commitImport(
   let replacedDays = 0;
   let learned: LearnedAlias[] = [];
 
-  await db.transaction('rw', [db.mealEntries, db.foods, db.pendingTexts], async () => {
-    for (const plan of plans) {
-      if (plan.replace) {
-        removed += await db.mealEntries.where('logDate').equals(plan.logDate).delete();
-        replacedDays += 1;
+  await db.transaction(
+    "rw",
+    [db.mealEntries, db.foods, db.pendingTexts],
+    async () => {
+      for (const plan of plans) {
+        if (plan.replace) {
+          removed += await db.mealEntries
+            .where("logDate")
+            .equals(plan.logDate)
+            .delete();
+          replacedDays += 1;
+        }
       }
-    }
 
-    for (const plan of plans) {
-      const result = await addEntryPlans(plan.logDate, plan.entries, boundaryHour);
-      added += result.added;
-      createdFoods += result.createdFoods;
-      if (result.added > 0) days += 1;
+      for (const plan of plans) {
+        const result = await addEntryPlans(
+          plan.logDate,
+          plan.entries,
+          boundaryHour,
+        );
+        added += result.added;
+        createdFoods += result.createdFoods;
+        if (result.added > 0) days += 1;
 
-      await addPendingPlans(plan.logDate, plan.pending, boundaryHour);
-      pending += plan.pending.length;
-    }
+        await addPendingPlans(plan.logDate, plan.pending, boundaryHour);
+        pending += plan.pending.length;
+      }
 
-    learned = await learnFromPlans(plans.flatMap((plan) => plan.entries));
-  });
+      learned = await learnFromPlans(plans.flatMap((plan) => plan.entries));
+    },
+  );
 
   return { added, pending, learned, createdFoods, days, replacedDays, removed };
 }

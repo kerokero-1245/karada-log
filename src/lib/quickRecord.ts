@@ -28,12 +28,17 @@
  * つまり「記録・呼び名・未処理」は全部入るか全部入らないかのどちらかになる。
  * snapshot / logDate / useCount の作り方を二重に持ちたくないので、この形を採る。
  */
-import { db } from '../db/db';
-import type { Food, LogDate, PendingText } from '../db/types';
-import { addMealEntries, assertTime } from './meals';
-import type { NewMealInput } from './meals';
-import { aliasesOf, alreadyKnown, canLearnAlias, mergeAliases } from './aliases';
-import { isoDateTimeIn, toIsoDateTime } from './date';
+import { db } from "../db/db";
+import type { Food, LogDate, PendingText } from "../db/types";
+import { addMealEntries, assertTime } from "./meals";
+import type { NewMealInput } from "./meals";
+import {
+  aliasesOf,
+  alreadyKnown,
+  canLearnAlias,
+  mergeAliases,
+} from "./aliases";
+import { isoDateTimeIn, toIsoDateTime } from "./date";
 
 export interface QuickEntryPlan {
   /** マスタの食品。推定で新しく作る項目は null */
@@ -42,7 +47,7 @@ export interface QuickEntryPlan {
    * 推定食品の下書き（lib/importText.ts）。記録を押したときに初めて作る。
    * マスタの食品を使うときは null。
    */
-  draft: Omit<Food, 'id'> | null;
+  draft: Omit<Food, "id"> | null;
   quantity: number;
   /** 'HH:mm' */
   time: string;
@@ -100,7 +105,12 @@ export async function addEntryPlans(
       food = { ...(entry.draft as Food), id };
       createdFoods += 1;
     }
-    inputs.push({ food, quantity: entry.quantity, time: entry.time, note: entry.raw });
+    inputs.push({
+      food,
+      quantity: entry.quantity,
+      time: entry.time,
+      note: entry.raw,
+    });
   }
 
   if (inputs.length > 0) {
@@ -113,7 +123,9 @@ export async function addEntryPlans(
  * 呼び名の学習。**手で解決したものだけ**（自動では増やさない）。
  * 判断材料は「そのときの DB の中身」。
  */
-export async function learnFromPlans(entries: QuickEntryPlan[]): Promise<LearnedAlias[]> {
+export async function learnFromPlans(
+  entries: QuickEntryPlan[],
+): Promise<LearnedAlias[]> {
   const learned: LearnedAlias[] = [];
   const foods = await db.foods.toArray();
 
@@ -123,7 +135,7 @@ export async function learnFromPlans(entries: QuickEntryPlan[]): Promise<Learned
     if (foodId === undefined) continue;
 
     const text = entry.learnText.trim();
-    if (text === '') continue;
+    if (text === "") continue;
 
     const stored = foods.find((food) => food.id === foodId);
     if (stored === undefined) continue;
@@ -131,7 +143,10 @@ export async function learnFromPlans(entries: QuickEntryPlan[]): Promise<Learned
     if (!canLearnAlias(text, foodId, foods)) continue;
 
     const merged = mergeAliases(aliasesOf(stored), [text]);
-    await db.foods.update(foodId, { aliases: merged, updatedAt: toIsoDateTime(new Date()) });
+    await db.foods.update(foodId, {
+      aliases: merged,
+      updatedAt: toIsoDateTime(new Date()),
+    });
     // 同じテキストが2項目に出てきたときに二重で覚えないよう、手元の配列も更新する
     stored.aliases = merged;
     learned.push({ text, foodName: stored.name });
@@ -140,7 +155,11 @@ export async function learnFromPlans(entries: QuickEntryPlan[]): Promise<Learned
 }
 
 /** 解決できなかった原文を預ける。★ 栄養値は持たせない（集計に入れない）★ */
-export async function addPendingPlans(logDate: LogDate, pending: QuickPendingPlan[], boundaryHour: number): Promise<void> {
+export async function addPendingPlans(
+  logDate: LogDate,
+  pending: QuickPendingPlan[],
+  boundaryHour: number,
+): Promise<void> {
   if (pending.length === 0) return;
   for (const item of pending) assertTime(item.time);
   const now = toIsoDateTime(new Date());
@@ -165,18 +184,22 @@ export async function commitQuickText(
   let added = 0;
   let createdFoods = 0;
 
-  await db.transaction('rw', [db.mealEntries, db.foods, db.pendingTexts], async () => {
-    const result = await addEntryPlans(logDate, entries, boundaryHour);
-    added = result.added;
-    createdFoods = result.createdFoods;
+  await db.transaction(
+    "rw",
+    [db.mealEntries, db.foods, db.pendingTexts],
+    async () => {
+      const result = await addEntryPlans(logDate, entries, boundaryHour);
+      added = result.added;
+      createdFoods = result.createdFoods;
 
-    learned = await learnFromPlans(entries);
-    await addPendingPlans(logDate, pending, boundaryHour);
+      learned = await learnFromPlans(entries);
+      await addPendingPlans(logDate, pending, boundaryHour);
 
-    if (sourcePendingId !== null) {
-      await db.pendingTexts.delete(sourcePendingId);
-    }
-  });
+      if (sourcePendingId !== null) {
+        await db.pendingTexts.delete(sourcePendingId);
+      }
+    },
+  );
 
   return { added, pending: pending.length, learned, createdFoods };
 }

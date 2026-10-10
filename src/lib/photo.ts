@@ -13,14 +13,14 @@
  * 90度回った状態で渡ることになる。未対応のブラウザでは補正せずそのまま進める
  * （読めないわけではないので、機能を止めるほどではない）。
  */
-import { IMAGE_MESSAGE, PhotoError } from './photoError';
+import { IMAGE_MESSAGE, PhotoError } from "./photoError";
 
 /** 長辺の上限 */
 export const MAX_EDGE = 1568;
 /** JPEG の品質。ラベルの小さい文字が潰れない範囲で軽くする */
 export const JPEG_QUALITY = 0.85;
 
-export type PhotoMediaType = 'image/jpeg';
+export type PhotoMediaType = "image/jpeg";
 
 export interface PhotoImage {
   /** data URL の接頭辞を除いた base64 */
@@ -40,10 +40,16 @@ interface Source {
 }
 
 async function fromBitmap(file: File): Promise<Source | null> {
-  if (typeof createImageBitmap !== 'function') return null;
-  for (const options of [{ imageOrientation: 'from-image' } as const, undefined]) {
+  if (typeof createImageBitmap !== "function") return null;
+  for (const options of [
+    { imageOrientation: "from-image" } as const,
+    undefined,
+  ]) {
     try {
-      const bitmap = options === undefined ? await createImageBitmap(file) : await createImageBitmap(file, options);
+      const bitmap =
+        options === undefined
+          ? await createImageBitmap(file)
+          : await createImageBitmap(file, options);
       return {
         image: bitmap,
         width: bitmap.width,
@@ -71,7 +77,7 @@ function fromImageElement(file: File): Promise<Source> {
     };
     image.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new PhotoError('image', IMAGE_MESSAGE));
+      reject(new PhotoError("image", IMAGE_MESSAGE));
     };
     image.src = url;
   });
@@ -79,40 +85,40 @@ function fromImageElement(file: File): Promise<Source> {
 
 /** 画像ファイル → 長辺1568px 以下の JPEG（base64）。写真は保存しない */
 export async function fileToPhoto(file: File): Promise<PhotoImage> {
-  if (!file.type.startsWith('image/')) {
-    throw new PhotoError('image', '画像ファイルを選んでください。');
+  if (!file.type.startsWith("image/")) {
+    throw new PhotoError("image", "画像ファイルを選んでください。");
   }
 
   const source = (await fromBitmap(file)) ?? (await fromImageElement(file));
   try {
     if (source.width <= 0 || source.height <= 0) {
-      throw new PhotoError('image', IMAGE_MESSAGE);
+      throw new PhotoError("image", IMAGE_MESSAGE);
     }
 
     const scale = Math.min(1, MAX_EDGE / Math.max(source.width, source.height));
     const width = Math.max(1, Math.round(source.width * scale));
     const height = Math.max(1, Math.round(source.height * scale));
 
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (context === null) throw new PhotoError('image', IMAGE_MESSAGE);
+    const context = canvas.getContext("2d");
+    if (context === null) throw new PhotoError("image", IMAGE_MESSAGE);
     // 縮小時のジャギーを抑える。ラベルの細い文字が読めるかどうかに効く
     context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = 'high';
+    context.imageSmoothingQuality = "high";
     context.drawImage(source.image, 0, 0, width, height);
 
-    const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-    const comma = dataUrl.indexOf(',');
-    if (!dataUrl.startsWith('data:image/jpeg') || comma < 0) {
-      throw new PhotoError('image', IMAGE_MESSAGE);
+    const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    const comma = dataUrl.indexOf(",");
+    if (!dataUrl.startsWith("data:image/jpeg") || comma < 0) {
+      throw new PhotoError("image", IMAGE_MESSAGE);
     }
     const base64 = dataUrl.slice(comma + 1);
 
     return {
       base64,
-      mediaType: 'image/jpeg',
+      mediaType: "image/jpeg",
       width,
       height,
       // base64 は元データの 4/3 の長さになる

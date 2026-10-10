@@ -2,12 +2,12 @@
  * バリアントの選択（カップヌードルBIG のスープ残し/完飲 など）。
  * 選ぶ基準は塩分なので、塩分だけ大きく出す。
  */
-import type { Food } from '../../db/types';
-import type { FoodGroup } from './foodGroups';
-import { Sheet } from '../../components/Sheet';
-import { Badge } from '../../components/ui';
-import { fmtNum } from '../../lib/nutrition';
-import { fmtKcalItem } from '../../lib/formatKcal';
+import type { Food } from "../../db/types";
+import type { FoodGroup } from "./foodGroups";
+import { Sheet } from "../../components/Sheet";
+import { Badge } from "../../components/ui";
+import { fmtNum } from "../../lib/nutrition";
+import { fmtKcalItem } from "../../lib/formatKcal";
 
 export function VariantPicker({
   group,
@@ -21,7 +21,12 @@ export function VariantPicker({
   onClose: () => void;
 }) {
   return (
-    <Sheet title={group.name} subtitle="食べ方を選んでください" onBack={onBack} onClose={onClose}>
+    <Sheet
+      title={group.name}
+      subtitle="食べ方を選んでください"
+      onBack={onBack}
+      onClose={onClose}
+    >
       <ul className="space-y-2">
         {group.foods.map((food) => (
           <li key={food.id}>
@@ -32,12 +37,17 @@ export function VariantPicker({
             >
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-baseline gap-1.5">
-                  <span className="text-base font-bold text-slate-800">{food.variantLabel ?? '標準'}</span>
-                  {food.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+                  <span className="text-base font-bold text-slate-800">
+                    {food.variantLabel ?? "標準"}
+                  </span>
+                  {food.source === "estimated" && (
+                    <Badge tone="amber">推定値</Badge>
+                  )}
                   {food.archived && <Badge tone="slate">在庫切れ</Badge>}
                 </span>
                 <span className="mt-1 block text-xs tabular-nums text-slate-500">
-                  {food.unitLabel} / {fmtKcalItem(food.per.kcal)}kcal / P{fmtNum(food.per.proteinG)}g / 脂質
+                  {food.unitLabel} / {fmtKcalItem(food.per.kcal)}kcal / P
+                  {fmtNum(food.per.proteinG)}g / 脂質
                   {fmtNum(food.per.fatG)}g
                 </span>
               </span>

@@ -5,9 +5,9 @@
  * 一覧では1行にまとめ、タップしたときにだけ選択させる。
  * 頻度は行単位（= バリアントの合計）で数えるが、記録は必ず1バリアントに落ちる。
  */
-import type { Food, FoodCategory, IsoDateTime } from '../../db/types';
-import { aliasesOf } from '../../lib/aliases';
-import { normalize } from '../../lib/quickText';
+import type { Food, FoodCategory, IsoDateTime } from "../../db/types";
+import { aliasesOf } from "../../lib/aliases";
+import { normalize } from "../../lib/quickText";
 
 export interface FoodGroup {
   key: string;
@@ -30,12 +30,12 @@ export interface FoodGroup {
  */
 export function matchesQuery(food: Food, query: string): boolean {
   const key = normalize(query);
-  if (key === '') return true;
+  if (key === "") return true;
   const fields = [
     // 名前とバリアント名をまたぐ書き方（'BIG スープ'）も、これまでどおり当てる
-    `${food.name}${food.variantLabel ?? ''}${food.category}`,
+    `${food.name}${food.variantLabel ?? ""}${food.category}`,
     food.name,
-    food.variantLabel ?? '',
+    food.variantLabel ?? "",
     food.category,
     ...aliasesOf(food),
   ];
@@ -69,8 +69,9 @@ export function groupFoods(foods: Food[]): FoodGroup[] {
     group.foods.sort(
       (a, b) =>
         b.useCount - a.useCount ||
-        (a.per.saltG ?? Number.POSITIVE_INFINITY) - (b.per.saltG ?? Number.POSITIVE_INFINITY) ||
-        (a.variantLabel ?? '').localeCompare(b.variantLabel ?? '', 'ja'),
+        (a.per.saltG ?? Number.POSITIVE_INFINITY) -
+          (b.per.saltG ?? Number.POSITIVE_INFINITY) ||
+        (a.variantLabel ?? "").localeCompare(b.variantLabel ?? "", "ja"),
     );
   }
   return [...groups.values()];
@@ -82,11 +83,14 @@ export function sortByFrequency(groups: FoodGroup[]): FoodGroup[] {
     (a, b) =>
       b.useCount - a.useCount ||
       compareIsoDesc(a.lastUsedAt, b.lastUsedAt) ||
-      a.name.localeCompare(b.name, 'ja'),
+      a.name.localeCompare(b.name, "ja"),
   );
 }
 
-function laterOf(a: IsoDateTime | null, b: IsoDateTime | null): IsoDateTime | null {
+function laterOf(
+  a: IsoDateTime | null,
+  b: IsoDateTime | null,
+): IsoDateTime | null {
   if (a === null) return b;
   if (b === null) return a;
   return a >= b ? a : b;

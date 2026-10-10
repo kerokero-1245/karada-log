@@ -13,7 +13,7 @@
  *    目標カロリーが変わるだけで、計画値が実績に足されることは無い（原則1）。
  *  - セットの回数は入力されたものだけを保存する。未入力のセットを作らない。
  */
-import { db } from '../db/db';
+import { db } from "../db/db";
 import type {
   Exercise,
   ExerciseOutcome,
@@ -24,14 +24,27 @@ import type {
   SessionExercise,
   SetRecord,
   TrainingSession,
-} from '../db/types';
-import { toIsoDateTime } from './date';
-import { isSetAchieved, judgeProgress, setValue, suggestNext } from './progression';
-import type { JudgeTarget, SetInput } from './progression';
+} from "../db/types";
+import { toIsoDateTime } from "./date";
+import {
+  isSetAchieved,
+  judgeProgress,
+  setValue,
+  suggestNext,
+} from "./progression";
+import type { JudgeTarget, SetInput } from "./progression";
 
 /** 種目マスタと、その回に狙う設定から判定用の規定値を作る */
-export function judgeTargetOf(exercise: Exercise, planned: ExerciseTarget): JudgeTarget {
-  return { kind: exercise.kind, sets: exercise.sets, reps: planned.reps, seconds: planned.seconds };
+export function judgeTargetOf(
+  exercise: Exercise,
+  planned: ExerciseTarget,
+): JudgeTarget {
+  return {
+    kind: exercise.kind,
+    sets: exercise.sets,
+    reps: planned.reps,
+    seconds: planned.seconds,
+  };
 }
 
 /** その回に狙う設定。次回の予定があればそれ、無ければ現在の設定 */
@@ -40,13 +53,17 @@ export function plannedTargetOf(exercise: Exercise): ExerciseTarget {
 }
 
 /** トレーニングを始める（その日の区分は自動で「ジムの日」になる） */
-export async function startSession(menu: MenuId, logDate: LogDate, now: Date = new Date()): Promise<number> {
+export async function startSession(
+  menu: MenuId,
+  logDate: LogDate,
+  now: Date = new Date(),
+): Promise<number> {
   const session: TrainingSession = {
     menu,
     startedAt: toIsoDateTime(now),
     startedAtIsEstimated: false,
     logDate,
-    note: '',
+    note: "",
   };
   return (await db.trainingSessions.add(session)) as number;
 }
@@ -73,66 +90,102 @@ export interface SaveExerciseResult {
  * 種目の結果を保存し、判定に応じて種目マスタの「現在 / 次回」を更新する。
  * 同じ記録を何度保存し直しても結果は同じ（次回は「今回扱った重量」から計算する）。
  */
-export async function saveExerciseRecord(input: SaveExerciseInput): Promise<SaveExerciseResult> {
+export async function saveExerciseRecord(
+  input: SaveExerciseInput,
+): Promise<SaveExerciseResult> {
   const { exercise, planned, load, sessionId, existing } = input;
   const target = judgeTargetOf(exercise, planned);
-  const filled = input.sets.filter((set) => setValue(set, exercise.kind) !== null);
+  const filled = input.sets.filter(
+    (set) => setValue(set, exercise.kind) !== null,
+  );
   const outcome = judgeProgress(filled, target);
 
-  return db.transaction('rw', db.sessionExercises, db.setRecords, db.exercises, async () => {
-    let sessionExerciseId: number;
-    if (existing?.id !== undefined) {
-      sessionExerciseId = existing.id;
-      await db.sessionExercises.update(sessionExerciseId, { load, outcome, note: input.note });
-      await db.setRecords.where('sessionExerciseId').equals(sessionExerciseId).delete();
-    } else {
-      // 実施順は「このセッションで何番目に記録したか」。順番は結果の原因になるので残す
-      const done = await db.sessionExercises.where('sessionId').equals(sessionId).count();
-      const item: SessionExercise = {
-        sessionId,
-        exerciseId: exercise.id as number,
-        order: done + 1,
-        exerciseName: exercise.name,
-        load,
-        outcome,
-        note: input.note,
-      };
-      sessionExerciseId = (await db.sessionExercises.add(item)) as number;
-    }
+  return db.transaction(
+    "rw",
+    db.sessionExercises,
+    db.setRecords,
+    db.exercises,
+    async () => {
+      let sessionExerciseId: number;
+      if (existing?.id !== undefined) {
+        sessionExerciseId = existing.id;
+        await db.sessionExercises.update(sessionExerciseId, {
+          load,
+          outcome,
+          note: input.note,
+        });
+        await db.setRecords
+          .where("sessionExerciseId")
+          .equals(sessionExerciseId)
+          .delete();
+      } else {
+        // 実施順は「このセッションで何番目に記録したか」。順番は結果の原因になるので残す
+        const done = await db.sessionExercises
+          .where("sessionId")
+          .equals(sessionId)
+          .count();
+        const item: SessionExercise = {
+          sessionId,
+          exerciseId: exercise.id as number,
+          order: done + 1,
+          exerciseName: exercise.name,
+          load,
+          outcome,
+          note: input.note,
+        };
+        sessionExerciseId = (await db.sessionExercises.add(item)) as number;
+      }
 
-    const records: SetRecord[] = filled.map((set, i) => ({
-      sessionExerciseId,
-      setNo: i + 1,
-      reps: exercise.kind === 'timed' ? null : set.reps,
-      seconds: exercise.kind === 'timed' ? set.seconds : null,
-      achieved: isSetAchieved(set, target),
-      note: '',
-    }));
-    if (records.length > 0) await db.setRecords.bulkAdd(records);
+      const records: SetRecord[] = filled.map((set, i) => ({
+        sessionExerciseId,
+        setNo: i + 1,
+        reps: exercise.kind === "timed" ? null : set.reps,
+        seconds: exercise.kind === "timed" ? set.seconds : null,
+        achieved: isSetAchieved(set, target),
+        note: "",
+      }));
+      if (records.length > 0) await db.setRecords.bulkAdd(records);
 
-    if (exercise.id !== undefined && outcome !== 'unknown') {
-      const used: ExerciseTarget = { load, reps: planned.reps, seconds: planned.seconds };
-      await db.exercises.update(exercise.id, {
-        current: used,
-        next: suggestNext(used, outcome, exercise.progression),
-        // 実施した重量が入ったので、構成が確定していれば「実測済み」にする
-        verified: load.style !== 'other',
-      });
-    }
+      if (exercise.id !== undefined && outcome !== "unknown") {
+        const used: ExerciseTarget = {
+          load,
+          reps: planned.reps,
+          seconds: planned.seconds,
+        };
+        await db.exercises.update(exercise.id, {
+          current: used,
+          next: suggestNext(used, outcome, exercise.progression),
+          // 実施した重量が入ったので、構成が確定していれば「実測済み」にする
+          verified: load.style !== "other",
+        });
+      }
 
-    return { sessionExerciseId, outcome };
-  });
+      return { sessionExerciseId, outcome };
+    },
+  );
 }
 
 /** 間違えて始めたトレーニングを取り消す（種目とセットの記録もまとめて消す） */
 export async function deleteSession(sessionId: number): Promise<void> {
-  await db.transaction('rw', db.trainingSessions, db.sessionExercises, db.setRecords, async () => {
-    const items = await db.sessionExercises.where('sessionId').equals(sessionId).toArray();
-    const ids = items.map((item) => item.id).filter((id): id is number => id !== undefined);
-    if (ids.length > 0) await db.setRecords.where('sessionExerciseId').anyOf(ids).delete();
-    await db.sessionExercises.where('sessionId').equals(sessionId).delete();
-    await db.trainingSessions.delete(sessionId);
-  });
+  await db.transaction(
+    "rw",
+    db.trainingSessions,
+    db.sessionExercises,
+    db.setRecords,
+    async () => {
+      const items = await db.sessionExercises
+        .where("sessionId")
+        .equals(sessionId)
+        .toArray();
+      const ids = items
+        .map((item) => item.id)
+        .filter((id): id is number => id !== undefined);
+      if (ids.length > 0)
+        await db.setRecords.where("sessionExerciseId").anyOf(ids).delete();
+      await db.sessionExercises.where("sessionId").equals(sessionId).delete();
+      await db.trainingSessions.delete(sessionId);
+    },
+  );
 }
 
 export interface HistoryPoint {
@@ -147,16 +200,28 @@ export interface HistoryPoint {
  * 種目の履歴（古い順）。同じ名前の種目は同じものとして束ねる
  * （アブローラーのようにメニューごとに別の種目行があるものも、名前が同じなら1本の推移で見る）。
  */
-export async function loadHistory(exerciseName: string, limit = 8): Promise<HistoryPoint[]> {
-  const items = await db.sessionExercises.filter((item) => item.exerciseName === exerciseName).toArray();
+export async function loadHistory(
+  exerciseName: string,
+  limit = 8,
+): Promise<HistoryPoint[]> {
+  const items = await db.sessionExercises
+    .filter((item) => item.exerciseName === exerciseName)
+    .toArray();
   if (items.length === 0) return [];
   const sessionIds = [...new Set(items.map((item) => item.sessionId))];
   const sessions = await db.trainingSessions.bulkGet(sessionIds);
   const sessionById = new Map(
-    sessions.filter((s): s is TrainingSession => s !== undefined).map((s) => [s.id as number, s]),
+    sessions
+      .filter((s): s is TrainingSession => s !== undefined)
+      .map((s) => [s.id as number, s]),
   );
-  const itemIds = items.map((item) => item.id).filter((id): id is number => id !== undefined);
-  const sets = itemIds.length === 0 ? [] : await db.setRecords.where('sessionExerciseId').anyOf(itemIds).toArray();
+  const itemIds = items
+    .map((item) => item.id)
+    .filter((id): id is number => id !== undefined);
+  const sets =
+    itemIds.length === 0
+      ? []
+      : await db.setRecords.where("sessionExerciseId").anyOf(itemIds).toArray();
 
   const points: HistoryPoint[] = [];
   for (const item of items) {
@@ -167,7 +232,9 @@ export async function loadHistory(exerciseName: string, limit = 8): Promise<Hist
       startedAt: session.startedAt,
       load: item.load,
       outcome: item.outcome,
-      sets: sets.filter((set) => set.sessionExerciseId === item.id).sort((a, b) => a.setNo - b.setNo),
+      sets: sets
+        .filter((set) => set.sessionExerciseId === item.id)
+        .sort((a, b) => a.setNo - b.setNo),
     });
   }
   points.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
@@ -176,17 +243,25 @@ export async function loadHistory(exerciseName: string, limit = 8): Promise<Hist
 
 /** 次に回すメニュー（A → B → C → A）。記録が無ければ A */
 export function nextMenuAfter(last: MenuId | null): MenuId {
-  if (last === 'A') return 'B';
-  if (last === 'B') return 'C';
-  return 'A';
+  if (last === "A") return "B";
+  if (last === "B") return "C";
+  return "A";
 }
 
 /** セッション内の保存済みの種目記録とセット */
 export async function loadSessionRecords(
   sessionId: number,
 ): Promise<{ items: SessionExercise[]; sets: SetRecord[] }> {
-  const items = await db.sessionExercises.where('sessionId').equals(sessionId).toArray();
-  const ids = items.map((item) => item.id).filter((id): id is number => id !== undefined);
-  const sets = ids.length === 0 ? [] : await db.setRecords.where('sessionExerciseId').anyOf(ids).toArray();
+  const items = await db.sessionExercises
+    .where("sessionId")
+    .equals(sessionId)
+    .toArray();
+  const ids = items
+    .map((item) => item.id)
+    .filter((id): id is number => id !== undefined);
+  const sets =
+    ids.length === 0
+      ? []
+      : await db.setRecords.where("sessionExerciseId").anyOf(ids).toArray();
   return { items, sets };
 }

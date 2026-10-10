@@ -10,8 +10,8 @@
  *    1つの言葉が2つの食品を指すようになると、次から「候補を選ぶ」が増えて逆に遅くなる
  *  - ユーザーが付けた呼び名は、初期データの更新で消さない
  */
-import type { Food } from '../db/types';
-import { normalize } from './quickText';
+import type { Food } from "../db/types";
+import { normalize } from "./quickText";
 
 /** 旧バージョンのレコード（aliases を持たない）でも落ちないようにする */
 export function aliasesOf(food: Food): string[] {
@@ -25,7 +25,7 @@ export function mergeAliases(current: string[], additions: string[]): string[] {
   for (const addition of additions) {
     const text = addition.trim();
     const key = normalize(text);
-    if (text === '' || key === '' || keys.has(key)) continue;
+    if (text === "" || key === "" || keys.has(key)) continue;
     merged.push(text);
     keys.add(key);
   }
@@ -36,13 +36,18 @@ export function mergeAliases(current: string[], additions: string[]): string[] {
  * その呼び名を覚えてよいか。
  * 他の食品の名前・呼び名とぶつかるなら覚えない（曖昧さを増やさない）。
  */
-export function canLearnAlias(alias: string, foodId: number, foods: Food[]): boolean {
+export function canLearnAlias(
+  alias: string,
+  foodId: number,
+  foods: Food[],
+): boolean {
   const key = normalize(alias);
-  if (key === '') return false;
+  if (key === "") return false;
   for (const food of foods) {
     if (food.id === foodId) continue;
     if (normalize(food.name) === key) return false;
-    if (aliasesOf(food).some((existing) => normalize(existing) === key)) return false;
+    if (aliasesOf(food).some((existing) => normalize(existing) === key))
+      return false;
   }
   return true;
 }
@@ -50,7 +55,7 @@ export function canLearnAlias(alias: string, foodId: number, foods: Food[]): boo
 /** すでに名前そのもの / 登録済みの呼び名なら、覚える必要がない */
 export function alreadyKnown(alias: string, food: Food): boolean {
   const key = normalize(alias);
-  if (key === '') return true;
+  if (key === "") return true;
   if (normalize(food.name) === key) return true;
   return aliasesOf(food).some((existing) => normalize(existing) === key);
 }

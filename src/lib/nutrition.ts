@@ -3,8 +3,8 @@
  * 未入力（null）を 0 として黙って足さない。足せなかった項目は数えて返し、
  * 画面で「未確認」と出せるようにする（原則1: 分からないものを埋めない）。
  */
-import type { Nutrition, NutrientKey } from '../db/types';
-import { NUTRIENT_KEYS } from '../db/types';
+import type { Nutrition, NutrientKey } from "../db/types";
+import { NUTRIENT_KEYS } from "../db/types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   kcal: null,
@@ -32,8 +32,20 @@ export function scaleNutrition(per: Nutrition, quantity: number): Nutrition {
 
 /** 合計。null は加算せず unknown に数える */
 export function sumNutrition(list: Nutrition[]): NutritionTotal {
-  const value: Nutrition = { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0 };
-  const unknown = { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0 } as Record<NutrientKey, number>;
+  const value: Nutrition = {
+    kcal: 0,
+    proteinG: 0,
+    fatG: 0,
+    carbG: 0,
+    saltG: 0,
+  };
+  const unknown = {
+    kcal: 0,
+    proteinG: 0,
+    fatG: 0,
+    carbG: 0,
+    saltG: 0,
+  } as Record<NutrientKey, number>;
   for (const n of list) {
     for (const key of NUTRIENT_KEYS) {
       const v = n[key];
@@ -45,8 +57,8 @@ export function sumNutrition(list: Nutrition[]): NutritionTotal {
 }
 
 /** 表示。null は '—' */
-export function fmtNum(v: number | null, suffix = ''): string {
-  if (v === null || Number.isNaN(v)) return '—';
+export function fmtNum(v: number | null, suffix = ""): string {
+  if (v === null || Number.isNaN(v)) return "—";
   return `${round2(v)}${suffix}`;
 }
 

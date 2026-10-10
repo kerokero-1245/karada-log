@@ -15,15 +15,15 @@
  *   - 当たらない／候補が並ぶ が 値がある → 'estimated'。推定の食品を作って記録する
  *   - 当たらず値も無い → 'missing'。栄養値を付けずに原文のまま預かる（従来どおり）
  */
-import type { Food, LogDate, Nutrition } from '../db/types';
-import { toCalendarDate, toIsoDateTime } from './date';
-import { formatQuantity } from './meals';
-import { gramsPerUnitOf, guessCategory, unitLabelOf } from './photoMeal';
-import { isGramUnit, parseItems, quantityFor, resolveItem } from './quickText';
-import type { ParsedItem, QuickResolution, QuickStatus } from './quickText';
+import type { Food, LogDate, Nutrition } from "../db/types";
+import { toCalendarDate, toIsoDateTime } from "./date";
+import { formatQuantity } from "./meals";
+import { gramsPerUnitOf, guessCategory, unitLabelOf } from "./photoMeal";
+import { isGramUnit, parseItems, quantityFor, resolveItem } from "./quickText";
+import type { ParsedItem, QuickResolution, QuickStatus } from "./quickText";
 
 /** 時刻が書かれていない行の既定。昼に寄せる（朝4時境界の内側で、日付が動かない時刻） */
-export const DEFAULT_IMPORT_TIME = '12:00';
+export const DEFAULT_IMPORT_TIME = "12:00";
 
 /* ------------------------------------------------------------------ */
 /* 推定食品の下書き                                                      */
@@ -44,7 +44,7 @@ function perUnit(values: Nutrition, quantity: number): Nutrition {
 
 export interface EstimatedPlan {
   /** 記録時に作る Food。source='estimated' なので画面では「推定値」と出る */
-  draft: Omit<Food, 'id'>;
+  draft: Omit<Food, "id">;
   /** その下書きに対する数量 */
   quantity: number;
   per: Nutrition;
@@ -60,7 +60,10 @@ export interface EstimatedPlan {
  *   '焼き鮭 2切れ=266/44/9/0.2/1.6' → 1切れ あたり 133kcal
  * '100g' のような重さ指定だけは「100g で1単位」として扱う（数量は1）。
  */
-export function estimatedPlanOf(parsed: ParsedItem, now: Date = new Date()): EstimatedPlan | null {
+export function estimatedPlanOf(
+  parsed: ParsedItem,
+  now: Date = new Date(),
+): EstimatedPlan | null {
   const values = parsed.inlineNutrition;
   if (values === null) return null;
 
@@ -68,9 +71,9 @@ export function estimatedPlanOf(parsed: ParsedItem, now: Date = new Date()): Est
   const gram = isGramUnit(parsed.unit);
   const quantity = gram ? 1 : amount;
   const unitLabel = gram
-    ? `${formatQuantity(amount)}${parsed.unit ?? 'g'}`
+    ? `${formatQuantity(amount)}${parsed.unit ?? "g"}`
     : parsed.unit === null
-      ? '1個'
+      ? "1個"
       : unitLabelOf(parsed.unit);
 
   const per = perUnit(values, quantity);
@@ -82,12 +85,12 @@ export function estimatedPlanOf(parsed: ParsedItem, now: Date = new Date()): Est
     per,
     unitLabel,
     draft: {
-      name: name === '' ? '貼り付けの品目' : name,
+      name: name === "" ? "貼り付けの品目" : name,
       unitLabel,
       gramsPerUnit: gram ? amount : gramsPerUnitOf(unitLabel),
       per,
-      source: 'estimated',
-      basis: { label: '貼り付けの値（1単位あたり）', unitsPerBasis: 1 },
+      source: "estimated",
+      basis: { label: "貼り付けの値（1単位あたり）", unitsPerBasis: 1 },
       category: guessCategory(name),
       note: `貼り付けから推定 ${toCalendarDate(now)}`,
       // 呼び名は付けない。推定の名前で呼び名を増やすと、以後の照合が曖昧になる
@@ -146,7 +149,7 @@ export function buildEntryView(
       unitLabel: food.unitLabel,
       notes,
       usesMasterValues: parsed.inlineNutrition !== null,
-      status: 'confirmed',
+      status: "confirmed",
       manual,
     };
   }
@@ -161,7 +164,7 @@ export function buildEntryView(
       unitLabel: estimated.unitLabel,
       notes: [],
       usesMasterValues: false,
-      status: 'estimated',
+      status: "estimated",
       manual: false,
     };
   }
@@ -171,7 +174,7 @@ export function buildEntryView(
     estimated: null,
     quantity: 1,
     per: { kcal: null, proteinG: null, fatG: null, carbG: null, saltG: null },
-    unitLabel: '',
+    unitLabel: "",
     notes: [],
     usesMasterValues: false,
     status: resolution.status,
@@ -208,7 +211,11 @@ export interface ImportParse {
 }
 
 /** 貼り付けたテキスト全体を、日付ごとにまとめて読む */
-export function parseImport(text: string, foods: Food[], today: LogDate): ImportParse {
+export function parseImport(
+  text: string,
+  foods: Food[],
+  today: LogDate,
+): ImportParse {
   const items = parseItems(text, today);
 
   const rows: ImportRow[] = items.map((parsed, index) => ({

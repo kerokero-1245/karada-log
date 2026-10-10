@@ -7,11 +7,11 @@
  *
  * API キーは復元の対象外。ファイルにも入っていないし、今の端末の値をそのまま残す。
  */
-import { useRef, useState } from 'react';
-import { Button, Card, Note } from '../../components/ui';
-import type { BackupCount, BackupFile } from '../../lib/backup';
-import { parseBackup, restoreBackup } from '../../lib/backup';
-import { formatDateTime } from '../../lib/date';
+import { useRef, useState } from "react";
+import { Button, Card, Note } from "../../components/ui";
+import type { BackupCount, BackupFile } from "../../lib/backup";
+import { parseBackup, restoreBackup } from "../../lib/backup";
+import { formatDateTime } from "../../lib/date";
 
 interface Staged {
   fileName: string;
@@ -28,7 +28,7 @@ export function RestoreCard() {
 
   const reset = () => {
     setStaged(null);
-    if (inputRef.current) inputRef.current.value = '';
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const pick = async (file: File | undefined) => {
@@ -37,11 +37,11 @@ export function RestoreCard() {
     setStaged(null);
     if (!file) return;
 
-    let text = '';
+    let text = "";
     try {
       text = await file.text();
     } catch {
-      setError('このファイルは読み込めません（中身を開けませんでした）');
+      setError("このファイルは読み込めません（中身を開けませんでした）");
       return;
     }
 
@@ -50,7 +50,11 @@ export function RestoreCard() {
       setError(`このファイルは読み込めません（${parsed.reason}）`);
       return;
     }
-    setStaged({ fileName: file.name, backup: parsed.backup, counts: parsed.counts });
+    setStaged({
+      fileName: file.name,
+      backup: parsed.backup,
+      counts: parsed.counts,
+    });
   };
 
   const run = async () => {
@@ -61,12 +65,16 @@ export function RestoreCard() {
       const result = await restoreBackup(staged.backup);
       const total = Object.values(result.restored).reduce((a, b) => a + b, 0);
       const parts = [`復元しました（${total}件）。`];
-      if (result.keptApiKey) parts.push('APIキーはこの端末の値のまま残しています。');
-      if (result.keptCurrentSettings) parts.push('ファイルに設定が無かったので、今の設定を残しました。');
-      setDone(parts.join(''));
+      if (result.keptApiKey)
+        parts.push("APIキーはこの端末の値のまま残しています。");
+      if (result.keptCurrentSettings)
+        parts.push("ファイルに設定が無かったので、今の設定を残しました。");
+      setDone(parts.join(""));
       reset();
     } catch (e) {
-      setError(`復元できませんでした（${e instanceof Error ? e.message : String(e)}）`);
+      setError(
+        `復元できませんでした（${e instanceof Error ? e.message : String(e)}）`,
+      );
     } finally {
       setBusy(false);
     }
@@ -75,7 +83,9 @@ export function RestoreCard() {
   return (
     <Card title="JSON から復元">
       <label className="block">
-        <span className="block text-xs font-bold text-slate-600">バックアップファイル</span>
+        <span className="block text-xs font-bold text-slate-600">
+          バックアップファイル
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -91,19 +101,29 @@ export function RestoreCard() {
 
       {staged !== null && (
         <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
-          <p className="text-sm font-bold text-amber-900">今のデータをすべて置き換えます</p>
+          <p className="text-sm font-bold text-amber-900">
+            今のデータをすべて置き換えます
+          </p>
           <p className="mt-1 text-xs text-amber-900">
             ファイル: {staged.fileName}
             <br />
-            書き出した日時: {staged.backup.exportedAt === '' ? '—' : formatDateTime(staged.backup.exportedAt)}
+            書き出した日時:{" "}
+            {staged.backup.exportedAt === ""
+              ? "—"
+              : formatDateTime(staged.backup.exportedAt)}
           </p>
           {/* 1列にする。2列だと 360 幅で「固定ベース」「0 件（ファイルに無し）」が途中で折り返す */}
           <dl className="mt-2 grid grid-cols-1 text-xs">
             {staged.counts.map((row) => (
-              <div key={row.table} className="flex justify-between gap-2 border-b border-amber-200 py-0.5">
-                <dt className="whitespace-nowrap text-amber-900">{row.label}</dt>
+              <div
+                key={row.table}
+                className="flex justify-between gap-2 border-b border-amber-200 py-0.5"
+              >
+                <dt className="whitespace-nowrap text-amber-900">
+                  {row.label}
+                </dt>
                 <dd className="whitespace-nowrap text-right font-medium tabular-nums text-amber-900">
-                  {row.count} 件{row.missing ? '（ファイルに無し）' : ''}
+                  {row.count} 件{row.missing ? "（ファイルに無し）" : ""}
                 </dd>
               </div>
             ))}
@@ -120,7 +140,10 @@ export function RestoreCard() {
       )}
 
       <div className="mt-2 space-y-0.5">
-        <Note>復元すると、今この端末にある記録は残りません。先に JSON をダウンロードしておいてください。</Note>
+        <Note>
+          復元すると、今この端末にある記録は残りません。先に JSON
+          をダウンロードしておいてください。
+        </Note>
         <Note>APIキーは復元の対象外です。今の端末の値がそのまま残ります。</Note>
       </div>
     </Card>

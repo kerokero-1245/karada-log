@@ -3,8 +3,12 @@
  * 「閉じる」で消え、localStorage に印を残して次からは出さない。
  * localStorage が使えない環境（読み書きで例外）では毎回出すが、閉じればその場では消える。
  */
-import { useState } from 'react';
-import { GUIDE_STORAGE_KEY, dismissedValue, shouldShowGuide } from '../../lib/firstRunGuide';
+import { useState } from "react";
+import {
+  GUIDE_STORAGE_KEY,
+  dismissedValue,
+  shouldShowGuide,
+} from "../../lib/firstRunGuide";
 
 function readStored(): string | null {
   try {
@@ -32,13 +36,21 @@ export function FirstRunGuideCard() {
   };
 
   return (
-    <section aria-labelledby="first-run-guide-title" className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+    <section
+      aria-labelledby="first-run-guide-title"
+      className="rounded-xl border border-sky-200 bg-sky-50 p-3"
+    >
       <h2 id="first-run-guide-title" className="text-sm font-bold text-sky-900">
         はじめに
       </h2>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-sky-900">
-        <li>食べたものを記録すると、その日のカロリー・たんぱく質・脂質・塩分を目標と比べて確認できます。</li>
-        <li>記録は「今日」タブの「＋ 記録する」や「テキストでまとめて記録」からできます。</li>
+        <li>
+          食べたものを記録すると、その日のカロリー・たんぱく質・脂質・塩分を目標と比べて確認できます。
+        </li>
+        <li>
+          記録は「今日」タブの「＋
+          記録する」や「テキストでまとめて記録」からできます。
+        </li>
         <li>記録の書き出しやバックアップは「設定」タブからできます。</li>
       </ul>
       <div className="mt-2 flex justify-end">

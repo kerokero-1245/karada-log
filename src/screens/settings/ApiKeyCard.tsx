@@ -7,13 +7,18 @@
  * 「接続テスト」は最小の呼び出し（テキストだけ・max_tokens 32）で、
  * キーが通るかどうかだけを確かめる。写真は送らない。
  */
-import { useState } from 'react';
-import type { Settings } from '../../db/types';
-import { Button, Card, Note } from '../../components/ui';
-import { apiKeyOf, clearApiKey, maskApiKey, saveApiKey } from '../../lib/apiKey';
-import { photoErrorMessage } from '../../lib/photoError';
-import { useOnline } from '../../lib/useOnline';
-import { testConnection } from '../../lib/vision';
+import { useState } from "react";
+import type { Settings } from "../../db/types";
+import { Button, Card, Note } from "../../components/ui";
+import {
+  apiKeyOf,
+  clearApiKey,
+  maskApiKey,
+  saveApiKey,
+} from "../../lib/apiKey";
+import { photoErrorMessage } from "../../lib/photoError";
+import { useOnline } from "../../lib/useOnline";
+import { testConnection } from "../../lib/vision";
 
 interface Status {
   ok: boolean;
@@ -23,21 +28,24 @@ interface Status {
 export function ApiKeyCard({ settings }: { settings: Settings }) {
   const saved = apiKeyOf(settings);
   const online = useOnline();
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status | null>(null);
 
   const save = async () => {
     const key = draft.trim();
-    if (key === '') {
-      setStatus({ ok: false, text: 'APIキーを入力してください。' });
+    if (key === "") {
+      setStatus({ ok: false, text: "APIキーを入力してください。" });
       return;
     }
     setBusy(true);
     try {
       await saveApiKey(key);
-      setDraft('');
-      setStatus({ ok: true, text: 'キーを保存しました。写真からの入力が使えます。' });
+      setDraft("");
+      setStatus({
+        ok: true,
+        text: "キーを保存しました。写真からの入力が使えます。",
+      });
     } catch (e) {
       setStatus({ ok: false, text: photoErrorMessage(e) });
     } finally {
@@ -49,7 +57,10 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
     setBusy(true);
     try {
       await clearApiKey();
-      setStatus({ ok: true, text: 'キーを削除しました。写真からの入力は出なくなります。' });
+      setStatus({
+        ok: true,
+        text: "キーを削除しました。写真からの入力は出なくなります。",
+      });
     } catch (e) {
       setStatus({ ok: false, text: photoErrorMessage(e) });
     } finally {
@@ -63,7 +74,7 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
     setStatus(null);
     try {
       await testConnection(saved);
-      setStatus({ ok: true, text: '接続OK' });
+      setStatus({ ok: true, text: "接続OK" });
     } catch (e) {
       setStatus({ ok: false, text: photoErrorMessage(e) });
     } finally {
@@ -90,7 +101,9 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
         <span className="block text-xs font-bold text-slate-600">
           APIキー
           <span className="ml-1 font-normal text-slate-400">
-            {saved === null ? 'console.anthropic.com で作れます' : '入れ替えるときだけ入力'}
+            {saved === null
+              ? "console.anthropic.com で作れます"
+              : "入れ替えるときだけ入力"}
           </span>
         </span>
         <input
@@ -113,7 +126,11 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
             <Button disabled={busy || !online} onClick={() => void test()}>
               接続テスト
             </Button>
-            <Button variant="danger" disabled={busy} onClick={() => void remove()}>
+            <Button
+              variant="danger"
+              disabled={busy}
+              onClick={() => void remove()}
+            >
               削除
             </Button>
           </>
@@ -121,16 +138,27 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
       </div>
 
       {!online && saved !== null && (
-        <p className="mt-2 text-xs text-amber-800">オフラインでは使えません。</p>
+        <p className="mt-2 text-xs text-amber-800">
+          オフラインでは使えません。
+        </p>
       )}
 
       {status !== null && (
-        <p className={`mt-2 text-sm ${status.ok ? 'text-emerald-700' : 'text-red-700'}`}>{status.text}</p>
+        <p
+          className={`mt-2 text-sm ${status.ok ? "text-emerald-700" : "text-red-700"}`}
+        >
+          {status.text}
+        </p>
       )}
 
       <div className="mt-2 space-y-0.5">
-        <Note>キーはこの端末の中だけに保存されます。どこにも同期しません。</Note>
-        <Note>写真は読み取りのために Anthropic に送られます。写真そのものは保存しません。</Note>
+        <Note>
+          キーはこの端末の中だけに保存されます。どこにも同期しません。
+        </Note>
+        <Note>
+          写真は読み取りのために Anthropic
+          に送られます。写真そのものは保存しません。
+        </Note>
         <Note>読み取り1枚あたり、数円ほどの利用料がかかります。</Note>
       </div>
     </Card>

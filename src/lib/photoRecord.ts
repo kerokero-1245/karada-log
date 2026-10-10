@@ -14,13 +14,13 @@
  * （理由は lib/quickRecord.ts の冒頭に書いたとおり。dexie は親の IDB
  * トランザクションを使い回し、子がこけたら親ごと巻き戻る）。
  */
-import { db } from '../db/db';
-import type { Food, LogDate } from '../db/types';
-import { addMealEntries } from './meals';
-import type { NewMealInput } from './meals';
-import { estimatedFoodOf, photoNoteOf } from './photoMeal';
-import type { PhotoMealRow } from './photoMeal';
-import type { QuickCommitResult } from './quickRecord';
+import { db } from "../db/db";
+import type { Food, LogDate } from "../db/types";
+import { addMealEntries } from "./meals";
+import type { NewMealInput } from "./meals";
+import { estimatedFoodOf, photoNoteOf } from "./photoMeal";
+import type { PhotoMealRow } from "./photoMeal";
+import type { QuickCommitResult } from "./quickRecord";
 
 export interface PhotoEntryPlan {
   row: PhotoMealRow;
@@ -42,7 +42,7 @@ export async function commitPhotoMeal(
 ): Promise<PhotoCommitResult> {
   let createdFoods = 0;
 
-  await db.transaction('rw', [db.mealEntries, db.foods], async () => {
+  await db.transaction("rw", [db.mealEntries, db.foods], async () => {
     const inputs: NewMealInput[] = [];
 
     for (const plan of plans) {

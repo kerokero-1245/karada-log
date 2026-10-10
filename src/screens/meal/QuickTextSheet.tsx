@@ -12,37 +12,47 @@
  *  - 栄養値を書いた行（'ご飯 1杯=252/3.8/0.5/55.7/0'）は、マスタに無ければ「推定」として
  *    その値のまま記録する。マスタに当たったときは **マスタの値** を使い、そう書く
  */
-import { useMemo, useState } from 'react';
-import { db } from '../../db/db';
-import type { Food, LogDate, Nutrition } from '../../db/types';
-import { Sheet } from '../../components/Sheet';
-import { CopyPromptButton } from '../../components/CopyPromptButton';
-import { TimeField } from '../../components/TimeField';
-import { Badge, Button, Note } from '../../components/ui';
-import { useLiveQuery } from '../../lib/useLiveQuery';
-import { formatLogDateShort, hasTime, nowTime } from '../../lib/date';
-import { buildEntryView } from '../../lib/importText';
-import type { EntryView } from '../../lib/importText';
-import { formatQuantity } from '../../lib/meals';
-import { fmtNum, scaleNutrition, sumNutrition } from '../../lib/nutrition';
-import { commitQuickText } from '../../lib/quickRecord';
-import type { QuickCommitResult, QuickEntryPlan, QuickPendingPlan } from '../../lib/quickRecord';
-import { QUICK_STATUS_LABELS, groupKeyOf, interpret, sortVariants } from '../../lib/quickText';
-import type { QuickResolution, QuickStatus } from '../../lib/quickText';
-import { ModeTabs } from './ModeTabs';
-import { FoodPickerSheet } from './FoodPickerSheet';
-import { NewFoodForm } from './NewFoodForm';
-import { fmtKcal, fmtKcalItem } from '../../lib/formatKcal';
+import { useMemo, useState } from "react";
+import { db } from "../../db/db";
+import type { Food, LogDate, Nutrition } from "../../db/types";
+import { Sheet } from "../../components/Sheet";
+import { CopyPromptButton } from "../../components/CopyPromptButton";
+import { TimeField } from "../../components/TimeField";
+import { Badge, Button, Note } from "../../components/ui";
+import { useLiveQuery } from "../../lib/useLiveQuery";
+import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
+import { buildEntryView } from "../../lib/importText";
+import type { EntryView } from "../../lib/importText";
+import { formatQuantity } from "../../lib/meals";
+import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import { commitQuickText } from "../../lib/quickRecord";
+import type {
+  QuickCommitResult,
+  QuickEntryPlan,
+  QuickPendingPlan,
+} from "../../lib/quickRecord";
+import {
+  QUICK_STATUS_LABELS,
+  groupKeyOf,
+  interpret,
+  sortVariants,
+} from "../../lib/quickText";
+import type { QuickResolution, QuickStatus } from "../../lib/quickText";
+import { ModeTabs } from "./ModeTabs";
+import { FoodPickerSheet } from "./FoodPickerSheet";
+import { NewFoodForm } from "./NewFoodForm";
+import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
 
 const NO_FOODS: Food[] = [];
 
-const PLACEHOLDER = 'ザバス2本 / マカダミア30g / スムージー\n21:30 家系ラーメン';
+const PLACEHOLDER =
+  "ザバス2本 / マカダミア30g / スムージー\n21:30 家系ラーメン";
 
 type Sub =
-  | { kind: 'preview' }
-  | { kind: 'candidates'; index: number }
-  | { kind: 'pick'; index: number }
-  | { kind: 'newFood'; index: number; name: string };
+  | { kind: "preview" }
+  | { kind: "candidates"; index: number }
+  | { kind: "pick"; index: number }
+  | { kind: "newFood"; index: number; name: string };
 
 interface Row {
   index: number;
@@ -52,11 +62,11 @@ interface Row {
   variants: Food[];
 }
 
-const STATUS_TONE: Record<QuickStatus, 'emerald' | 'amber' | 'red'> = {
-  confirmed: 'emerald',
-  estimated: 'amber',
-  ambiguous: 'amber',
-  missing: 'red',
+const STATUS_TONE: Record<QuickStatus, "emerald" | "amber" | "red"> = {
+  confirmed: "emerald",
+  estimated: "amber",
+  ambiguous: "amber",
+  missing: "red",
 };
 
 export function QuickTextSheet({
@@ -87,17 +97,24 @@ export function QuickTextSheet({
 
   const [text, setText] = useState(initialText);
   const [time, setTime] = useState(() => nowTime());
-  const [choices, setChoices] = useState<Record<number, { foodId: number; manual: boolean }>>({});
-  const [sub, setSub] = useState<Sub>({ kind: 'preview' });
+  const [choices, setChoices] = useState<
+    Record<number, { foodId: number; manual: boolean }>
+  >({});
+  const [sub, setSub] = useState<Sub>({ kind: "preview" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resolutions = useMemo(() => interpret(text, foodList, logDate), [text, foodList, logDate]);
+  const resolutions = useMemo(
+    () => interpret(text, foodList, logDate),
+    [text, foodList, logDate],
+  );
 
   const rows: Row[] = resolutions.map((resolution, index) => {
     const choice = choices[index];
     const picked =
-      choice === undefined ? null : (foodList.find((food) => food.id === choice.foodId) ?? null);
+      choice === undefined
+        ? null
+        : (foodList.find((food) => food.id === choice.foodId) ?? null);
     const view = buildEntryView(resolution, picked, choice?.manual ?? false);
     return {
       index,
@@ -106,13 +123,19 @@ export function QuickTextSheet({
       variants:
         view.food === null
           ? []
-          : sortVariants(foodList.filter((item) => groupKeyOf(item) === groupKeyOf(view.food as Food))),
+          : sortVariants(
+              foodList.filter(
+                (item) => groupKeyOf(item) === groupKeyOf(view.food as Food),
+              ),
+            ),
     };
   });
 
   // 下の時刻欄の値を使う項目があるか（先頭に「21:30」と書いた項目はそちらを使う）。
   // 使う項目があるのに時刻欄が空なら、時刻なしの記録にならないよう保存を止める
-  const fallbackTimeUsed = rows.length === 0 || rows.some((row) => row.resolution.parsed.time === null);
+  const fallbackTimeUsed =
+    rows.length === 0 ||
+    rows.some((row) => row.resolution.parsed.time === null);
   const timeMissing = fallbackTimeUsed && !hasTime(time);
 
   // この画面は1日ぶんの記録なので、日付の行があっても日付は動かさない（取り込みシートの担当）
@@ -128,7 +151,10 @@ export function QuickTextSheet({
     if (row.view.food === null && row.view.estimated === null) {
       pending.push({
         raw: parsed.raw,
-        reason: row.view.status === 'missing' ? '見つかりませんでした' : '候補から選べていません',
+        reason:
+          row.view.status === "missing"
+            ? "見つかりませんでした"
+            : "候補から選べていません",
         time: itemTime,
       });
     } else {
@@ -158,7 +184,7 @@ export function QuickTextSheet({
     const id = food.id;
     if (id === undefined) return;
     setChoices((prev) => ({ ...prev, [index]: { foodId: id, manual } }));
-    setSub({ kind: 'preview' });
+    setSub({ kind: "preview" });
   };
 
   // テキストを直したら項目の位置がずれるので、手で選んだ結果はいったん捨てる
@@ -173,7 +199,13 @@ export function QuickTextSheet({
     setSaving(true);
     setError(null);
     try {
-      const result = await commitQuickText(logDate, entries, pending, pendingId, boundaryHour);
+      const result = await commitQuickText(
+        logDate,
+        entries,
+        pending,
+        pendingId,
+        boundaryHour,
+      );
       onRecorded(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -183,39 +215,41 @@ export function QuickTextSheet({
 
   /* --- 下位の画面 --- */
 
-  const target = sub.kind === 'preview' ? undefined : rows[sub.index];
+  const target = sub.kind === "preview" ? undefined : rows[sub.index];
 
-  if (sub.kind === 'pick' && target !== undefined) {
+  if (sub.kind === "pick" && target !== undefined) {
     return (
       <FoodPickerSheet
         subtitle={`「${target.resolution.parsed.raw}」に使う食品`}
         initialQuery={target.resolution.parsed.name}
         onPick={(food) => choose(sub.index, food, true)}
-        onNewFood={(name) => setSub({ kind: 'newFood', index: sub.index, name })}
-        onBack={() => setSub({ kind: 'preview' })}
+        onNewFood={(name) =>
+          setSub({ kind: "newFood", index: sub.index, name })
+        }
+        onBack={() => setSub({ kind: "preview" })}
         onClose={onClose}
       />
     );
   }
 
-  if (sub.kind === 'newFood' && target !== undefined) {
+  if (sub.kind === "newFood" && target !== undefined) {
     return (
       <NewFoodForm
         initialName={sub.name}
         apiKey={apiKey}
         onSaved={(food) => choose(sub.index, food, true)}
-        onBack={() => setSub({ kind: 'preview' })}
+        onBack={() => setSub({ kind: "preview" })}
         onClose={onClose}
       />
     );
   }
 
-  if (sub.kind === 'candidates' && target !== undefined) {
+  if (sub.kind === "candidates" && target !== undefined) {
     return (
       <Sheet
         title="候補から選ぶ"
         subtitle={`「${target.resolution.parsed.raw}」`}
-        onBack={() => setSub({ kind: 'preview' })}
+        onBack={() => setSub({ kind: "preview" })}
         onClose={onClose}
       >
         <div className="space-y-2">
@@ -230,27 +264,41 @@ export function QuickTextSheet({
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="text-sm font-bold text-slate-800">{candidate.name}</span>
+                    <span className="text-sm font-bold text-slate-800">
+                      {candidate.name}
+                    </span>
                     {candidate.foods.length > 1 && (
-                      <Badge tone="blue">バリアント{candidate.foods.length}件</Badge>
+                      <Badge tone="blue">
+                        バリアント{candidate.foods.length}件
+                      </Badge>
                     )}
-                    {first.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+                    {first.source === "estimated" && (
+                      <Badge tone="amber">推定値</Badge>
+                    )}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
+                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P
+                    {fmtNum(first.per.proteinG)}g / 脂質
                     {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-slate-400">{candidate.reason}</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-400">
+                    {candidate.reason}
+                  </span>
                 </span>
                 <span className="text-slate-300">›</span>
               </button>
             );
           })}
 
-          <Button className="w-full" onClick={() => setSub({ kind: 'pick', index: sub.index })}>
+          <Button
+            className="w-full"
+            onClick={() => setSub({ kind: "pick", index: sub.index })}
+          >
             一覧から探す
           </Button>
-          <Note>選んだ食品は、この原文の呼び名として覚えます（他の食品とぶつからないときだけ）。</Note>
+          <Note>
+            選んだ食品は、この原文の呼び名として覚えます（他の食品とぶつからないときだけ）。
+          </Note>
         </div>
       </Sheet>
     );
@@ -266,20 +314,29 @@ export function QuickTextSheet({
       footer={
         <div className="space-y-2">
           <div>
-            <p className="text-xs text-slate-500">記録する{entries.length}件の合計</p>
+            <p className="text-xs text-slate-500">
+              記録する{entries.length}件の合計
+            </p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g / 脂質
+              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g
+              / 脂質
               {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
             </p>
           </div>
           <Button
             variant="primary"
             className="h-14 w-full text-base"
-            disabled={saving || timeMissing || (entries.length === 0 && pending.length === 0)}
+            disabled={
+              saving ||
+              timeMissing ||
+              (entries.length === 0 && pending.length === 0)
+            }
             onClick={record}
           >
             {entries.length}件を記録
-            {pending.length > 0 ? `（${pending.length}件は未処理として保存）` : ''}
+            {pending.length > 0
+              ? `（${pending.length}件は未処理として保存）`
+              : ""}
           </Button>
         </div>
       }
@@ -288,7 +345,7 @@ export function QuickTextSheet({
         <ModeTabs
           mode="text"
           onChange={(next) => {
-            if (next === 'search') onSwitchToSearch();
+            if (next === "search") onSwitchToSearch();
           }}
         />
 
@@ -300,7 +357,9 @@ export function QuickTextSheet({
 
         <div className="rounded-xl bg-white p-3 shadow-sm">
           <label className="block">
-            <span className="block text-xs font-bold text-slate-600">食べたもの</span>
+            <span className="block text-xs font-bold text-slate-600">
+              食べたもの
+            </span>
             <textarea
               value={text}
               onChange={(e) => changeText(e.target.value)}
@@ -311,10 +370,11 @@ export function QuickTextSheet({
             />
           </label>
           <Note>
-            「/」「、」「＋」「・」改行 で区切ります。数量は「2本」「30g」「3玉」のように書けます。
-            先頭に「21:30」と書くと、その項目だけ時刻を変えられます。
-            「ご飯 1杯=252/3.8/0.5/55.7/0」のように =kcal/P/脂質/炭水化物/塩分 を付けると、
-            マスタに無いものもその値で記録できます。
+            「/」「、」「＋」「・」改行
+            で区切ります。数量は「2本」「30g」「3玉」のように書けます。
+            先頭に「21:30」と書くと、その項目だけ時刻を変えられます。 「ご飯
+            1杯=252/3.8/0.5/55.7/0」のように =kcal/P/脂質/炭水化物/塩分
+            を付けると、 マスタに無いものもその値で記録できます。
           </Note>
         </div>
 
@@ -324,7 +384,8 @@ export function QuickTextSheet({
 
         {otherDates.length > 0 && (
           <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900">
-            日付の行がありますが、この画面は{formatLogDateShort(logDate)}の記録として保存します。
+            日付の行がありますが、この画面は{formatLogDateShort(logDate)}
+            の記録として保存します。
             何日ぶんかをまとめて入れるときは、設定タブの「記録を貼り付けて取り込む」を使ってください。
           </div>
         )}
@@ -341,10 +402,16 @@ export function QuickTextSheet({
                 row={row}
                 fallbackTime={time}
                 onPickVariant={(food) => choose(row.index, food, false)}
-                onOpenCandidates={() => setSub({ kind: 'candidates', index: row.index })}
-                onOpenPicker={() => setSub({ kind: 'pick', index: row.index })}
+                onOpenCandidates={() =>
+                  setSub({ kind: "candidates", index: row.index })
+                }
+                onOpenPicker={() => setSub({ kind: "pick", index: row.index })}
                 onOpenNewFood={() =>
-                  setSub({ kind: 'newFood', index: row.index, name: row.resolution.parsed.name })
+                  setSub({
+                    kind: "newFood",
+                    index: row.index,
+                    name: row.resolution.parsed.name,
+                  })
                 }
               />
             ))}
@@ -364,14 +431,19 @@ export function QuickTextSheet({
 
         {pending.length > 0 && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-            解決できていない{pending.length}件は、栄養値を付けずに原文のまま預かります。
+            解決できていない{pending.length}
+            件は、栄養値を付けずに原文のまま預かります。
             集計には入りません。あとで「未処理のテキスト」から続きができます。
           </div>
         )}
 
-        {error !== null && <p className="text-sm text-red-700">保存できませんでした: {error}</p>}
+        {error !== null && (
+          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
+        )}
 
-        <Note>栄養値は記録した時点の値をコピーして残します。原文もそのまま記録に残ります。</Note>
+        <Note>
+          栄養値は記録した時点の値をコピーして残します。原文もそのまま記録に残ります。
+        </Note>
       </div>
     </Sheet>
   );
@@ -399,14 +471,21 @@ function PreviewRow({
   const value = resolved ? scaleNutrition(view.per, view.quantity) : null;
   const hasUnknown =
     value !== null &&
-    (value.kcal === null || value.proteinG === null || value.fatG === null || value.saltG === null);
+    (value.kcal === null ||
+      value.proteinG === null ||
+      value.fatG === null ||
+      value.saltG === null);
 
   return (
     <li className="py-2">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-xs tabular-nums text-slate-500">{parsed.time ?? fallbackTime}</span>
+        <span className="text-xs tabular-nums text-slate-500">
+          {parsed.time ?? fallbackTime}
+        </span>
         <span className="text-xs text-slate-500">「{parsed.raw}」</span>
-        <Badge tone={STATUS_TONE[view.status]}>{QUICK_STATUS_LABELS[view.status]}</Badge>
+        <Badge tone={STATUS_TONE[view.status]}>
+          {QUICK_STATUS_LABELS[view.status]}
+        </Badge>
         {view.usesMasterValues && <Badge tone="blue">マスタの値</Badge>}
         {view.manual && <Badge tone="violet">選んだ</Badge>}
       </div>
@@ -414,9 +493,13 @@ function PreviewRow({
       {resolved && value !== null ? (
         <>
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-            <span className="text-sm font-bold text-slate-800">{food?.name ?? parsed.name}</span>
-            {food?.variantLabel != null && <Badge tone="blue">{food.variantLabel}</Badge>}
-            {food?.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+            <span className="text-sm font-bold text-slate-800">
+              {food?.name ?? parsed.name}
+            </span>
+            {food?.variantLabel != null && (
+              <Badge tone="blue">{food.variantLabel}</Badge>
+            )}
+            {food?.source === "estimated" && <Badge tone="amber">推定値</Badge>}
             {food?.archived === true && <Badge tone="slate">在庫切れ</Badge>}
             <span className="text-sm tabular-nums text-slate-700">
               {formatQuantity(view.quantity)} × {view.unitLabel}
@@ -424,13 +507,18 @@ function PreviewRow({
           </div>
 
           <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質
+            {fmtNum(value.fatG)}g / 塩分
             {fmtNum(value.saltG)}g
-            {hasUnknown && <span className="ml-1 text-slate-500">（「—」は未確認）</span>}
+            {hasUnknown && (
+              <span className="ml-1 text-slate-500">（「—」は未確認）</span>
+            )}
           </p>
 
           {view.usesMasterValues && (
-            <p className="mt-0.5 text-[11px] text-slate-500">マスタの値を使います。</p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              マスタの値を使います。
+            </p>
           )}
 
           {row.variants.length > 1 && food !== null && (
@@ -442,11 +530,12 @@ function PreviewRow({
                   onClick={() => onPickVariant(variant)}
                   className={`min-h-11 rounded-full px-3 text-xs font-bold ${
                     variant.id === food.id
-                      ? 'bg-slate-900 text-white'
-                      : 'border border-slate-300 bg-white text-slate-600'
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-white text-slate-600"
                   }`}
                 >
-                  {variant.variantLabel ?? '標準'}（塩分{fmtNum(variant.per.saltG)}g）
+                  {variant.variantLabel ?? "標準"}（塩分
+                  {fmtNum(variant.per.saltG)}g）
                 </button>
               ))}
             </div>
@@ -454,8 +543,8 @@ function PreviewRow({
         </>
       ) : (
         <p className="mt-0.5 text-sm text-slate-700">
-          {view.status === 'missing'
-            ? '食品マスタに見つかりませんでした。'
+          {view.status === "missing"
+            ? "食品マスタに見つかりませんでした。"
             : `候補が${row.resolution.candidates.length}件あります。どれか選んでください。`}
         </p>
       )}
@@ -475,7 +564,7 @@ function PreviewRow({
         <Button className="px-3 text-xs" onClick={onOpenPicker}>
           食品を選ぶ
         </Button>
-        {view.status === 'missing' && (
+        {view.status === "missing" && (
           <Button className="px-3 text-xs" onClick={onOpenNewFood}>
             この名前で新規登録
           </Button>

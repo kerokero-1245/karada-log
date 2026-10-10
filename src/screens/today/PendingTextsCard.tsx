@@ -5,9 +5,9 @@
  * ★ 栄養値を持たないので、集計には一切入っていない。★
  * タップするとテキストモードでその原文を開き直して、続きから解決できる。
  */
-import type { LogDate, PendingText } from '../../db/types';
-import { Badge, Button, Card, Note } from '../../components/ui';
-import { formatLogDateShort, timeOf } from '../../lib/date';
+import type { LogDate, PendingText } from "../../db/types";
+import { Badge, Button, Card, Note } from "../../components/ui";
+import { formatLogDateShort, timeOf } from "../../lib/date";
 
 export function PendingTextsCard({
   items,
@@ -33,21 +33,31 @@ export function PendingTextsCard({
               className="min-h-14 min-w-0 flex-1 rounded-lg px-1 py-1 text-left active:bg-slate-50"
             >
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <span className="text-sm font-medium text-slate-800">「{item.text}」</span>
+                <span className="text-sm font-medium text-slate-800">
+                  「{item.text}」
+                </span>
                 <Badge tone="amber">{item.reason}</Badge>
               </span>
               <span className="mt-0.5 block text-[11px] tabular-nums text-slate-500">
-                {item.logDate === todayLogDate ? '今日' : formatLogDateShort(item.logDate)}{' '}
+                {item.logDate === todayLogDate
+                  ? "今日"
+                  : formatLogDateShort(item.logDate)}{" "}
                 {timeOf(item.recordedAt)}
               </span>
             </button>
-            <Button variant="ghost" className="shrink-0 px-3 text-xs" onClick={() => onDelete(item)}>
+            <Button
+              variant="ghost"
+              className="shrink-0 px-3 text-xs"
+              onClick={() => onDelete(item)}
+            >
               削除
             </Button>
           </li>
         ))}
       </ul>
-      <Note>栄養値を付けていないので、今日の集計には入っていません。記録するか削除すると消えます。</Note>
+      <Note>
+        栄養値を付けていないので、今日の集計には入っていません。記録するか削除すると消えます。
+      </Note>
     </Card>
   );
 }

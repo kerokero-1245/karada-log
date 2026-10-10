@@ -5,14 +5,14 @@
  * 同じ写真をもう一度選べるように、読み終わったら input の値を空に戻す
  * （戻さないと「同じファイルを選び直しても change が飛ばない」に引っかかる）。
  */
-import { useRef } from 'react';
-import { Button } from '../../components/ui';
+import { useRef } from "react";
+import { Button } from "../../components/ui";
 
 export function PhotoFileButton({
   label,
   inputLabel,
-  variant = 'secondary',
-  className = '',
+  variant = "secondary",
+  className = "",
   disabled = false,
   onFile,
 }: {
@@ -20,7 +20,7 @@ export function PhotoFileButton({
   label: string;
   /** input の aria-label。支援技術と自動テストが掴む名前 */
   inputLabel: string;
-  variant?: 'primary' | 'secondary';
+  variant?: "primary" | "secondary";
   className?: string;
   disabled?: boolean;
   onFile: (file: File) => void;
@@ -46,7 +46,7 @@ export function PhotoFileButton({
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0] ?? null;
-          event.target.value = '';
+          event.target.value = "";
           if (file !== null) onFile(file);
         }}
       />

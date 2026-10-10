@@ -1,8 +1,8 @@
 /** 食品の一覧（バリアントは1行）。タップで選択に進む。 */
-import type { FoodGroup } from './foodGroups';
-import { fmtNum } from '../../lib/nutrition';
-import { Badge } from '../../components/ui';
-import { fmtKcalItem } from '../../lib/formatKcal';
+import type { FoodGroup } from "./foodGroups";
+import { fmtNum } from "../../lib/nutrition";
+import { Badge } from "../../components/ui";
+import { fmtKcalItem } from "../../lib/formatKcal";
 
 export function FoodList({
   groups,
@@ -27,19 +27,31 @@ export function FoodList({
             >
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                  <span className="text-sm font-medium text-slate-800">{group.name}</span>
-                  {hasVariants && <Badge tone="blue">バリアント{group.foods.length}件</Badge>}
-                  {!hasVariants && first.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
+                  <span className="text-sm font-medium text-slate-800">
+                    {group.name}
+                  </span>
+                  {hasVariants && (
+                    <Badge tone="blue">バリアント{group.foods.length}件</Badge>
+                  )}
+                  {!hasVariants && first.source === "estimated" && (
+                    <Badge tone="amber">推定値</Badge>
+                  )}
                   {group.archived && <Badge tone="slate">在庫切れ</Badge>}
                 </span>
                 <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
                   {hasVariants ? (
                     <>
-                      {group.foods.map((f) => `${f.variantLabel ?? '—'} 塩分${fmtNum(f.per.saltG)}g`).join(' / ')}
+                      {group.foods
+                        .map(
+                          (f) =>
+                            `${f.variantLabel ?? "—"} 塩分${fmtNum(f.per.saltG)}g`,
+                        )
+                        .join(" / ")}
                     </>
                   ) : (
                     <>
-                      {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P{fmtNum(first.per.proteinG)}g / 脂質
+                      {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P
+                      {fmtNum(first.per.proteinG)}g / 脂質
                       {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
                     </>
                   )}

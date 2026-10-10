@@ -10,10 +10,10 @@
  *    「これ以上は使われません」とだけ示す（handover: 害はないがカロリーが無駄になる）
  *  - 塩分だけ上限型。上限を超えたら赤。「上限まで あと ○g」/「上限まで -○g」
  */
-import type { DayType, NutrientKey, Settings } from '../db/types';
-import type { NutritionTotal } from './nutrition';
+import type { DayType, NutrientKey, Settings } from "../db/types";
+import type { NutritionTotal } from "./nutrition";
 
-export type BarTone = 'amber' | 'emerald' | 'sky' | 'red';
+export type BarTone = "amber" | "emerald" | "sky" | "red";
 
 export interface BarSegment {
   widthPercent: number;
@@ -29,7 +29,7 @@ export interface BarModel {
   key: NutrientKey;
   label: string;
   unit: string;
-  kind: 'floor' | 'cap';
+  kind: "floor" | "cap";
   current: number;
   target: number;
   /** P の上限152g。他は null */
@@ -50,10 +50,10 @@ export interface BarModel {
 }
 
 const TONE_TEXT_CLASS: Record<BarTone, string> = {
-  amber: 'text-amber-700',
-  emerald: 'text-emerald-700',
-  sky: 'text-sky-700',
-  red: 'text-red-700',
+  amber: "text-amber-700",
+  emerald: "text-emerald-700",
+  sky: "text-sky-700",
+  red: "text-red-700",
 };
 
 export function toneTextClass(tone: BarTone): string {
@@ -62,7 +62,7 @@ export function toneTextClass(tone: BarTone): string {
 
 /** その日のカロリー目標。ハードコードせず Settings から読む */
 export function dayTargetKcal(settings: Settings, dayType: DayType): number {
-  return dayType === 'gym' ? settings.gymDayKcal : settings.restDayKcal;
+  return dayType === "gym" ? settings.gymDayKcal : settings.restDayKcal;
 }
 
 /**
@@ -70,13 +70,13 @@ export function dayTargetKcal(settings: Settings, dayType: DayType): number {
  * それ以外は小数1桁。末尾の 0 は落とす（140.0 → 140）。
  */
 export function formatAmount(key: NutrientKey, value: number): string {
-  if (key === 'kcal') return Math.round(value).toLocaleString('ja-JP');
-  const fixed = key === 'saltG' ? value.toFixed(2) : value.toFixed(1);
+  if (key === "kcal") return Math.round(value).toLocaleString("ja-JP");
+  const fixed = key === "saltG" ? value.toFixed(2) : value.toFixed(1);
   return trimZeros(fixed);
 }
 
 function trimZeros(text: string): string {
-  return text.includes('.') ? text.replace(/\.?0+$/, '') : text;
+  return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
 }
 
 function clamp(percent: number): number {
@@ -85,20 +85,47 @@ function clamp(percent: number): number {
 }
 
 /** 4本のバー。カロリー / たんぱく質 / 脂質 / 塩分 */
-export function buildBars(total: NutritionTotal, settings: Settings, dayType: DayType): BarModel[] {
+export function buildBars(
+  total: NutritionTotal,
+  settings: Settings,
+  dayType: DayType,
+): BarModel[] {
   return [
-    floorBar('kcal', 'カロリー', 'kcal', total.value.kcal ?? 0, dayTargetKcal(settings, dayType), null, total.unknown.kcal),
     floorBar(
-      'proteinG',
-      'たんぱく質',
-      'g',
+      "kcal",
+      "カロリー",
+      "kcal",
+      total.value.kcal ?? 0,
+      dayTargetKcal(settings, dayType),
+      null,
+      total.unknown.kcal,
+    ),
+    floorBar(
+      "proteinG",
+      "たんぱく質",
+      "g",
       total.value.proteinG ?? 0,
       settings.proteinTargetG,
       settings.proteinCapG,
       total.unknown.proteinG,
     ),
-    floorBar('fatG', '脂質', 'g', total.value.fatG ?? 0, settings.fatTargetG, null, total.unknown.fatG),
-    capBar('saltG', '塩分', 'g', total.value.saltG ?? 0, settings.saltLimitG, total.unknown.saltG),
+    floorBar(
+      "fatG",
+      "脂質",
+      "g",
+      total.value.fatG ?? 0,
+      settings.fatTargetG,
+      null,
+      total.unknown.fatG,
+    ),
+    capBar(
+      "saltG",
+      "塩分",
+      "g",
+      total.value.saltG ?? 0,
+      settings.saltLimitG,
+      total.unknown.saltG,
+    ),
   ];
 }
 
@@ -119,25 +146,41 @@ function floorBar(
   const segments: BarSegment[] = [];
   const filled = Math.min(current, target);
   if (filled > 0) {
-    segments.push({ widthPercent: pct(filled), className: reached ? 'bg-emerald-500' : 'bg-amber-400' });
+    segments.push({
+      widthPercent: pct(filled),
+      className: reached ? "bg-emerald-500" : "bg-amber-400",
+    });
   }
   if (current > target) {
     const upper = cap === null ? current : Math.min(current, cap);
-    if (upper > target) segments.push({ widthPercent: pct(upper - target), className: 'bg-emerald-300' });
+    if (upper > target)
+      segments.push({
+        widthPercent: pct(upper - target),
+        className: "bg-emerald-300",
+      });
   }
   if (cap !== null && current > cap) {
     // 上限より上は「使われない分」。警告ではないのでグレー
-    segments.push({ widthPercent: pct(current - cap), className: 'bg-slate-400' });
+    segments.push({
+      widthPercent: pct(current - cap),
+      className: "bg-slate-400",
+    });
   }
 
-  const markers: BarMarker[] = [{ percent: pct(target), label: `目標 ${formatAmount(key, target)}${unit}` }];
-  if (cap !== null) markers.push({ percent: pct(cap), label: `上限 ${formatAmount(key, cap)}${unit}` });
+  const markers: BarMarker[] = [
+    { percent: pct(target), label: `目標 ${formatAmount(key, target)}${unit}` },
+  ];
+  if (cap !== null)
+    markers.push({
+      percent: pct(cap),
+      label: `上限 ${formatAmount(key, cap)}${unit}`,
+    });
 
   return {
     key,
     label,
     unit,
-    kind: 'floor',
+    kind: "floor",
     current,
     target,
     cap,
@@ -146,12 +189,12 @@ function floorBar(
     remainText: reached
       ? `目標に到達（+${formatAmount(key, current - target)}${unit}）`
       : `あと ${formatAmount(key, target - current)}${unit}`,
-    legendText: markers.map((m) => m.label).join('　'),
+    legendText: markers.map((m) => m.label).join("　"),
     noteText:
       cap !== null && current > cap
         ? `${formatAmount(key, cap)}${unit} より上の ${formatAmount(key, current - cap)}${unit} は、これ以上は使われません`
         : null,
-    tone: reached ? 'emerald' : 'amber',
+    tone: reached ? "emerald" : "amber",
     segments,
     markers,
   };
@@ -172,14 +215,19 @@ function capBar(
 
   const segments: BarSegment[] = [];
   const within = Math.min(current, limit);
-  if (within > 0) segments.push({ widthPercent: pct(within), className: 'bg-sky-500' });
-  if (over) segments.push({ widthPercent: pct(current - limit), className: 'bg-red-500' });
+  if (within > 0)
+    segments.push({ widthPercent: pct(within), className: "bg-sky-500" });
+  if (over)
+    segments.push({
+      widthPercent: pct(current - limit),
+      className: "bg-red-500",
+    });
 
   return {
     key,
     label,
     unit,
-    kind: 'cap',
+    kind: "cap",
     current,
     target: limit,
     cap: limit,
@@ -190,8 +238,10 @@ function capBar(
       : `上限まで あと ${formatAmount(key, limit - current)}${unit}`,
     legendText: `上限 ${formatAmount(key, limit)}${unit}`,
     noteText: null,
-    tone: over ? 'red' : 'sky',
+    tone: over ? "red" : "sky",
     segments,
-    markers: [{ percent: pct(limit), label: `上限 ${formatAmount(key, limit)}${unit}` }],
+    markers: [
+      { percent: pct(limit), label: `上限 ${formatAmount(key, limit)}${unit}` },
+    ],
   };
 }

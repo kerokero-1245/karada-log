@@ -4,16 +4,16 @@
  *
  * ここでは記録しない。選んだ食品を呼び出し元に返すだけ（記録は「記録する」を押したとき）。
  */
-import { useMemo, useState } from 'react';
-import { db } from '../../db/db';
-import type { Food } from '../../db/types';
-import { Sheet } from '../../components/Sheet';
-import { Button } from '../../components/ui';
-import { useLiveQuery } from '../../lib/useLiveQuery';
-import { FoodList } from './FoodList';
-import { VariantPicker } from './VariantPicker';
-import type { FoodGroup } from './foodGroups';
-import { groupFoods, matchesQuery, sortByFrequency } from './foodGroups';
+import { useMemo, useState } from "react";
+import { db } from "../../db/db";
+import type { Food } from "../../db/types";
+import { Sheet } from "../../components/Sheet";
+import { Button } from "../../components/ui";
+import { useLiveQuery } from "../../lib/useLiveQuery";
+import { FoodList } from "./FoodList";
+import { VariantPicker } from "./VariantPicker";
+import type { FoodGroup } from "./foodGroups";
+import { groupFoods, matchesQuery, sortByFrequency } from "./foodGroups";
 
 export function FoodPickerSheet({
   subtitle,
@@ -36,18 +36,30 @@ export function FoodPickerSheet({
   const [group, setGroup] = useState<FoodGroup | null>(null);
 
   const groups = useMemo(() => {
-    const visible = (foods ?? []).filter((food) => (showArchived || !food.archived) && matchesQuery(food, query));
+    const visible = (foods ?? []).filter(
+      (food) => (showArchived || !food.archived) && matchesQuery(food, query),
+    );
     return sortByFrequency(groupFoods(visible));
   }, [foods, query, showArchived]);
 
   if (group !== null) {
     return (
-      <VariantPicker group={group} onSelect={onPick} onBack={() => setGroup(null)} onClose={onClose} />
+      <VariantPicker
+        group={group}
+        onSelect={onPick}
+        onBack={() => setGroup(null)}
+        onClose={onClose}
+      />
     );
   }
 
   return (
-    <Sheet title="食品を選ぶ" subtitle={subtitle} onBack={onBack} onClose={onClose}>
+    <Sheet
+      title="食品を選ぶ"
+      subtitle={subtitle}
+      onBack={onBack}
+      onClose={onClose}
+    >
       <div className="space-y-3">
         <input
           type="search"
@@ -59,7 +71,9 @@ export function FoodPickerSheet({
         />
 
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-700">候補（{groups.length}件）</h3>
+          <h3 className="text-sm font-bold text-slate-700">
+            候補（{groups.length}件）
+          </h3>
           <label className="flex min-h-11 items-center gap-1.5 text-xs text-slate-600">
             <input
               type="checkbox"
@@ -85,8 +99,14 @@ export function FoodPickerSheet({
           </p>
         )}
 
-        <Button variant="primary" className="w-full" onClick={() => onNewFood(query.trim())}>
-          {query.trim() === '' ? '新しい食品を登録' : `「${query.trim()}」をこの名前で新規登録`}
+        <Button
+          variant="primary"
+          className="w-full"
+          onClick={() => onNewFood(query.trim())}
+        >
+          {query.trim() === ""
+            ? "新しい食品を登録"
+            : `「${query.trim()}」をこの名前で新規登録`}
         </Button>
       </div>
     </Sheet>

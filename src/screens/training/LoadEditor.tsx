@@ -5,12 +5,12 @@
  *  - マシン: スタックの重量
  * 入力のたびに「合計（内訳）」を出し、バーの取り違えに気づけるようにする。
  */
-import type { BarType, LoadSpec, Progression } from '../../db/types';
-import { BAR_LABELS, BAR_WEIGHT_KG } from '../../db/types';
-import { describeLoad } from '../../lib/weight';
-import { NumberField } from './NumberField';
+import type { BarType, LoadSpec, Progression } from "../../db/types";
+import { BAR_LABELS, BAR_WEIGHT_KG } from "../../db/types";
+import { describeLoad } from "../../lib/weight";
+import { NumberField } from "./NumberField";
 
-const BAR_TYPES: BarType[] = ['ez', 'short'];
+const BAR_TYPES: BarType[] = ["ez", "short"];
 
 export function LoadEditor({
   load,
@@ -21,13 +21,20 @@ export function LoadEditor({
   progression: Progression | null;
   onChange: (load: LoadSpec) => void;
 }) {
-  const weightStep = progression && progression.metric === 'weight' && progression.amount > 0 ? progression.amount : 1;
+  const weightStep =
+    progression && progression.metric === "weight" && progression.amount > 0
+      ? progression.amount
+      : 1;
 
   return (
     <div className="space-y-2">
-      {load.style === 'barbell' && (
+      {load.style === "barbell" && (
         <>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="バーの種類">
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="バーの種類"
+          >
             {BAR_TYPES.map((type) => {
               const active = load.barType === type;
               return (
@@ -37,7 +44,9 @@ export function LoadEditor({
                   aria-pressed={active}
                   onClick={() => onChange({ ...load, barType: type })}
                   className={`min-h-11 rounded-full px-4 text-sm font-bold ${
-                    active ? 'bg-slate-900 text-white' : 'border border-slate-300 bg-white text-slate-600'
+                    active
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-white text-slate-600"
                   }`}
                 >
                   {BAR_LABELS[type]} {BAR_WEIGHT_KG[type]}kg
@@ -58,20 +67,22 @@ export function LoadEditor({
         </>
       )}
 
-      {load.style === 'dumbbell' && (
+      {load.style === "dumbbell" && (
         <div>
-          <p className="mb-1 text-xs text-slate-500">ダンベル 片手（{load.hands}本）</p>
+          <p className="mb-1 text-xs text-slate-500">
+            ダンベル 片手（{load.hands}本）
+          </p>
           <NumberField
             label="ダンベル片手の重量"
             unit="kg"
-            step={progression?.basis === 'perHand' ? weightStep : 1}
+            step={progression?.basis === "perHand" ? weightStep : 1}
             value={load.kgPerHand}
             onChange={(v) => onChange({ ...load, kgPerHand: v ?? 0 })}
           />
         </div>
       )}
 
-      {load.style === 'machine' && (
+      {load.style === "machine" && (
         <div>
           <p className="mb-1 text-xs text-slate-500">マシンの重量</p>
           <NumberField
@@ -84,10 +95,11 @@ export function LoadEditor({
         </div>
       )}
 
-      {load.style === 'other' && (
+      {load.style === "other" && (
         <div className="space-y-2 rounded-lg bg-amber-50 p-2">
           <p className="text-xs text-amber-900">
-            構成がまだ分かっていない重量です（{load.description}）。バーの種類とプレートで入れ直すと、次回から内訳つきで残ります。
+            構成がまだ分かっていない重量です（{load.description}
+            ）。バーの種類とプレートで入れ直すと、次回から内訳つきで残ります。
           </p>
           <div className="flex flex-wrap gap-2">
             {BAR_TYPES.map((type) => (
@@ -96,9 +108,14 @@ export function LoadEditor({
                 type="button"
                 onClick={() =>
                   onChange({
-                    style: 'barbell',
+                    style: "barbell",
                     barType: type,
-                    plateKgPerSide: Math.max(0, Math.round(((load.totalKg - BAR_WEIGHT_KG[type]) / 2) * 100) / 100),
+                    plateKgPerSide: Math.max(
+                      0,
+                      Math.round(
+                        ((load.totalKg - BAR_WEIGHT_KG[type]) / 2) * 100,
+                      ) / 100,
+                    ),
                   })
                 }
                 className="min-h-11 rounded-full border border-amber-400 bg-white px-3 text-sm font-bold text-amber-900"
@@ -117,12 +134,17 @@ export function LoadEditor({
         </div>
       )}
 
-      {load.style !== 'bodyweight' && (
-        <p className="text-sm font-bold tabular-nums text-slate-800" data-testid="load-total">
+      {load.style !== "bodyweight" && (
+        <p
+          className="text-sm font-bold tabular-nums text-slate-800"
+          data-testid="load-total"
+        >
           合計 {describeLoad(load)}
         </p>
       )}
-      {load.style === 'bodyweight' && <p className="text-sm text-slate-600">自重</p>}
+      {load.style === "bodyweight" && (
+        <p className="text-sm text-slate-600">自重</p>
+      )}
     </div>
   );
 }

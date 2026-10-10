@@ -3,12 +3,12 @@
  * 推定値・固定ベース由来はバッジで区別する（数字の出どころを隠さない）。
  * テキストから入れたものは原文も出す（「何と書いたものが、何になったか」を追えるように）。
  */
-import type { MealEntry } from '../../db/types';
-import { timeOf } from '../../lib/date';
-import { entryNutrition, formatQuantity } from '../../lib/meals';
-import { fmtNum } from '../../lib/nutrition';
-import { Badge } from '../../components/ui';
-import { fmtKcalItem } from '../../lib/formatKcal';
+import type { MealEntry } from "../../db/types";
+import { timeOf } from "../../lib/date";
+import { entryNutrition, formatQuantity } from "../../lib/meals";
+import { fmtNum } from "../../lib/nutrition";
+import { Badge } from "../../components/ui";
+import { fmtKcalItem } from "../../lib/formatKcal";
 
 export function MealList({
   entries,
@@ -41,20 +41,31 @@ export function MealList({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                  <span className="text-sm font-medium text-slate-800">{entry.snapshot.name}</span>
-                  {entry.snapshot.variantLabel && <Badge tone="blue">{entry.snapshot.variantLabel}</Badge>}
-                  {entry.snapshot.source === 'estimated' && <Badge tone="amber">推定値</Badge>}
-                  {entry.fromShortcutSetId !== null && <Badge tone="slate">固定ベース</Badge>}
+                  <span className="text-sm font-medium text-slate-800">
+                    {entry.snapshot.name}
+                  </span>
+                  {entry.snapshot.variantLabel && (
+                    <Badge tone="blue">{entry.snapshot.variantLabel}</Badge>
+                  )}
+                  {entry.snapshot.source === "estimated" && (
+                    <Badge tone="amber">推定値</Badge>
+                  )}
+                  {entry.fromShortcutSetId !== null && (
+                    <Badge tone="slate">固定ベース</Badge>
+                  )}
                 </span>
                 <span className="mt-0.5 block text-xs text-slate-500">
                   {formatQuantity(entry.quantity)} × {entry.snapshot.unitLabel}
                 </span>
                 <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-                  {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質{fmtNum(value.fatG)}g / 塩分
+                  {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g /
+                  脂質{fmtNum(value.fatG)}g / 塩分
                   {fmtNum(value.saltG)}g
                 </span>
-                {entry.note !== '' && (
-                  <span className="mt-0.5 block text-[11px] text-slate-400">原文: 「{entry.note}」</span>
+                {entry.note !== "" && (
+                  <span className="mt-0.5 block text-[11px] text-slate-400">
+                    原文: 「{entry.note}」
+                  </span>
                 )}
               </span>
               <span className="pt-3 text-slate-300">›</span>

@@ -10,11 +10,15 @@
  *
  * どちらも null は '—'、負のゼロ（入力欄の '-0' など）は '0' と出す。
  */
-const TOTAL = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 0 });
-const ITEM = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 1 });
+const TOTAL = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
+const ITEM = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 });
 
-function format(value: number | null, formatter: Intl.NumberFormat, digits: number): string {
-  if (value === null || Number.isNaN(value)) return '—';
+function format(
+  value: number | null,
+  formatter: Intl.NumberFormat,
+  digits: number,
+): string {
+  if (value === null || Number.isNaN(value)) return "—";
   const scale = 10 ** digits;
   const rounded = Math.round(value * scale) / scale;
   // Math.round(-0.04) や入力の '-0' は -0 になり、Intl は '-0' と出す
@@ -29,13 +33,13 @@ export function fmtKcalItem(value: number | null): string {
   return format(value, ITEM, 1);
 }
 
-const STORED = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 20 });
+const STORED = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 20 });
 
 /**
  * 開発用のデータ確認画面向け。保存されている値を丸めずに出す（桁区切りだけ付ける）。
  * null は '—'、負のゼロは '0'。
  */
 export function fmtStored(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return '—';
+  if (value === null || Number.isNaN(value)) return "—";
   return STORED.format(value === 0 ? 0 : value);
 }

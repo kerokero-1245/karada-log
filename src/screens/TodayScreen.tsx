@@ -4,30 +4,42 @@
  * 表示するのは **記録されたものだけ**。固定ベースは開いて追加するまで入らない（原則1）。
  * テキストで書いたものも、シートで確認して「記録する」を押すまで入らない。
  */
-import { useMemo, useState } from 'react';
-import { db } from '../db/db';
-import type { DayType, MealEntry, Nutrition, PendingText, Settings, TrainingSession } from '../db/types';
-import { MENU_LABELS } from '../db/types';
-import { NutrientBar } from '../components/NutrientBar';
-import { Badge, Card, Note } from '../components/ui';
-import { apiKeyOf } from '../lib/apiKey';
-import { clearManualDayType, resolveDayType, setManualDayType, useTodayLogDate } from '../lib/day';
-import { timeOf } from '../lib/date';
-import { buildBars, dayTargetKcal } from '../lib/goals';
-import { entryNutrition } from '../lib/meals';
-import { fmtNum, scaleNutrition, sumNutrition } from '../lib/nutrition';
-import { deletePendingText } from '../lib/quickRecord';
-import type { QuickCommitResult } from '../lib/quickRecord';
-import { useLiveQuery } from '../lib/useLiveQuery';
-import { DayHeader } from './today/DayHeader';
-import { FirstRunGuideCard } from './today/FirstRunGuideCard';
-import { MealList } from './today/MealList';
-import { PendingTextsCard } from './today/PendingTextsCard';
-import { QuickTextBar } from './today/QuickTextBar';
-import { MealAddSheet } from './meal/MealAddSheet';
-import { MealEditSheet } from './meal/MealEditSheet';
-import { ShortcutSheet } from './meal/ShortcutSheet';
-import { fmtKcal } from '../lib/formatKcal';
+import { useMemo, useState } from "react";
+import { db } from "../db/db";
+import type {
+  DayType,
+  MealEntry,
+  Nutrition,
+  PendingText,
+  Settings,
+  TrainingSession,
+} from "../db/types";
+import { MENU_LABELS } from "../db/types";
+import { NutrientBar } from "../components/NutrientBar";
+import { Badge, Card, Note } from "../components/ui";
+import { apiKeyOf } from "../lib/apiKey";
+import {
+  clearManualDayType,
+  resolveDayType,
+  setManualDayType,
+  useTodayLogDate,
+} from "../lib/day";
+import { timeOf } from "../lib/date";
+import { buildBars, dayTargetKcal } from "../lib/goals";
+import { entryNutrition } from "../lib/meals";
+import { fmtNum, scaleNutrition, sumNutrition } from "../lib/nutrition";
+import { deletePendingText } from "../lib/quickRecord";
+import type { QuickCommitResult } from "../lib/quickRecord";
+import { useLiveQuery } from "../lib/useLiveQuery";
+import { DayHeader } from "./today/DayHeader";
+import { FirstRunGuideCard } from "./today/FirstRunGuideCard";
+import { MealList } from "./today/MealList";
+import { PendingTextsCard } from "./today/PendingTextsCard";
+import { QuickTextBar } from "./today/QuickTextBar";
+import { MealAddSheet } from "./meal/MealAddSheet";
+import { MealEditSheet } from "./meal/MealEditSheet";
+import { ShortcutSheet } from "./meal/ShortcutSheet";
+import { fmtKcal } from "../lib/formatKcal";
 
 const NO_ENTRIES: MealEntry[] = [];
 const NO_SESSIONS: TrainingSession[] = [];
@@ -43,18 +55,25 @@ export function TodayScreen({ settings }: { settings: Settings }) {
   const logDate = useTodayLogDate(boundaryHour);
 
   const entries = useLiveQuery(
-    () => db.mealEntries.where('logDate').equals(logDate).sortBy('recordedAt'),
+    () => db.mealEntries.where("logDate").equals(logDate).sortBy("recordedAt"),
     [logDate],
   );
   const sessions = useLiveQuery(
-    () => db.trainingSessions.where('logDate').equals(logDate).sortBy('startedAt'),
+    () =>
+      db.trainingSessions.where("logDate").equals(logDate).sortBy("startedAt"),
     [logDate],
   );
   const dayMeta = useLiveQuery(() => db.dayMeta.get(logDate), [logDate]);
-  const shortcutSets = useLiveQuery(() => db.shortcutSets.orderBy('order').toArray(), []);
+  const shortcutSets = useLiveQuery(
+    () => db.shortcutSets.orderBy("order").toArray(),
+    [],
+  );
   const foods = useLiveQuery(() => db.foods.toArray(), []);
   // 未処理テキストは日付で絞らない。前の日のぶんが残っていても見えるようにする
-  const pendingTexts = useLiveQuery(() => db.pendingTexts.orderBy('recordedAt').toArray(), []);
+  const pendingTexts = useLiveQuery(
+    () => db.pendingTexts.orderBy("recordedAt").toArray(),
+    [],
+  );
 
   const [addOpen, setAddOpen] = useState<AddSheetState | null>(null);
   const [shortcutId, setShortcutId] = useState<number | null>(null);
@@ -69,8 +88,12 @@ export function TodayScreen({ settings }: { settings: Settings }) {
   const bars = buildBars(totals, settings, dayType);
 
   const editing = list.find((entry) => entry.id === editingId) ?? null;
-  const shortcut = (shortcutSets ?? []).find((set) => set.id === shortcutId) ?? null;
-  const foodById = useMemo(() => new Map((foods ?? []).map((food) => [food.id, food])), [foods]);
+  const shortcut =
+    (shortcutSets ?? []).find((set) => set.id === shortcutId) ?? null;
+  const foodById = useMemo(
+    () => new Map((foods ?? []).map((food) => [food.id, food])),
+    [foods],
+  );
 
   const selectDayType = (next: DayType) => {
     void setManualDayType(logDate, next);
@@ -101,11 +124,15 @@ export function TodayScreen({ settings }: { settings: Settings }) {
             <div className="min-w-0 flex-1 space-y-0.5 text-sm text-emerald-900">
               {flash.added > 0 && <p>{flash.added}件を記録しました。</p>}
               {flash.pending > 0 && (
-                <p>{flash.pending}件は未処理として預かりました。集計には入っていません。</p>
+                <p>
+                  {flash.pending}
+                  件は未処理として預かりました。集計には入っていません。
+                </p>
               )}
               {flash.learned.map((item) => (
                 <p key={item.text}>
-                  次回から「{item.text}」はこの食品として認識します（{item.foodName}）。
+                  次回から「{item.text}」はこの食品として認識します（
+                  {item.foodName}）。
                 </p>
               ))}
             </div>
@@ -128,12 +155,16 @@ export function TodayScreen({ settings }: { settings: Settings }) {
           </div>
         </Card>
 
-        <QuickTextBar onSubmit={(text) => setAddOpen({ text, pendingId: null })} />
+        <QuickTextBar
+          onSubmit={(text) => setAddOpen({ text, pendingId: null })}
+        />
 
         <PendingTextsCard
           items={pendingList}
           todayLogDate={logDate}
-          onOpen={(item) => setAddOpen({ text: item.text, pendingId: item.id ?? null })}
+          onOpen={(item) =>
+            setAddOpen({ text: item.text, pendingId: item.id ?? null })
+          }
           onDelete={(item) => {
             if (item.id !== undefined) void deletePendingText(item.id);
           }}
@@ -147,7 +178,9 @@ export function TodayScreen({ settings }: { settings: Settings }) {
                   set.items
                     .map((item) => {
                       const food = foodById.get(item.foodId);
-                      return food ? scaleNutrition(food.per, item.quantity) : null;
+                      return food
+                        ? scaleNutrition(food.per, item.quantity)
+                        : null;
                     })
                     .filter((value): value is Nutrition => value !== null),
                 );
@@ -158,10 +191,14 @@ export function TodayScreen({ settings }: { settings: Settings }) {
                       onClick={() => setShortcutId(set.id ?? null)}
                       className="min-h-14 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-left active:bg-slate-50"
                     >
-                      <span className="block text-sm font-bold text-slate-800">{set.name}</span>
+                      <span className="block text-sm font-bold text-slate-800">
+                        {set.name}
+                      </span>
                       <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                        {set.items.length}品 ・ 全部で {fmtKcal(planned.value.kcal)}kcal / P
-                        {fmtNum(planned.value.proteinG)}g / 脂質{fmtNum(planned.value.fatG)}g / 塩分
+                        {set.items.length}品 ・ 全部で{" "}
+                        {fmtKcal(planned.value.kcal)}kcal / P
+                        {fmtNum(planned.value.proteinG)}g / 脂質
+                        {fmtNum(planned.value.fatG)}g / 塩分
                         {fmtNum(planned.value.saltG)}g
                       </span>
                       <span className="mt-0.5 block text-[11px] text-amber-700">
@@ -176,17 +213,29 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         )}
 
         <Card title={`今日の記録（${list.length}件）`}>
-          <MealList entries={list} onSelect={(entry) => setEditingId(entry.id ?? null)} />
+          <MealList
+            entries={list}
+            onSelect={(entry) => setEditingId(entry.id ?? null)}
+          />
         </Card>
 
         {sessionList.length > 0 && (
           <Card title="今日のトレーニング">
             <ul className="space-y-1">
               {sessionList.map((session) => (
-                <li key={session.id} className="flex items-baseline gap-2 text-sm">
-                  <span className="w-12 shrink-0 tabular-nums text-slate-500">{timeOf(session.startedAt)}</span>
-                  <span className="font-medium text-slate-800">{MENU_LABELS[session.menu]}</span>
-                  {session.startedAtIsEstimated && <Badge tone="slate">時刻は仮置き</Badge>}
+                <li
+                  key={session.id}
+                  className="flex items-baseline gap-2 text-sm"
+                >
+                  <span className="w-12 shrink-0 tabular-nums text-slate-500">
+                    {timeOf(session.startedAt)}
+                  </span>
+                  <span className="font-medium text-slate-800">
+                    {MENU_LABELS[session.menu]}
+                  </span>
+                  {session.startedAtIsEstimated && (
+                    <Badge tone="slate">時刻は仮置き</Badge>
+                  )}
                 </li>
               ))}
             </ul>
@@ -194,8 +243,12 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         )}
 
         <Card title="あと何を食べればいいか">
-          <p className="text-sm text-slate-600">提案は次のステップで追加します。</p>
-          <Note>残りのカロリー・P・塩分の枠から、食品マスタで組み合わせを出す予定です（F6）。</Note>
+          <p className="text-sm text-slate-600">
+            提案は次のステップで追加します。
+          </p>
+          <Note>
+            残りのカロリー・P・塩分の枠から、食品マスタで組み合わせを出す予定です（F6）。
+          </Note>
         </Card>
       </main>
 
@@ -203,7 +256,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         <div className="mx-auto max-w-md">
           <button
             type="button"
-            onClick={() => setAddOpen({ text: '', pendingId: null })}
+            onClick={() => setAddOpen({ text: "", pendingId: null })}
             className="h-14 w-full rounded-full bg-emerald-600 text-base font-bold text-white shadow-lg active:bg-emerald-700"
           >
             ＋ 記録する
@@ -232,7 +285,11 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         />
       )}
       {editing && (
-        <MealEditSheet entry={editing} boundaryHour={boundaryHour} onClose={() => setEditingId(null)} />
+        <MealEditSheet
+          entry={editing}
+          boundaryHour={boundaryHour}
+          onClose={() => setEditingId(null)}
+        />
       )}
     </div>
   );

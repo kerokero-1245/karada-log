@@ -5,7 +5,7 @@
  * 「その日」を素朴な暦日で数えると、深夜のラーメンが翌日に乗って
  * 両方の日の集計が壊れる。集計・アラート・週次はすべて LogDate で束ねる。
  */
-import type { IsoDateTime, LogDate } from '../db/types';
+import type { IsoDateTime, LogDate } from "../db/types";
 
 /** 日付の境界（時）。Settings.dayBoundaryHour の既定値 */
 export const DAY_BOUNDARY_HOUR = 4;
@@ -13,9 +13,9 @@ export const DAY_BOUNDARY_HOUR = 4;
 /** 週の起点。1 = 月曜 */
 export const WEEK_STARTS_ON = 1;
 
-export const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'] as const;
+export const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Date → 'YYYY-MM-DDTHH:mm'（ローカル時刻） */
 export function toIsoDateTime(d: Date): IsoDateTime {
@@ -29,9 +29,9 @@ export function toCalendarDate(d: Date): string {
 
 /** 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD' → Date（ローカル時刻として解釈） */
 export function parseIso(value: IsoDateTime | LogDate): Date {
-  const [datePart, timePart = '00:00'] = value.split('T');
-  const [y, m, d] = datePart.split('-').map(Number);
-  const [hh, mm] = timePart.split(':').map(Number);
+  const [datePart, timePart = "00:00"] = value.split("T");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [hh, mm] = timePart.split(":").map(Number);
   return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
 }
 
@@ -39,22 +39,31 @@ export function parseIso(value: IsoDateTime | LogDate): Date {
  * 日時 → 論理日付。
  * boundaryHour より前の時刻は前日に寄せる（4時境界なら 02:30 は前日）。
  */
-export function toLogDate(at: Date | IsoDateTime, boundaryHour: number = DAY_BOUNDARY_HOUR): LogDate {
-  const d = typeof at === 'string' ? parseIso(at) : new Date(at.getTime());
+export function toLogDate(
+  at: Date | IsoDateTime,
+  boundaryHour: number = DAY_BOUNDARY_HOUR,
+): LogDate {
+  const d = typeof at === "string" ? parseIso(at) : new Date(at.getTime());
   const shifted = new Date(d.getTime());
   shifted.setHours(shifted.getHours() - boundaryHour);
   return toCalendarDate(shifted);
 }
 
 /** 論理日付の開始時刻（= その暦日の boundaryHour 時） */
-export function logDateStart(logDate: LogDate, boundaryHour: number = DAY_BOUNDARY_HOUR): Date {
+export function logDateStart(
+  logDate: LogDate,
+  boundaryHour: number = DAY_BOUNDARY_HOUR,
+): Date {
   const d = parseIso(logDate);
   d.setHours(boundaryHour, 0, 0, 0);
   return d;
 }
 
 /** 論理日付の終了時刻（= 翌暦日の boundaryHour 時。この値は含まない） */
-export function logDateEnd(logDate: LogDate, boundaryHour: number = DAY_BOUNDARY_HOUR): Date {
+export function logDateEnd(
+  logDate: LogDate,
+  boundaryHour: number = DAY_BOUNDARY_HOUR,
+): Date {
   const d = logDateStart(logDate, boundaryHour);
   d.setDate(d.getDate() + 1);
   return d;
@@ -78,20 +87,28 @@ export function diffDays(a: LogDate, b: LogDate): number {
 }
 
 /** その論理日付が属する週の起点（既定: 月曜） */
-export function weekStartOf(logDate: LogDate, weekStartsOn: number = WEEK_STARTS_ON): LogDate {
+export function weekStartOf(
+  logDate: LogDate,
+  weekStartsOn: number = WEEK_STARTS_ON,
+): LogDate {
   const d = parseIso(logDate);
   const diff = (d.getDay() - weekStartsOn + 7) % 7;
   return addDays(logDate, -diff);
 }
 
 /** その週の7日分の論理日付 */
-export function weekDates(logDate: LogDate, weekStartsOn: number = WEEK_STARTS_ON): LogDate[] {
+export function weekDates(
+  logDate: LogDate,
+  weekStartsOn: number = WEEK_STARTS_ON,
+): LogDate[] {
   const start = weekStartOf(logDate, weekStartsOn);
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
 /** 現在時刻の論理日付 */
-export function todayLogDate(boundaryHour: number = DAY_BOUNDARY_HOUR): LogDate {
+export function todayLogDate(
+  boundaryHour: number = DAY_BOUNDARY_HOUR,
+): LogDate {
   return toLogDate(new Date(), boundaryHour);
 }
 
@@ -103,7 +120,7 @@ export function formatLogDate(logDate: LogDate): string {
 
 /** '2026-09-12T21:30' → '2026/09/12（土） 21:30' */
 export function formatDateTime(at: IsoDateTime): string {
-  const [datePart, timePart = ''] = at.split('T');
+  const [datePart, timePart = ""] = at.split("T");
   return `${formatLogDate(datePart)} ${timePart}`.trim();
 }
 
@@ -124,7 +141,7 @@ export function formatLogDateShort(logDate: LogDate): string {
 
 /** '2026-09-20T21:30' → '21:30' */
 export function timeOf(at: IsoDateTime): string {
-  const [, time = ''] = at.split('T');
+  const [, time = ""] = at.split("T");
   return time.slice(0, 5);
 }
 
@@ -146,8 +163,11 @@ export function isoDateTimeIn(
   boundaryHour: number = DAY_BOUNDARY_HOUR,
 ): IsoDateTime {
   const hhmm = time.slice(0, 5);
-  const hour = Number(hhmm.split(':')[0]);
-  const calendarDate = Number.isFinite(hour) && hour < boundaryHour ? addDays(logDate, 1) : logDate;
+  const hour = Number(hhmm.split(":")[0]);
+  const calendarDate =
+    Number.isFinite(hour) && hour < boundaryHour
+      ? addDays(logDate, 1)
+      : logDate;
   return `${calendarDate}T${hhmm}`;
 }
 

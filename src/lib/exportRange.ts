@@ -8,10 +8,18 @@
  * 「今週」は 週の起点 〜 今日 で切る。まだ来ていない日を並べても中身が無く、
  * 「未記録」の行だけが増えて読み手が誤読しやすいため。
  */
-import type { LogDate } from '../db/types';
-import { WEEK_STARTS_ON, addDays, diffDays, formatLogDate, parseIso, weekStartOf } from './date';
+import type { LogDate } from "../db/types";
+import {
+  WEEK_STARTS_ON,
+  addDays,
+  diffDays,
+  formatLogDate,
+  parseIso,
+  weekStartOf,
+} from "./date";
 
-export type RangePresetKey = 'thisWeek' | 'lastWeek' | 'last7' | 'last14' | 'custom';
+export type RangePresetKey =
+  "thisWeek" | "lastWeek" | "last7" | "last14" | "custom";
 
 export interface DateRange {
   start: LogDate;
@@ -19,15 +27,15 @@ export interface DateRange {
 }
 
 export const RANGE_PRESETS: { key: RangePresetKey; label: string }[] = [
-  { key: 'thisWeek', label: '今週' },
-  { key: 'lastWeek', label: '先週' },
-  { key: 'last7', label: '直近7日' },
-  { key: 'last14', label: '直近14日' },
-  { key: 'custom', label: '日付指定' },
+  { key: "thisWeek", label: "今週" },
+  { key: "lastWeek", label: "先週" },
+  { key: "last7", label: "直近7日" },
+  { key: "last14", label: "直近14日" },
+  { key: "custom", label: "日付指定" },
 ];
 
 /** 既定は「直近7日」 */
-export const DEFAULT_RANGE_PRESET: RangePresetKey = 'last7';
+export const DEFAULT_RANGE_PRESET: RangePresetKey = "last7";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -46,17 +54,17 @@ export function resolveRange(
   weekStartsOn: number = WEEK_STARTS_ON,
 ): DateRange {
   switch (key) {
-    case 'thisWeek':
+    case "thisWeek":
       return { start: weekStartOf(today, weekStartsOn), end: today };
-    case 'lastWeek': {
+    case "lastWeek": {
       const lastMonday = addDays(weekStartOf(today, weekStartsOn), -7);
       return { start: lastMonday, end: addDays(lastMonday, 6) };
     }
-    case 'last7':
+    case "last7":
       return { start: addDays(today, -6), end: today };
-    case 'last14':
+    case "last14":
       return { start: addDays(today, -13), end: today };
-    case 'custom': {
+    case "custom": {
       const start = isLogDate(custom.start) ? custom.start : today;
       const end = isLogDate(custom.end) ? custom.end : today;
       return start <= end ? { start, end } : { start: end, end: start };
@@ -85,5 +93,5 @@ export function formatRange(range: DateRange): string {
 
 /** ファイル名用。'20260907-20260922' */
 export function rangeFileStamp(range: DateRange): string {
-  return `${range.start.replace(/-/g, '')}-${range.end.replace(/-/g, '')}`;
+  return `${range.start.replace(/-/g, "")}-${range.end.replace(/-/g, "")}`;
 }

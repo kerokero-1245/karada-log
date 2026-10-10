@@ -7,11 +7,11 @@
  */
 
 /** localStorage のキー。 */
-export const GUIDE_STORAGE_KEY = 'karada-log.firstRunGuide';
+export const GUIDE_STORAGE_KEY = "karada-log.firstRunGuide";
 
 /** 「閉じた」ことを表す保存値。 */
 export function dismissedValue(): string {
-  return 'dismissed';
+  return "dismissed";
 }
 
 /** 保存値（localStorage.getItem の戻り値）から、案内カードを出すかを決める。閉じた印が無ければ出す。 */

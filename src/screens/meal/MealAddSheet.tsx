@@ -10,54 +10,54 @@
  *
  * ★ どの経路でも、記録に入るのはユーザーが最後のボタンを押したときだけ（原則1）。★
  */
-import { useMemo, useState } from 'react';
-import { db } from '../../db/db';
-import type { Food, LogDate } from '../../db/types';
-import { Sheet } from '../../components/Sheet';
-import { Button, Note } from '../../components/ui';
-import { useLiveQuery } from '../../lib/useLiveQuery';
-import { formatLogDateShort } from '../../lib/date';
-import type { FoodFormValues } from '../../lib/foodForm';
-import { formValuesFromLabel, labelNotice } from '../../lib/photoLabel';
-import type { QuickCommitResult } from '../../lib/quickRecord';
-import type { MealPhotoRead } from '../../lib/vision';
-import { FoodList } from './FoodList';
-import { NewFoodForm } from './NewFoodForm';
-import { PhotoMealSheet } from './PhotoMealSheet';
-import { PhotoPickSheet } from './PhotoPickSheet';
-import { QuantityStep } from './QuantityStep';
-import { QuickTextSheet } from './QuickTextSheet';
-import { VariantPicker } from './VariantPicker';
-import { ModeTabs } from './ModeTabs';
-import type { MealAddMode } from './ModeTabs';
-import type { FoodGroup } from './foodGroups';
-import { groupFoods, matchesQuery, sortByFrequency } from './foodGroups';
+import { useMemo, useState } from "react";
+import { db } from "../../db/db";
+import type { Food, LogDate } from "../../db/types";
+import { Sheet } from "../../components/Sheet";
+import { Button, Note } from "../../components/ui";
+import { useLiveQuery } from "../../lib/useLiveQuery";
+import { formatLogDateShort } from "../../lib/date";
+import type { FoodFormValues } from "../../lib/foodForm";
+import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
+import type { QuickCommitResult } from "../../lib/quickRecord";
+import type { MealPhotoRead } from "../../lib/vision";
+import { FoodList } from "./FoodList";
+import { NewFoodForm } from "./NewFoodForm";
+import { PhotoMealSheet } from "./PhotoMealSheet";
+import { PhotoPickSheet } from "./PhotoPickSheet";
+import { QuantityStep } from "./QuantityStep";
+import { QuickTextSheet } from "./QuickTextSheet";
+import { VariantPicker } from "./VariantPicker";
+import { ModeTabs } from "./ModeTabs";
+import type { MealAddMode } from "./ModeTabs";
+import type { FoodGroup } from "./foodGroups";
+import { groupFoods, matchesQuery, sortByFrequency } from "./foodGroups";
 
 const FREQUENT_LIMIT = 10;
 
 type Step =
-  | { kind: 'list' }
-  | { kind: 'variant'; group: FoodGroup }
-  | { kind: 'quantity'; food: Food; from: 'list' | 'new' }
+  | { kind: "list" }
+  | { kind: "variant"; group: FoodGroup }
+  | { kind: "quantity"; food: Food; from: "list" | "new" }
   /** 食べ方の選択から来たときは、「戻る」で同じ食べ方の選択に戻す */
-  | { kind: 'quantity'; food: Food; from: 'variant'; group: FoodGroup }
+  | { kind: "quantity"; food: Food; from: "variant"; group: FoodGroup }
   | {
-      kind: 'newFood';
+      kind: "newFood";
       name: string;
       /** 写真から読み取った値で埋めて開くときだけ入る */
       values: FoodFormValues | null;
       notice: string | null;
       /** 「戻る」の行き先 */
-      back: 'list' | 'photo';
+      back: "list" | "photo";
     }
-  | { kind: 'photo' }
-  | { kind: 'photoMeal'; read: MealPhotoRead };
+  | { kind: "photo" }
+  | { kind: "photoMeal"; read: MealPhotoRead };
 
 export function MealAddSheet({
   logDate,
   boundaryHour,
   apiKey = null,
-  initialText = '',
+  initialText = "",
   pendingId = null,
   onClose,
   onRecorded,
@@ -74,73 +74,85 @@ export function MealAddSheet({
   onRecorded: (result: QuickCommitResult) => void;
 }) {
   const foods = useLiveQuery(() => db.foods.toArray(), []);
-  const [mode, setMode] = useState<MealAddMode>('text');
-  const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<MealAddMode>("text");
+  const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [step, setStep] = useState<Step>({ kind: 'list' });
+  const [step, setStep] = useState<Step>({ kind: "list" });
 
-  const searching = query.trim() !== '';
+  const searching = query.trim() !== "";
   const groups = useMemo(() => {
-    const visible = (foods ?? []).filter((food) => (showArchived || !food.archived) && matchesQuery(food, query));
+    const visible = (foods ?? []).filter(
+      (food) => (showArchived || !food.archived) && matchesQuery(food, query),
+    );
     return sortByFrequency(groupFoods(visible));
   }, [foods, query, showArchived]);
   const shown = searching || showAll ? groups : groups.slice(0, FREQUENT_LIMIT);
 
   const selectGroup = (group: FoodGroup) => {
-    if (group.foods.length > 1) setStep({ kind: 'variant', group });
-    else setStep({ kind: 'quantity', food: group.foods[0], from: 'list' });
+    if (group.foods.length > 1) setStep({ kind: "variant", group });
+    else setStep({ kind: "quantity", food: group.foods[0], from: "list" });
   };
 
   /* --- 写真（テキスト／検索のどちらからでも入れる） --- */
 
-  if (step.kind === 'photo' && apiKey !== null) {
+  if (step.kind === "photo" && apiKey !== null) {
     return (
       <PhotoPickSheet
         apiKey={apiKey}
         onLabel={(read) =>
           setStep({
-            kind: 'newFood',
-            name: read.name ?? '',
+            kind: "newFood",
+            name: read.name ?? "",
             // ★ 読み取った値で埋めるだけ。保存は「登録」を押してから
             values: formValuesFromLabel(read),
             notice: labelNotice(read),
-            back: 'photo',
+            back: "photo",
           })
         }
-        onMeal={(read) => setStep({ kind: 'photoMeal', read })}
-        onBack={() => setStep({ kind: 'list' })}
+        onMeal={(read) => setStep({ kind: "photoMeal", read })}
+        onBack={() => setStep({ kind: "list" })}
         onClose={onClose}
       />
     );
   }
 
-  if (step.kind === 'photoMeal') {
+  if (step.kind === "photoMeal") {
     return (
       <PhotoMealSheet
         read={step.read}
         logDate={logDate}
         boundaryHour={boundaryHour}
-        onBack={() => setStep({ kind: 'photo' })}
+        onBack={() => setStep({ kind: "photo" })}
         onClose={onClose}
         onRecorded={onRecorded}
       />
     );
   }
 
-  if (step.kind === 'variant') {
+  if (step.kind === "variant") {
     return (
       <VariantPicker
         group={step.group}
-        onSelect={(food) => setStep({ kind: 'quantity', food, from: 'variant', group: step.group })}
-        onBack={() => setStep({ kind: 'list' })}
+        onSelect={(food) =>
+          setStep({
+            kind: "quantity",
+            food,
+            from: "variant",
+            group: step.group,
+          })
+        }
+        onBack={() => setStep({ kind: "list" })}
         onClose={onClose}
       />
     );
   }
 
-  if (step.kind === 'quantity') {
-    const back: Step = step.from === 'variant' ? { kind: 'variant', group: step.group } : { kind: 'list' };
+  if (step.kind === "quantity") {
+    const back: Step =
+      step.from === "variant"
+        ? { kind: "variant", group: step.group }
+        : { kind: "list" };
     return (
       <QuantityStep
         food={step.food}
@@ -153,7 +165,7 @@ export function MealAddSheet({
     );
   }
 
-  if (step.kind === 'newFood') {
+  if (step.kind === "newFood") {
     const back = step.back;
     return (
       <NewFoodForm
@@ -161,14 +173,16 @@ export function MealAddSheet({
         initialValues={step.values}
         initialNotice={step.notice}
         apiKey={apiKey}
-        onSaved={(food) => setStep({ kind: 'quantity', food, from: 'new' })}
-        onBack={() => setStep(back === 'photo' ? { kind: 'photo' } : { kind: 'list' })}
+        onSaved={(food) => setStep({ kind: "quantity", food, from: "new" })}
+        onBack={() =>
+          setStep(back === "photo" ? { kind: "photo" } : { kind: "list" })
+        }
         onClose={onClose}
       />
     );
   }
 
-  if (mode === 'text') {
+  if (mode === "text") {
     return (
       <QuickTextSheet
         logDate={logDate}
@@ -178,19 +192,23 @@ export function MealAddSheet({
         pendingId={pendingId}
         onClose={onClose}
         onRecorded={onRecorded}
-        onSwitchToSearch={() => setMode('search')}
-        onPhoto={() => setStep({ kind: 'photo' })}
+        onSwitchToSearch={() => setMode("search")}
+        onPhoto={() => setStep({ kind: "photo" })}
       />
     );
   }
 
   return (
-    <Sheet title="記録する" subtitle={`${formatLogDateShort(logDate)} の記録`} onClose={onClose}>
+    <Sheet
+      title="記録する"
+      subtitle={`${formatLogDateShort(logDate)} の記録`}
+      onClose={onClose}
+    >
       <div className="space-y-3">
         <ModeTabs mode="search" onChange={setMode} />
 
         {apiKey !== null && (
-          <Button className="w-full" onClick={() => setStep({ kind: 'photo' })}>
+          <Button className="w-full" onClick={() => setStep({ kind: "photo" })}>
             写真から
           </Button>
         )}
@@ -205,7 +223,7 @@ export function MealAddSheet({
 
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-700">
-            {searching ? `検索結果（${groups.length}件）` : 'よく食べるもの'}
+            {searching ? `検索結果（${groups.length}件）` : "よく食べるもの"}
           </h3>
           <label className="flex min-h-11 items-center gap-1.5 text-xs text-slate-600">
             <input
@@ -233,7 +251,13 @@ export function MealAddSheet({
               variant="primary"
               className="mt-2 w-full"
               onClick={() =>
-                setStep({ kind: 'newFood', name: query.trim(), values: null, notice: null, back: 'list' })
+                setStep({
+                  kind: "newFood",
+                  name: query.trim(),
+                  values: null,
+                  notice: null,
+                  back: "list",
+                })
               }
             >
               「{query.trim()}」をこの名前で新規登録
@@ -245,7 +269,13 @@ export function MealAddSheet({
           <Button
             className="w-full"
             onClick={() =>
-              setStep({ kind: 'newFood', name: query.trim(), values: null, notice: null, back: 'list' })
+              setStep({
+                kind: "newFood",
+                name: query.trim(),
+                values: null,
+                notice: null,
+                back: "list",
+              })
             }
           >
             新しい食品を登録

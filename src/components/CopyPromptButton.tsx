@@ -7,24 +7,24 @@
  * クリップボードは環境によって使えない（許可が無い・HTTPS でない など）。
  * 使えなかったときは読み取り専用の欄に出して、手で選んでコピーできるようにする。
  */
-import { useEffect, useState } from 'react';
-import { Button, Note } from './ui';
-import { copyText } from '../lib/download';
-import { IMPORT_PROMPT } from '../lib/importPrompt';
+import { useEffect, useState } from "react";
+import { Button, Note } from "./ui";
+import { copyText } from "../lib/download";
+import { IMPORT_PROMPT } from "../lib/importPrompt";
 
-type CopyState = 'idle' | 'copied' | 'manual';
+type CopyState = "idle" | "copied" | "manual";
 
-export function CopyPromptButton({ className = '' }: { className?: string }) {
-  const [state, setState] = useState<CopyState>('idle');
+export function CopyPromptButton({ className = "" }: { className?: string }) {
+  const [state, setState] = useState<CopyState>("idle");
 
   useEffect(() => {
-    if (state !== 'copied') return;
-    const timer = window.setTimeout(() => setState('idle'), 2000);
+    if (state !== "copied") return;
+    const timer = window.setTimeout(() => setState("idle"), 2000);
     return () => window.clearTimeout(timer);
   }, [state]);
 
   const copy = async () => {
-    setState((await copyText(IMPORT_PROMPT)) ? 'copied' : 'manual');
+    setState((await copyText(IMPORT_PROMPT)) ? "copied" : "manual");
   };
 
   return (
@@ -33,9 +33,11 @@ export function CopyPromptButton({ className = '' }: { className?: string }) {
         claude.ai 用の依頼文をコピー
       </Button>
 
-      {state === 'copied' && <p className="mt-1 text-sm text-emerald-700">コピーしました</p>}
+      {state === "copied" && (
+        <p className="mt-1 text-sm text-emerald-700">コピーしました</p>
+      )}
 
-      {state === 'manual' && (
+      {state === "manual" && (
         <div className="mt-1">
           <p className="text-sm text-amber-800">
             この環境ではボタンからコピーできませんでした。下の欄を選んでコピーしてください。

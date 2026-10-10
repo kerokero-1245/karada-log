@@ -7,10 +7,16 @@
  * 追加時は食品情報のスナップショットを持たせる（後からマスタを直しても実績が動かない）。
  * 同じトランザクションで Food.useCount を +1 し lastUsedAt を更新する（F2 の頻度順表示用）。
  */
-import { db } from '../db/db';
-import type { Food, LogDate, MealEntry, MealSnapshot, Nutrition } from '../db/types';
-import { hasTime, isoDateTimeIn, toIsoDateTime, toLogDate } from './date';
-import { scaleNutrition } from './nutrition';
+import { db } from "../db/db";
+import type {
+  Food,
+  LogDate,
+  MealEntry,
+  MealSnapshot,
+  Nutrition,
+} from "../db/types";
+import { hasTime, isoDateTimeIn, toIsoDateTime, toLogDate } from "./date";
+import { scaleNutrition } from "./nutrition";
 
 export interface NewMealInput {
   food: Food;
@@ -41,7 +47,8 @@ export function snapshotOf(food: Food): MealSnapshot {
  * できてしまうので、保存の入口でも弾く（トランザクションごと取り消される）。
  */
 export function assertTime(time: string): void {
-  if (!hasTime(time)) throw new Error('時刻が入っていません。時刻を入れてから保存してください');
+  if (!hasTime(time))
+    throw new Error("時刻が入っていません。時刻を入れてから保存してください");
 }
 
 /** その記録の栄養値（1単位あたり × 数量） */
@@ -64,10 +71,10 @@ export async function addMealEntries(
   const now = toIsoDateTime(new Date());
   const ids: number[] = [];
 
-  await db.transaction('rw', [db.mealEntries, db.foods], async () => {
+  await db.transaction("rw", [db.mealEntries, db.foods], async () => {
     for (const input of inputs) {
       const foodId = input.food.id;
-      if (foodId === undefined) throw new Error('食品が保存されていません');
+      if (foodId === undefined) throw new Error("食品が保存されていません");
 
       const recordedAt = isoDateTimeIn(logDate, input.time, boundaryHour);
       const entry: MealEntry = {
@@ -77,14 +84,17 @@ export async function addMealEntries(
         logDate: toLogDate(recordedAt, boundaryHour),
         snapshot: snapshotOf(input.food),
         fromShortcutSetId,
-        note: input.note ?? '',
+        note: input.note ?? "",
       };
       ids.push((await db.mealEntries.add(entry)) as number);
 
       // 頻度は「その時点の DB の値」を基準に増やす（渡された Food が古くても壊れない）
       const stored = await db.foods.get(foodId);
       if (stored) {
-        await db.foods.update(foodId, { useCount: stored.useCount + 1, lastUsedAt: now });
+        await db.foods.update(foodId, {
+          useCount: stored.useCount + 1,
+          lastUsedAt: now,
+        });
       }
     }
   });

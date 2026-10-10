@@ -2,8 +2,8 @@
  * 数量の入力。既定は1。「−」「＋」で±1、直接入力もできる（小数可・最小0.1）。
  * 例: マカダミアは1単位10gなので、30g食べたら数量3。
  */
-import { useState } from 'react';
-import { formatQuantity } from '../lib/meals';
+import { useState } from "react";
+import { formatQuantity } from "../lib/meals";
 
 const MIN = 0.1;
 
@@ -21,7 +21,7 @@ export function QuantityStepper({
   const commit = (next: string) => {
     setText(next);
     const parsed = Number(next);
-    if (next.trim() !== '' && Number.isFinite(parsed) && parsed >= MIN) {
+    if (next.trim() !== "" && Number.isFinite(parsed) && parsed >= MIN) {
       onChange(round2(parsed));
     }
   };
@@ -61,7 +61,9 @@ export function QuantityStepper({
           ＋
         </button>
       </div>
-      <p className="mt-1 text-center text-xs text-slate-500">単位: {unitLabel}（0.1 から。小数も入ります）</p>
+      <p className="mt-1 text-center text-xs text-slate-500">
+        単位: {unitLabel}（0.1 から。小数も入ります）
+      </p>
     </div>
   );
 }

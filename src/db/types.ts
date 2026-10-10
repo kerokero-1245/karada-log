@@ -42,14 +42,20 @@ export interface Nutrition {
 
 export type NutrientKey = keyof Nutrition;
 
-export const NUTRIENT_KEYS: NutrientKey[] = ['kcal', 'proteinG', 'fatG', 'carbG', 'saltG'];
+export const NUTRIENT_KEYS: NutrientKey[] = [
+  "kcal",
+  "proteinG",
+  "fatG",
+  "carbG",
+  "saltG",
+];
 
 export const NUTRIENT_LABELS: Record<NutrientKey, string> = {
-  kcal: 'kcal',
-  proteinG: 'P',
-  fatG: '脂質',
-  carbG: '炭水',
-  saltG: '塩分',
+  kcal: "kcal",
+  proteinG: "P",
+  fatG: "脂質",
+  carbG: "炭水",
+  saltG: "塩分",
 };
 
 /* ------------------------------------------------------------------ */
@@ -57,28 +63,28 @@ export const NUTRIENT_LABELS: Record<NutrientKey, string> = {
 /* ------------------------------------------------------------------ */
 
 export const FOOD_CATEGORIES = [
-  '麺類',
-  '主食',
-  '肉',
-  '魚',
-  '卵',
-  '乳製品',
-  'プロテイン',
-  'ナッツ',
-  '果物',
-  '弁当・惣菜',
-  '菓子',
-  '飲料',
-  'その他',
+  "麺類",
+  "主食",
+  "肉",
+  "魚",
+  "卵",
+  "乳製品",
+  "プロテイン",
+  "ナッツ",
+  "果物",
+  "弁当・惣菜",
+  "菓子",
+  "飲料",
+  "その他",
 ] as const;
 
 export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
 
 /** F7「麺類を2日連続で記録」アラートの判定に使うカテゴリ。ラーメン・うどん・パスタを含む。 */
-export const NOODLE_CATEGORY: FoodCategory = '麺類';
+export const NOODLE_CATEGORY: FoodCategory = "麺類";
 
 /** ラベル実測値か、推定値か。推定値は画面上で区別して表示する（F3）。 */
-export type ValueSource = 'label' | 'estimated';
+export type ValueSource = "label" | "estimated";
 
 /**
  * 入力時の表記。栄養値は Food.per に「1単位あたり」で正規化して保存するが、
@@ -210,7 +216,7 @@ export interface PendingText {
 /* 固定ベース（ショートカット）= 計画。実績ではない                        */
 /* ------------------------------------------------------------------ */
 
-export type MealTiming = '朝' | '日中' | '間食' | '夜' | 'ジム後';
+export type MealTiming = "朝" | "日中" | "間食" | "夜" | "ジム後";
 
 export interface ShortcutItem {
   foodId: number;
@@ -241,11 +247,11 @@ export interface ShortcutSet {
 /* 日の区分                                                             */
 /* ------------------------------------------------------------------ */
 
-export type DayType = 'gym' | 'rest';
+export type DayType = "gym" | "rest";
 
 export const DAY_TYPE_LABELS: Record<DayType, string> = {
-  gym: 'ジムの日',
-  rest: '休養日',
+  gym: "ジムの日",
+  rest: "休養日",
 };
 
 /**
@@ -257,7 +263,7 @@ export interface DayMeta {
   /** 主キー。論理日付 */
   logDate: LogDate;
   dayType: DayType;
-  source: 'auto' | 'manual';
+  source: "auto" | "manual";
   note: string;
   updatedAt: IsoDateTime;
 }
@@ -266,16 +272,16 @@ export interface DayMeta {
 /* トレーニング                                                         */
 /* ------------------------------------------------------------------ */
 
-export type MenuId = 'A' | 'B' | 'C';
+export type MenuId = "A" | "B" | "C";
 
 export const MENU_LABELS: Record<MenuId, string> = {
-  A: 'A（押す）',
-  B: 'B（引く）',
-  C: 'C（脚・体幹）',
+  A: "A（押す）",
+  B: "B（引く）",
+  C: "C（脚・体幹）",
 };
 
 /** バー種別。取り違え事故があるため必ず記録する（原則2） */
-export type BarType = 'ez' | 'short';
+export type BarType = "ez" | "short";
 
 export const BAR_WEIGHT_KG: Record<BarType, number> = {
   ez: 7,
@@ -283,8 +289,8 @@ export const BAR_WEIGHT_KG: Record<BarType, number> = {
 };
 
 export const BAR_LABELS: Record<BarType, string> = {
-  ez: 'EZバー',
-  short: 'ショートバー',
+  ez: "EZバー",
+  short: "ショートバー",
 };
 
 /**
@@ -293,31 +299,31 @@ export const BAR_LABELS: Record<BarType, string> = {
  */
 export type LoadSpec =
   /** バーベル: 総重量 = バー重量 + プレート片側 × 2 */
-  | { style: 'barbell'; barType: BarType; plateKgPerSide: number }
+  | { style: "barbell"; barType: BarType; plateKgPerSide: number }
   /** ダンベル: 片手◯kg を hands 本。進捗は片手の重量で追う */
-  | { style: 'dumbbell'; kgPerHand: number; hands: 1 | 2 }
+  | { style: "dumbbell"; kgPerHand: number; hands: 1 | 2 }
   /** マシン: スタックの総重量そのもの */
-  | { style: 'machine'; stackKg: number }
+  | { style: "machine"; stackKg: number }
   /** 自重（アブローラーなど）。加重があれば addedKg */
-  | { style: 'bodyweight'; addedKg: number | null }
+  | { style: "bodyweight"; addedKg: number | null }
   /** 総重量だけ分かっていて構成が未確定。次回の実測で確定させる */
-  | { style: 'other'; totalKg: number; description: string };
+  | { style: "other"; totalKg: number; description: string };
 
 /** 種目の種類 */
 export type ExerciseKind =
   /** 重量 × 回数（規定回数に到達したかで進捗判定） */
-  | 'weight_reps'
+  | "weight_reps"
   /** 時間ベース（ファーマーズウォークなど。秒数で記録） */
-  | 'timed'
+  | "timed"
   /** 限界まで（アブローラーなど。回数は記録するが進捗判定はしない） */
-  | 'amrap';
+  | "amrap";
 
 /** 次回の上げ幅。種目ごとに違う（レッグプレス +3.5kg / ベンチ +2.5kg / ダンベル +2kg片側 / ファーマーズ +5秒） */
 export interface Progression {
-  metric: 'weight' | 'seconds';
+  metric: "weight" | "seconds";
   amount: number;
   /** 'total' = 総重量に加算 / 'perHand' = ダンベル片手に加算。metric='seconds' では 'total' */
-  basis: 'total' | 'perHand';
+  basis: "total" | "perHand";
 }
 
 /** その種目で狙う設定値の組。「現在」と「次回」を同じ形で持つ */
@@ -371,16 +377,16 @@ export interface TrainingSession {
  */
 export type ExerciseOutcome =
   /** 3セットとも規定に到達 → 次回 +増分を提案 */
-  | 'achieved'
+  | "achieved"
   /** 1セットでも届かなかった → 据え置き */
-  | 'held'
+  | "held"
   /** 判定できるだけの記録が無い */
-  | 'unknown';
+  | "unknown";
 
 export const OUTCOME_LABELS: Record<ExerciseOutcome, string> = {
-  achieved: '達成',
-  held: '据え置き',
-  unknown: '記録なし',
+  achieved: "達成",
+  held: "据え置き",
+  unknown: "記録なし",
 };
 
 export interface SessionExercise {
@@ -414,16 +420,23 @@ export interface SetRecord {
 /* 体組成                                                              */
 /* ------------------------------------------------------------------ */
 
-export type SegmentKey = 'trunk' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg';
+export type SegmentKey =
+  "trunk" | "rightArm" | "leftArm" | "rightLeg" | "leftLeg";
 
-export const SEGMENT_KEYS: SegmentKey[] = ['trunk', 'rightArm', 'leftArm', 'rightLeg', 'leftLeg'];
+export const SEGMENT_KEYS: SegmentKey[] = [
+  "trunk",
+  "rightArm",
+  "leftArm",
+  "rightLeg",
+  "leftLeg",
+];
 
 export const SEGMENT_LABELS: Record<SegmentKey, string> = {
-  trunk: '体幹部',
-  rightArm: '右腕',
-  leftArm: '左腕',
-  rightLeg: '右足',
-  leftLeg: '左足',
+  trunk: "体幹部",
+  rightArm: "右腕",
+  leftArm: "左腕",
+  rightLeg: "右足",
+  leftLeg: "左足",
 };
 
 export interface SegmentMuscle {
@@ -440,17 +453,17 @@ export interface SegmentFat {
 
 export type MeasurementWarningCode =
   /** 最後のトレから3日未満（水分・炎症で重く出る） */
-  | 'training_gap_lt3'
+  | "training_gap_lt3"
   /** 前日の塩分が高い（測定前はパターンC 2〜3g が条件） */
-  | 'previous_day_high_salt'
+  | "previous_day_high_salt"
   /** 食後経過時間が未記録 */
-  | 'meal_timing_unknown'
+  | "meal_timing_unknown"
   /** 食後2時間未満 */
-  | 'meal_too_recent';
+  | "meal_too_recent";
 
 export interface MeasurementWarning {
   code: MeasurementWarningCode;
-  severity: 'high' | 'medium' | 'info';
+  severity: "high" | "medium" | "info";
   message: string;
 }
 
@@ -585,7 +598,7 @@ export interface GoalLine {
 
 export interface Profile {
   heightCm: number;
-  sex: 'male' | 'female';
+  sex: "male" | "female";
   age: number;
 }
 

@@ -13,13 +13,13 @@
  *   **名前・呼び名・食べ方の名前が丸ごと一致したとき（85点以上）だけ** 採用する。
  *   当たらなかったものは「推定」として、API の概算値のまま出す。
  */
-import type { Food, FoodCategory, Nutrition } from '../db/types';
-import { toCalendarDate, toIsoDateTime } from './date';
-import { formatQuantity } from './meals';
-import { findCandidates, parseItem, quantityFor } from './quickText';
-import type { QuickCandidate } from './quickText';
-import { normalize } from './quickText';
-import type { MealPhotoItem, MealPhotoRead } from './vision';
+import type { Food, FoodCategory, Nutrition } from "../db/types";
+import { toCalendarDate, toIsoDateTime } from "./date";
+import { formatQuantity } from "./meals";
+import { findCandidates, parseItem, quantityFor } from "./quickText";
+import type { QuickCandidate } from "./quickText";
+import { normalize } from "./quickText";
+import type { MealPhotoItem, MealPhotoRead } from "./vision";
 
 /**
  * マスタ照合を認める最低スコア。
@@ -72,14 +72,16 @@ export function perUnitOf(item: MealPhotoItem): Nutrition {
 
 /** '杯' → '1杯' / '100g' → '100g'（既存の食品マスタと同じ書き方に揃える） */
 export function unitLabelOf(unit: string): string {
-  const trimmed = unit.normalize('NFKC').trim();
-  if (trimmed === '') return '1食';
+  const trimmed = unit.normalize("NFKC").trim();
+  if (trimmed === "") return "1食";
   return /^\d/.test(trimmed) ? trimmed : `1${trimmed}`;
 }
 
 /** 単位が '100g' のように重さそのものなら、グラム数を拾う */
 export function gramsPerUnitOf(unit: string): number | null {
-  const matched = /^(\d+(?:\.\d+)?)\s*(g|ml|グラム)$/i.exec(unit.normalize('NFKC').trim());
+  const matched = /^(\d+(?:\.\d+)?)\s*(g|ml|グラム)$/i.exec(
+    unit.normalize("NFKC").trim(),
+  );
   if (matched === null) return null;
   const grams = Number(matched[1]);
   return Number.isFinite(grams) && grams > 0 ? grams : null;
@@ -96,18 +98,130 @@ export function gramsPerUnitOf(unit: string): number | null {
  * 「麺そのもの」と言い切れる語だけを入れる。迷ったら その他 に落とす。
  */
 const CATEGORY_HINTS: { category: FoodCategory; words: string[] }[] = [
-  { category: '麺類', words: ['ラーメン', 'うどん', 'そば', 'パスタ', 'スパゲ', '焼きそば', 'つけ麺', '中華麺', 'ちゃんぽん'] },
-  { category: '主食', words: ['ご飯', 'ごはん', 'ライス', '白米', '玄米', 'おにぎり', 'パン', 'トースト', '丼', '餅', 'もち'] },
-  { category: '魚', words: ['鮭', 'さけ', 'しゃけ', '鯖', 'さば', '鯵', 'あじ', '鰯', 'いわし', 'まぐろ', '鮪', 'ぶり', '鰤', 'さんま', '秋刀魚', '刺身', '海老', 'えび', 'いか', 'たこ', 'ししゃも', '魚'] },
-  { category: '卵', words: ['卵', 'たまご', '玉子', 'オムレツ', '目玉焼き'] },
-  { category: '肉', words: ['鶏', '豚', '牛', '肉', 'ハム', 'ソーセージ', 'ベーコン', 'から揚げ', '唐揚げ', 'ステーキ', 'ハンバーグ', '生姜焼き'] },
-  { category: '乳製品', words: ['ヨーグルト', 'チーズ', '牛乳', 'ミルク'] },
-  { category: 'プロテイン', words: ['プロテイン'] },
-  { category: 'ナッツ', words: ['ナッツ', 'アーモンド', 'カシュー', 'マカダミア', 'くるみ'] },
-  { category: '果物', words: ['バナナ', 'りんご', 'みかん', 'ぶどう', 'いちご', 'キウイ', 'オレンジ'] },
-  { category: '菓子', words: ['チョコ', 'クッキー', 'ケーキ', 'アイス', 'せんべい', 'スナック', 'ポテトチップ'] },
-  { category: '飲料', words: ['コーラ', 'ジュース', 'コーヒー', 'お茶', 'ビール', 'スムージー'] },
-  { category: '弁当・惣菜', words: ['弁当', '惣菜', 'サラダ', '味噌汁', 'みそ汁', 'スープ', '煮物', '漬物', '冷奴', '納豆'] },
+  {
+    category: "麺類",
+    words: [
+      "ラーメン",
+      "うどん",
+      "そば",
+      "パスタ",
+      "スパゲ",
+      "焼きそば",
+      "つけ麺",
+      "中華麺",
+      "ちゃんぽん",
+    ],
+  },
+  {
+    category: "主食",
+    words: [
+      "ご飯",
+      "ごはん",
+      "ライス",
+      "白米",
+      "玄米",
+      "おにぎり",
+      "パン",
+      "トースト",
+      "丼",
+      "餅",
+      "もち",
+    ],
+  },
+  {
+    category: "魚",
+    words: [
+      "鮭",
+      "さけ",
+      "しゃけ",
+      "鯖",
+      "さば",
+      "鯵",
+      "あじ",
+      "鰯",
+      "いわし",
+      "まぐろ",
+      "鮪",
+      "ぶり",
+      "鰤",
+      "さんま",
+      "秋刀魚",
+      "刺身",
+      "海老",
+      "えび",
+      "いか",
+      "たこ",
+      "ししゃも",
+      "魚",
+    ],
+  },
+  { category: "卵", words: ["卵", "たまご", "玉子", "オムレツ", "目玉焼き"] },
+  {
+    category: "肉",
+    words: [
+      "鶏",
+      "豚",
+      "牛",
+      "肉",
+      "ハム",
+      "ソーセージ",
+      "ベーコン",
+      "から揚げ",
+      "唐揚げ",
+      "ステーキ",
+      "ハンバーグ",
+      "生姜焼き",
+    ],
+  },
+  { category: "乳製品", words: ["ヨーグルト", "チーズ", "牛乳", "ミルク"] },
+  { category: "プロテイン", words: ["プロテイン"] },
+  {
+    category: "ナッツ",
+    words: ["ナッツ", "アーモンド", "カシュー", "マカダミア", "くるみ"],
+  },
+  {
+    category: "果物",
+    words: [
+      "バナナ",
+      "りんご",
+      "みかん",
+      "ぶどう",
+      "いちご",
+      "キウイ",
+      "オレンジ",
+    ],
+  },
+  {
+    category: "菓子",
+    words: [
+      "チョコ",
+      "クッキー",
+      "ケーキ",
+      "アイス",
+      "せんべい",
+      "スナック",
+      "ポテトチップ",
+    ],
+  },
+  {
+    category: "飲料",
+    words: ["コーラ", "ジュース", "コーヒー", "お茶", "ビール", "スムージー"],
+  },
+  {
+    category: "弁当・惣菜",
+    words: [
+      "弁当",
+      "惣菜",
+      "サラダ",
+      "味噌汁",
+      "みそ汁",
+      "スープ",
+      "煮物",
+      "漬物",
+      "冷奴",
+      "納豆",
+    ],
+  },
 ];
 
 const NORMALIZED_HINTS = CATEGORY_HINTS.map((hint) => ({
@@ -117,11 +231,11 @@ const NORMALIZED_HINTS = CATEGORY_HINTS.map((hint) => ({
 
 export function guessCategory(name: string): FoodCategory {
   const key = normalize(name);
-  if (key === '') return 'その他';
+  if (key === "") return "その他";
   for (const hint of NORMALIZED_HINTS) {
     if (hint.words.some((word) => key.includes(word))) return hint.category;
   }
-  return 'その他';
+  return "その他";
 }
 
 /* ------------------------------------------------------------------ */
@@ -134,7 +248,9 @@ export function guessCategory(name: string): FoodCategory {
  * 照合の判定には持ち込まない（表示のほうでは在庫切れのバッジが出る）。
  */
 function matchScore(candidate: QuickCandidate): number {
-  const allArchived = candidate.foods.length > 0 && candidate.foods.every((food) => food.archived);
+  const allArchived =
+    candidate.foods.length > 0 &&
+    candidate.foods.every((food) => food.archived);
   return allArchived ? candidate.score + 25 : candidate.score;
 }
 
@@ -143,12 +259,16 @@ export function matchFood(item: MealPhotoItem, foods: Food[]): Food | null {
   const candidates = findCandidates(item.name, foods);
   if (candidates.length === 0) return null;
   // 同点が並ぶときは決め打ちしない（原則1: 分からないものを埋めない）
-  if (candidates.length > 1 && candidates[0].score === candidates[1].score) return null;
+  if (candidates.length > 1 && candidates[0].score === candidates[1].score)
+    return null;
   if (matchScore(candidates[0]) < MATCH_MIN_SCORE) return null;
   return candidates[0].foods[0] ?? null;
 }
 
-export function buildPhotoRows(read: MealPhotoRead, foods: Food[]): PhotoMealRow[] {
+export function buildPhotoRows(
+  read: MealPhotoRead,
+  foods: Food[],
+): PhotoMealRow[] {
   return read.items.map((item, index) => {
     const raw = rawTextOf(item);
     const matched = matchFood(item, foods);
@@ -190,17 +310,20 @@ export function buildPhotoRows(read: MealPhotoRead, foods: Food[]): PhotoMealRow
  * マスタに無かった品目の Food（下書き）。
  * source='estimated' なので、一覧でも記録でも「推定値」のバッジが付く。
  */
-export function estimatedFoodOf(item: MealPhotoItem, now: Date = new Date()): Omit<Food, 'id'> {
+export function estimatedFoodOf(
+  item: MealPhotoItem,
+  now: Date = new Date(),
+): Omit<Food, "id"> {
   const stamp = toIsoDateTime(now);
   const quantity = item.quantity > 0 ? item.quantity : 1;
   const name = item.name.trim();
 
   return {
-    name: name === '' ? '写真の品目' : name,
+    name: name === "" ? "写真の品目" : name,
     unitLabel: unitLabelOf(item.unit),
     gramsPerUnit: gramsPerUnitOf(item.unit),
     per: perUnitOf(item),
-    source: 'estimated',
+    source: "estimated",
     basis: {
       label: `写真からの推定（${formatQuantity(quantity)}${item.unit}あたり）`,
       unitsPerBasis: quantity,

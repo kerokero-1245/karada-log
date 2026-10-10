@@ -2,10 +2,10 @@
  * 数値の入力（− / 直接入力 / ＋）。重量・回数・秒数に使う。
  * 入力途中の文字（'12.' など）を壊さないよう、表示用の文字列を別に持つ。
  */
-import { useState } from 'react';
+import { useState } from "react";
 
 function fmt(value: number | null): string {
-  if (value === null) return '';
+  if (value === null) return "";
   return String(Math.round(value * 100) / 100);
 }
 
@@ -34,17 +34,18 @@ export function NumberField({
   const [shown, setShown] = useState(value);
   if (shown !== value) {
     setShown(value);
-    if (!(text.trim() !== '' && Number(text) === value)) setText(fmt(value));
+    if (!(text.trim() !== "" && Number(text) === value)) setText(fmt(value));
   }
 
   const commit = (next: string) => {
     setText(next);
-    if (next.trim() === '') {
+    if (next.trim() === "") {
       if (allowEmpty) onChange(null);
       return;
     }
     const parsed = Number(next);
-    if (Number.isFinite(parsed) && parsed >= min) onChange(Math.round(parsed * 100) / 100);
+    if (Number.isFinite(parsed) && parsed >= min)
+      onChange(Math.round(parsed * 100) / 100);
   };
 
   const bump = (delta: number) => {

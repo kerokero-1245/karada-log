@@ -30,10 +30,8 @@ export interface PhotoEntryPlan {
   time: string;
 }
 
-export interface PhotoCommitResult extends QuickCommitResult {
-  /** 今回新しく作った推定食品の数（画面のお知らせに出す） */
-  createdFoods: number;
-}
+/** 写真の記録の結果。テキスト記録と同じ形（createdFoods は画面のお知らせに出す） */
+export type PhotoCommitResult = QuickCommitResult;
 
 export async function commitPhotoMeal(
   logDate: LogDate,

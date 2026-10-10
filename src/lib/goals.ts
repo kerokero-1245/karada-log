@@ -28,12 +28,6 @@ export interface BarMarker {
 export interface BarModel {
   key: NutrientKey;
   label: string;
-  unit: string;
-  kind: "floor" | "cap";
-  current: number;
-  target: number;
-  /** P の上限152g。他は null */
-  cap: number | null;
   /** 栄養値が未入力（null）で合計に入れられなかった件数 */
   unknownCount: number;
   /** '501 / 2,050 kcal' */
@@ -179,11 +173,6 @@ function floorBar(
   return {
     key,
     label,
-    unit,
-    kind: "floor",
-    current,
-    target,
-    cap,
     unknownCount,
     valueText: `${formatAmount(key, current)} / ${formatAmount(key, target)} ${unit}`,
     remainText: reached
@@ -226,11 +215,6 @@ function capBar(
   return {
     key,
     label,
-    unit,
-    kind: "cap",
-    current,
-    target: limit,
-    cap: limit,
     unknownCount,
     valueText: `${formatAmount(key, current)} / ${formatAmount(key, limit)} ${unit}`,
     remainText: over

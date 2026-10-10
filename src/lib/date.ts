@@ -49,26 +49,6 @@ export function toLogDate(
   return toCalendarDate(shifted);
 }
 
-/** 論理日付の開始時刻（= その暦日の boundaryHour 時） */
-export function logDateStart(
-  logDate: LogDate,
-  boundaryHour: number = DAY_BOUNDARY_HOUR,
-): Date {
-  const d = parseIso(logDate);
-  d.setHours(boundaryHour, 0, 0, 0);
-  return d;
-}
-
-/** 論理日付の終了時刻（= 翌暦日の boundaryHour 時。この値は含まない） */
-export function logDateEnd(
-  logDate: LogDate,
-  boundaryHour: number = DAY_BOUNDARY_HOUR,
-): Date {
-  const d = logDateStart(logDate, boundaryHour);
-  d.setDate(d.getDate() + 1);
-  return d;
-}
-
 /** 論理日付を n 日ずらす */
 export function addDays(logDate: LogDate, n: number): LogDate {
   const d = parseIso(logDate);
@@ -96,15 +76,6 @@ export function weekStartOf(
   return addDays(logDate, -diff);
 }
 
-/** その週の7日分の論理日付 */
-export function weekDates(
-  logDate: LogDate,
-  weekStartsOn: number = WEEK_STARTS_ON,
-): LogDate[] {
-  const start = weekStartOf(logDate, weekStartsOn);
-  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-}
-
 /** 現在時刻の論理日付 */
 export function todayLogDate(
   boundaryHour: number = DAY_BOUNDARY_HOUR,
@@ -122,11 +93,6 @@ export function formatLogDate(logDate: LogDate): string {
 export function formatDateTime(at: IsoDateTime): string {
   const [datePart, timePart = ""] = at.split("T");
   return `${formatLogDate(datePart)} ${timePart}`.trim();
-}
-
-/** 2つの日時の差（時間）。小数を返す */
-export function diffHours(from: IsoDateTime, to: IsoDateTime): number {
-  return (parseIso(to).getTime() - parseIso(from).getTime()) / (60 * 60 * 1000);
 }
 
 /* ------------------------------------------------------------------ */

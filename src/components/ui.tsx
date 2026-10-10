@@ -36,21 +36,16 @@ export function Badge({
 
 export function Card({
   title,
-  right,
   children,
-  className = "",
 }: {
   title?: string;
-  right?: ReactNode;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <section className={`rounded-xl bg-white p-3 shadow-sm ${className}`}>
+    <section className="rounded-xl bg-white p-3 shadow-sm">
       {title && (
         <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-slate-200 pb-1">
           <h2 className="text-sm font-bold text-slate-700">{title}</h2>
-          {right}
         </div>
       )}
       {children}

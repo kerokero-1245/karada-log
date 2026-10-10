@@ -26,10 +26,6 @@ export interface PhotoImage {
   /** data URL の接頭辞を除いた base64 */
   base64: string;
   mediaType: PhotoMediaType;
-  width: number;
-  height: number;
-  /** 送信データのおおよそのバイト数（画面に出す目安） */
-  bytes: number;
 }
 
 interface Source {
@@ -116,22 +112,8 @@ export async function fileToPhoto(file: File): Promise<PhotoImage> {
     }
     const base64 = dataUrl.slice(comma + 1);
 
-    return {
-      base64,
-      mediaType: "image/jpeg",
-      width,
-      height,
-      // base64 は元データの 4/3 の長さになる
-      bytes: Math.round((base64.length * 3) / 4),
-    };
+    return { base64, mediaType: "image/jpeg" };
   } finally {
     source.release();
   }
-}
-
-/** 「約 240KB」。送信量の目安表示用 */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)}KB`;
-  return `${Math.round((bytes / (1024 * 1024)) * 10) / 10}MB`;
 }

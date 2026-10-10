@@ -13,7 +13,6 @@ export function NumberField({
   value,
   onChange,
   step,
-  min = 0,
   unit,
   label,
   placeholder,
@@ -22,7 +21,6 @@ export function NumberField({
   value: number | null;
   onChange: (value: number | null) => void;
   step: number;
-  min?: number;
   unit: string;
   label: string;
   placeholder?: string;
@@ -44,13 +42,13 @@ export function NumberField({
       return;
     }
     const parsed = Number(next);
-    if (Number.isFinite(parsed) && parsed >= min)
+    if (Number.isFinite(parsed) && parsed >= 0)
       onChange(Math.round(parsed * 100) / 100);
   };
 
   const bump = (delta: number) => {
     const base = value ?? 0;
-    const next = Math.max(min, Math.round((base + delta) * 100) / 100);
+    const next = Math.max(0, Math.round((base + delta) * 100) / 100);
     setText(fmt(next));
     onChange(next);
   };

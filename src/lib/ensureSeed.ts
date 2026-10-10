@@ -5,11 +5,11 @@
  * Settings.seedVersion で冪等だが、同時に2本走ると両方が「まだ空」と判断して
  * 二重投入になりうる。Promise を共有して直列化する。
  */
-import { seedIfEmpty, type SeedResult } from "../db/seed";
+import { seedIfEmpty } from "../db/seed";
 
-let pending: Promise<SeedResult> | null = null;
+let pending: Promise<void> | null = null;
 
-export function ensureSeed(): Promise<SeedResult> {
+export function ensureSeed(): Promise<void> {
   if (!pending) {
     pending = seedIfEmpty().catch((error) => {
       // 失敗したら次の呼び出しでやり直せるようにする

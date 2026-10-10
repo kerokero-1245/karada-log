@@ -114,15 +114,6 @@ export interface ParsedItem {
   logDate: LogDate | null;
 }
 
-/** 複数行・複数項目のテキストを項目ごとに割る */
-export function splitItems(text: string): string[] {
-  return text
-    .normalize("NFKC")
-    .split(SEPARATORS)
-    .map((part) => part.trim())
-    .filter((part) => part !== "");
-}
-
 /**
  * 1項目ぶんの解釈。
  *

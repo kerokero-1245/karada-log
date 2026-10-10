@@ -14,7 +14,7 @@ import { IMPORT_PROMPT } from "../lib/importPrompt";
 
 type CopyState = "idle" | "copied" | "manual";
 
-export function CopyPromptButton({ className = "" }: { className?: string }) {
+export function CopyPromptButton() {
   const [state, setState] = useState<CopyState>("idle");
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function CopyPromptButton({ className = "" }: { className?: string }) {
   };
 
   return (
-    <div className={className}>
+    <div>
       <Button className="w-full" onClick={() => void copy()}>
         claude.ai 用の依頼文をコピー
       </Button>

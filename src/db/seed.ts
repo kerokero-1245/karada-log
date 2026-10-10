@@ -46,13 +46,6 @@ import { aliasesOf, mergeAliases } from "../lib/aliases";
  */
 export const SEED_VERSION = 2;
 
-export interface SeedResult {
-  /** すでに投入済みで何もしなかった */
-  skipped: boolean;
-  counts: Record<string, number>;
-  notes: string[];
-}
-
 /* ------------------------------------------------------------------ */
 /* 食品マスタ（handover §8）                                            */
 /* ------------------------------------------------------------------ */
@@ -636,24 +629,21 @@ const segmentFat: Record<SegmentKey, SegmentFat> = {
 /* 投入                                                                */
 /* ------------------------------------------------------------------ */
 
-export async function seedIfEmpty(): Promise<SeedResult> {
+export async function seedIfEmpty(): Promise<void> {
   const existing = await db.settings.get(1);
 
   // settings 行があれば「もう投入済みの端末」。フル投入は二度と走らせない。
   if (existing) {
-    if (existing.seedVersion >= SEED_VERSION) {
-      return { skipped: true, counts: await currentCounts(), notes: [] };
-    }
-    const notes = await upgradeSeed(existing.seedVersion);
+    if (existing.seedVersion >= SEED_VERSION) return;
+    await upgradeSeed(existing.seedVersion);
     await db.settings.update(1, {
       seedVersion: SEED_VERSION,
       updatedAt: toIsoDateTime(new Date()),
     });
-    return { skipped: false, counts: await currentCounts(), notes };
+    return;
   }
 
   const now = toIsoDateTime(new Date());
-  const notes: string[] = [];
 
   await db.transaction(
     "rw",
@@ -1017,18 +1007,6 @@ export async function seedIfEmpty(): Promise<SeedResult> {
       await db.settings.put(settings);
     },
   );
-
-  notes.push(
-    "食事記録（MealEntry）は投入していない。§9 の日次実績は合計値のみで品目単位の記録が揃っていないため",
-  );
-  notes.push(
-    "固定ベースは ShortcutSet として投入。タップするまで記録には入らない（原則1）",
-  );
-  notes.push(
-    "09/11 の B は「実施した」ことだけ記録（重量・回数は未記録）。測定条件の日数計算に使う",
-  );
-
-  return { skipped: false, counts: await currentCounts(), notes };
 }
 
 /**
@@ -1038,26 +1016,18 @@ export async function seedIfEmpty(): Promise<SeedResult> {
  *   ユーザーが登録した食品・付けた呼び名・記録を消さないこと。
  *   足りないものを足すだけにする。
  */
-async function upgradeSeed(fromVersion: number): Promise<string[]> {
-  const notes: string[] = [];
-
+async function upgradeSeed(fromVersion: number): Promise<void> {
   if (fromVersion < 2) {
-    const updated = await applyDefaultAliases();
-    notes.push(
-      `既定の呼び名（エイリアス）を ${updated} 件の食品に追加した。ユーザーが付けた呼び名はそのまま残している`,
-    );
+    await applyDefaultAliases();
   }
-
-  return notes;
 }
 
 /**
  * 既定の呼び名を、名前（＋バリアント名）が一致する食品に足す。
  * id は端末ごとに違うので、FOOD_SEEDS の名前で突き合わせる。
  */
-async function applyDefaultAliases(): Promise<number> {
+async function applyDefaultAliases(): Promise<void> {
   const foods = await db.foods.toArray();
-  let updated = 0;
 
   for (const seed of FOOD_SEEDS) {
     const defaults = DEFAULT_ALIASES[seed.key];
@@ -1073,56 +1043,6 @@ async function applyDefaultAliases(): Promise<number> {
       if (merged.length === current.length) continue;
       await db.foods.update(food.id, { aliases: merged });
       food.aliases = merged;
-      updated += 1;
     }
   }
-
-  return updated;
-}
-
-async function currentCounts(): Promise<Record<string, number>> {
-  const [
-    foods,
-    mealEntries,
-    pendingTexts,
-    shortcutSets,
-    exercises,
-    trainingSessions,
-    sessionExercises,
-    setRecords,
-    bodyCompositions,
-    boneDensities,
-    supplements,
-  ] = await Promise.all([
-    db.foods.count(),
-    db.mealEntries.count(),
-    db.pendingTexts.count(),
-    db.shortcutSets.count(),
-    db.exercises.count(),
-    db.trainingSessions.count(),
-    db.sessionExercises.count(),
-    db.setRecords.count(),
-    db.bodyCompositions.count(),
-    db.boneDensities.count(),
-    db.supplements.count(),
-  ]);
-  return {
-    foods,
-    mealEntries,
-    pendingTexts,
-    shortcutSets,
-    exercises,
-    trainingSessions,
-    sessionExercises,
-    setRecords,
-    bodyCompositions,
-    boneDensities,
-    supplements,
-  };
-}
-
-/** 開発用: 全消去して再投入する */
-export async function resetAndSeed(): Promise<SeedResult> {
-  await Promise.all(db.tables.map((t) => t.clear()));
-  return seedIfEmpty();
 }

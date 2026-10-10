@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* tests/ のファイル内の語（filter など）をクラス名と読み取って、本番の CSS に載せない */
+@source not "../tests";
+
 html {
   /* iOS で入力欄にフォーカスしたときの拡大を防ぐ */
   -webkit-text-size-adjust: 100%;

@@ -39,7 +39,7 @@ import {
   canLearnAlias,
   mergeAliases,
 } from "./aliases";
-import { isoDateTimeIn, toIsoDateTime } from "./date";
+import { isoDateTimeIn, nowIso } from "./date";
 
 export interface QuickEntryPlan {
   /** マスタの食品。推定で新しく作る項目は null */
@@ -146,7 +146,7 @@ export async function learnFromPlans(
     const merged = mergeAliases(aliasesOf(stored), [text]);
     await db.foods.update(foodId, {
       aliases: merged,
-      updatedAt: toIsoDateTime(new Date()),
+      updatedAt: nowIso(),
     });
     // 同じテキストが2項目に出てきたときに二重で覚えないよう、手元の配列も更新する
     stored.aliases = merged;
@@ -163,7 +163,7 @@ export async function addPendingPlans(
 ): Promise<void> {
   if (pending.length === 0) return;
   for (const item of pending) assertTime(item.time);
-  const now = toIsoDateTime(new Date());
+  const now = nowIso();
   const rows: PendingText[] = pending.map((item) => ({
     text: item.raw,
     reason: item.reason,

@@ -11,13 +11,17 @@ import {
   WEEKDAY_JA,
   WEEK_STARTS_ON,
   addDays,
+  compactDate,
   diffDays,
   formatDateTime,
   formatLogDate,
   formatLogDateShort,
+  formatSlashDate,
   hasTime,
   isoDateTimeIn,
+  nowIso,
   nowTime,
+  pad2,
   parseIso,
   timeOf,
   toCalendarDate,
@@ -25,6 +29,7 @@ import {
   toLogDate,
   todayLogDate,
   weekStartOf,
+  weekdayOf,
 } from "../src/lib/date.ts";
 import { freezeTime, unfreezeTime } from "./helpers.ts";
 
@@ -150,4 +155,35 @@ test("date.hasTime: HH:mm で始まる文字列だけが時刻", () => {
   for (const value of ["8:30", "", "--:--"]) {
     assert.equal(hasTime(value), false, value);
   }
+});
+
+test("date.pad2: 1 桁は 0 埋めで 2 桁、2 桁以上はそのまま", () => {
+  assert.equal(pad2(0), "00");
+  assert.equal(pad2(5), "05");
+  assert.equal(pad2(10), "10");
+  assert.equal(pad2(31), "31");
+  assert.equal(pad2(123), "123");
+});
+
+test("date.nowIso: 今この時刻を 'YYYY-MM-DDTHH:mm' にする（toIsoDateTime(new Date()) と同じ）", () => {
+  freezeTime(new Date(2026, 9, 11, 3, 4));
+  assert.equal(nowIso(), "2026-10-11T03:04");
+  assert.equal(nowIso(), toIsoDateTime(new Date()));
+  freezeTime(new Date(2026, 0, 2, 23, 59));
+  assert.equal(nowIso(), "2026-01-02T23:59");
+});
+
+test("date.weekdayOf / formatSlashDate / compactDate: 曜日 1 文字・YYYY/MM/DD・YYYYMMDD", () => {
+  assert.equal(weekdayOf("2026-09-12"), "土");
+  assert.equal(weekdayOf("2026-09-20"), "日");
+  assert.equal(weekdayOf("2026-09-21"), "月");
+  assert.equal(formatSlashDate("2026-09-12"), "2026/09/12");
+  assert.equal(formatSlashDate("2026-01-05"), "2026/01/05");
+  assert.equal(compactDate("2026-09-07"), "20260907");
+  assert.equal(compactDate("2026-12-31"), "20261231");
+  // formatLogDate は 日付 + 曜日 をこの 2 つから組み立てる
+  assert.equal(
+    formatLogDate("2026-09-12"),
+    `${formatSlashDate("2026-09-12")}（${weekdayOf("2026-09-12")}）`,
+  );
 });

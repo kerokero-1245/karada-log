@@ -16,6 +16,7 @@
  *   - 当たらず値も無い → 'missing'。栄養値を付けずに原文のまま預かる（従来どおり）
  */
 import type { Food, LogDate, Nutrition } from "../db/types";
+import { groupBy } from "./collections";
 import { toCalendarDate, toIsoDateTime } from "./date";
 import { formatQuantity } from "./meals";
 import { gramsPerUnitOf, guessCategory, unitLabelOf } from "./photoMeal";
@@ -226,12 +227,7 @@ export function parseImport(
     timeMissing: parsed.time === null,
   }));
 
-  const grouped = new Map<LogDate, ImportRow[]>();
-  for (const row of rows) {
-    const list = grouped.get(row.logDate);
-    if (list === undefined) grouped.set(row.logDate, [row]);
-    else list.push(row);
-  }
+  const grouped = groupBy(rows, (row) => row.logDate);
 
   const days = [...grouped]
     .map(([logDate, dayRows]) => ({ logDate, rows: dayRows }))

@@ -16,7 +16,7 @@ import type {
   ValueSource,
 } from "../db/types";
 import { NUTRIENT_KEYS } from "../db/types";
-import { toIsoDateTime } from "./date";
+import { nowIso } from "./date";
 
 /** 表記の基準 3択 */
 export type BasisKind = "unit" | "per100g" | "bag";
@@ -179,7 +179,7 @@ export function buildFood(values: FoodFormValues): FoodFormResult {
     return { errors, preview, unitsPerBasis, basisLabel, food: null };
   }
 
-  const now = toIsoDateTime(new Date());
+  const now = nowIso();
   const basis: EntryBasis = { label: basisLabel, unitsPerBasis };
   const food: Omit<Food, "id"> = {
     name,

@@ -8,6 +8,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  ARCHIVED_PENALTY,
   findCandidates,
   groupKeyOf,
   interpret,
@@ -670,4 +671,15 @@ test("quickText.quantityFor: 数量トークンが商品名・単位ラベルの
       notes: [],
     },
   );
+});
+
+test("quickText.ARCHIVED_PENALTY: 在庫切れの減点は 25。scoreFood で引いた分を写真の照合（matchFood）が戻す", () => {
+  assert.equal(ARCHIVED_PENALTY, 25);
+  const [, , , , , , bLegend] = catalogFixture();
+  const archived = scoreFood(bLegend, normalize("ビーレジェンド"));
+  const live = scoreFood(
+    foodFixture({ name: bLegend.name, archived: false }),
+    normalize("ビーレジェンド"),
+  );
+  assert.equal(live.score - archived.score, ARCHIVED_PENALTY);
 });

@@ -27,13 +27,14 @@ import type {
   TrainingSession,
 } from "../db/types";
 import { DAY_TYPE_LABELS, MENU_LABELS, OUTCOME_LABELS } from "../db/types";
+import { groupBy } from "./collections";
 import {
-  WEEKDAY_JA,
   formatDateTime,
   formatLogDateShort,
   parseIso,
   timeOf,
   weekStartOf,
+  weekdayOf,
 } from "./date";
 import type { DateRange } from "./exportRange";
 import { formatRange, rangeDayCount } from "./exportRange";
@@ -115,10 +116,6 @@ function fmtSigned(value: number): string {
 
 function trimZeros(text: string): string {
   return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
-}
-
-function weekdayOf(logDate: LogDate): string {
-  return WEEKDAY_JA[parseIso(logDate).getDay()];
 }
 
 /** '2026-09-21' → '9/21' */
@@ -249,13 +246,9 @@ function summarySection(input: ExportInput): string {
 
 function weeklySection(input: ExportInput): string {
   const s = input.settings;
-  const groups = new Map<LogDate, ExportDay[]>();
-  for (const day of input.days) {
-    const key = weekStartOf(day.logDate, s.weekStartsOn);
-    const list = groups.get(key);
-    if (list) list.push(day);
-    else groups.set(key, [day]);
-  }
+  const groups = groupBy(input.days, (day) =>
+    weekStartOf(day.logDate, s.weekStartsOn),
+  );
 
   const target = `${formatAmount("kcal", s.weeklyKcalTarget)} ± ${s.weeklyKcalTolerance}`;
   const rows = [...groups.entries()].map(([weekStart, days]) => {

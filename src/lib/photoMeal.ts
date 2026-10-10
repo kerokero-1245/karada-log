@@ -16,7 +16,12 @@
 import type { Food, FoodCategory, Nutrition } from "../db/types";
 import { toCalendarDate, toIsoDateTime } from "./date";
 import { formatQuantity } from "./meals";
-import { findCandidates, parseItem, quantityFor } from "./quickText";
+import {
+  ARCHIVED_PENALTY,
+  findCandidates,
+  parseItem,
+  quantityFor,
+} from "./quickText";
 import type { QuickCandidate } from "./quickText";
 import { normalize } from "./quickText";
 import type { MealPhotoItem, MealPhotoRead } from "./vision";
@@ -243,7 +248,7 @@ export function guessCategory(name: string): FoodCategory {
 /* ------------------------------------------------------------------ */
 
 /**
- * 在庫切れの −25 を戻したスコア。
+ * 在庫切れの減点（ARCHIVED_PENALTY）を戻したスコア。
  * 「在庫を切らしている」ことと「同じ商品かどうか」は別の話なので、
  * 照合の判定には持ち込まない（表示のほうでは在庫切れのバッジが出る）。
  */
@@ -251,7 +256,7 @@ function matchScore(candidate: QuickCandidate): number {
   const allArchived =
     candidate.foods.length > 0 &&
     candidate.foods.every((food) => food.archived);
-  return allArchived ? candidate.score + 25 : candidate.score;
+  return allArchived ? candidate.score + ARCHIVED_PENALTY : candidate.score;
 }
 
 /** 品目1つをマスタに当ててみる。丸ごと一致したときだけ採用する */

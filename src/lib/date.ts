@@ -15,16 +15,24 @@ export const WEEK_STARTS_ON = 1;
 
 export const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
-const pad = (n: number) => String(n).padStart(2, "0");
+/** 1 桁の数を 2 桁に 0 埋めする。5 → '05' */
+export function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
 
 /** Date → 'YYYY-MM-DDTHH:mm'（ローカル時刻） */
 export function toIsoDateTime(d: Date): IsoDateTime {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${toCalendarDate(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 /** Date → 'YYYY-MM-DD'（暦日。論理日付ではない） */
 export function toCalendarDate(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** 今この時刻 'YYYY-MM-DDTHH:mm'（createdAt / updatedAt など、保存する時刻に使う） */
+export function nowIso(): IsoDateTime {
+  return toIsoDateTime(new Date());
 }
 
 /** 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD' → Date（ローカル時刻として解釈） */
@@ -83,10 +91,25 @@ export function todayLogDate(
   return toLogDate(new Date(), boundaryHour);
 }
 
+/** '2026-09-12' → '土'（曜日 1 文字） */
+export function weekdayOf(logDate: LogDate): string {
+  return WEEKDAY_JA[parseIso(logDate).getDay()];
+}
+
+/** '2026-09-12' → '2026/09/12'（曜日なし） */
+export function formatSlashDate(logDate: LogDate): string {
+  const d = parseIso(logDate);
+  return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}`;
+}
+
+/** '2026-09-07' → '20260907'（ファイル名に使う） */
+export function compactDate(logDate: LogDate): string {
+  return logDate.replace(/-/g, "");
+}
+
 /** '2026-09-12' → '2026/09/12（土）' */
 export function formatLogDate(logDate: LogDate): string {
-  const d = parseIso(logDate);
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}（${WEEKDAY_JA[d.getDay()]}）`;
+  return `${formatSlashDate(logDate)}（${weekdayOf(logDate)}）`;
 }
 
 /** '2026-09-12T21:30' → '2026/09/12（土） 21:30' */
@@ -102,7 +125,7 @@ export function formatDateTime(at: IsoDateTime): string {
 /** '2026-09-20' → '9/20（土）'。見出しが長くならないように月日だけ */
 export function formatLogDateShort(logDate: LogDate): string {
   const d = parseIso(logDate);
-  return `${d.getMonth() + 1}/${d.getDate()}（${WEEKDAY_JA[d.getDay()]}）`;
+  return `${d.getMonth() + 1}/${d.getDate()}（${weekdayOf(logDate)}）`;
 }
 
 /** '2026-09-20T21:30' → '21:30' */
@@ -113,7 +136,7 @@ export function timeOf(at: IsoDateTime): string {
 
 /** 現在時刻 'HH:mm'（<input type="time"> の初期値に使う） */
 export function nowTime(): string {
-  return toIsoDateTime(new Date()).slice(11, 16);
+  return nowIso().slice(11, 16);
 }
 
 /**

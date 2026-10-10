@@ -16,7 +16,7 @@ import type {
   MealSnapshot,
   Nutrition,
 } from "../db/types";
-import { hasTime, isoDateTimeIn, toIsoDateTime, toLogDate } from "./date";
+import { hasTime, isoDateTimeIn, nowIso, toLogDate } from "./date";
 import { scaleNutrition } from "./nutrition";
 
 export interface NewMealInput {
@@ -69,7 +69,7 @@ export async function addMealEntries(
   boundaryHour?: number,
 ): Promise<number[]> {
   for (const input of inputs) assertTime(input.time);
-  const now = toIsoDateTime(new Date());
+  const now = nowIso();
   const ids: number[] = [];
 
   await db.transaction("rw", [db.mealEntries, db.foods], async () => {

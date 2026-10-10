@@ -12,13 +12,14 @@
 import { useMemo, useState } from "react";
 import { db } from "../../db/db";
 import type { MenuId, Settings } from "../../db/types";
-import { DAY_TYPE_LABELS, MENU_LABELS } from "../../db/types";
+import { DAY_TYPE_LABELS, MENU_IDS, MENU_LABELS } from "../../db/types";
 import { Card, Note } from "../../components/ui";
 import { formatLogDate, timeOf } from "../../lib/date";
 import { resolveDayType, useTodayLogDate } from "../../lib/day";
 import { dayTargetKcal, formatAmount } from "../../lib/goals";
 import { entryNutrition } from "../../lib/meals";
 import { sumNutrition } from "../../lib/nutrition";
+import { DEFAULT_TARGET_REPS } from "../../lib/progression";
 import {
   deleteSession,
   loadSessionRecords,
@@ -29,8 +30,6 @@ import {
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { describeLoadShort } from "../../lib/weight";
 import { ExerciseCard } from "./ExerciseCard";
-
-const MENUS: MenuId[] = ["A", "B", "C"];
 
 export function TrainingScreen({ settings }: { settings: Settings }) {
   const logDate = useTodayLogDate(settings.dayBoundaryHour);
@@ -165,7 +164,7 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
                 </Note>
               )}
             </Card>
-            {MENUS.map((menu) => (
+            {MENU_IDS.map((menu) => (
               <Card key={menu}>
                 <div className="flex items-baseline justify-between gap-2">
                   <h2 className="text-base font-bold text-slate-800">
@@ -185,7 +184,7 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
                         ? `限界まで × ${exercise.sets}`
                         : exercise.kind === "timed"
                           ? `${describeLoadShort(planned.load)} ${planned.seconds ?? "—"}秒 × ${exercise.sets}`
-                          : `${describeLoadShort(planned.load)} × ${planned.reps ?? 10}回 × ${exercise.sets}`;
+                          : `${describeLoadShort(planned.load)} × ${planned.reps ?? DEFAULT_TARGET_REPS}回 × ${exercise.sets}`;
                     return (
                       <li
                         key={exercise.id}

@@ -11,7 +11,7 @@
 import { db } from "../db/db";
 import type { IsoDateTime, Settings } from "../db/types";
 import { apiKeyOf } from "./apiKey";
-import { toIsoDateTime } from "./date";
+import { compactDate, nowIso, toCalendarDate } from "./date";
 import { isPlainObject } from "./guards";
 
 export const BACKUP_APP = "karada-log";
@@ -94,7 +94,7 @@ export async function buildBackup(): Promise<BackupFile> {
   return {
     app: BACKUP_APP,
     formatVersion: BACKUP_FORMAT_VERSION,
-    exportedAt: toIsoDateTime(new Date()),
+    exportedAt: nowIso(),
     seedVersion: current?.seedVersion ?? 0,
     tables,
   };
@@ -102,7 +102,7 @@ export async function buildBackup(): Promise<BackupFile> {
 
 /** ファイル名。'karada-log-backup-20260922.json' */
 export function backupFileName(at: Date = new Date()): string {
-  return `karada-log-backup-${toIsoDateTime(at).slice(0, 10).replace(/-/g, "")}.json`;
+  return `karada-log-backup-${compactDate(toCalendarDate(at))}.json`;
 }
 
 /* ------------------------------------------------------------------ */

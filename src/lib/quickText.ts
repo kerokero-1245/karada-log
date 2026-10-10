@@ -18,7 +18,8 @@
  *      （ただし栄養値が書いてあれば「推定」として扱える。lib/importText.ts）
  */
 import type { Food, LogDate, Nutrition } from "../db/types";
-import { todayLogDate } from "./date";
+import { groupBy } from "./collections";
+import { pad2, todayLogDate } from "./date";
 
 /* ------------------------------------------------------------------ */
 /* 正規化                                                               */
@@ -130,7 +131,7 @@ export function parseItem(input: string): ParsedItem {
     const hour = Number(timeMatch[1]);
     const minute = Number(timeMatch[2]);
     if (hour <= 23 && minute <= 59) {
-      time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+      time = `${pad2(hour)}:${pad2(minute)}`;
       rest = rest.slice(timeMatch[0].length).trim();
     }
   }
@@ -224,8 +225,6 @@ const DATE_LINE_RE = new RegExp(
   String.raw`^(?:(\d{4})\s*[/\-.年]\s*)?(\d{1,2})\s*[/\-.月]\s*(\d{1,2})\s*日?\s*${WEEKDAY}?$`,
 );
 
-const pad2 = (value: number) => String(value).padStart(2, "0");
-
 /**
  * 年が書かれていないときは「その日付が未来にならない直近の年」。
  * 9/22 が今日なら 9/22 は今年、12/31 は去年になる。
@@ -313,9 +312,12 @@ export function parseItems(
 /* 照合                                                                */
 /* ------------------------------------------------------------------ */
 
+/** 在庫切れ（archived）の減点。候補から消しはしないが、優先度は下げる */
+export const ARCHIVED_PENALTY = 25;
+
 /**
  * 照合スコア。名前が一番強く、カテゴリが一番弱い。
- * 在庫切れ（archived）は −25。候補から消しはしないが、優先度は下げる。
+ * 在庫切れ（archived）は ARCHIVED_PENALTY を引く。
  */
 export interface FoodScore {
   score: number;
@@ -357,7 +359,9 @@ export function scoreFood(food: Food, key: string): FoodScore {
     take(30, "カテゴリが部分一致");
 
   if (best === 0) return { score: 0, reason: "" };
-  if (food.archived) return { score: best - 25, reason: `${reason}・在庫切れ` };
+  if (food.archived) {
+    return { score: best - ARCHIVED_PENALTY, reason: `${reason}・在庫切れ` };
+  }
   return { score: best, reason };
 }
 
@@ -411,14 +415,10 @@ export function findCandidates(name: string, foods: Food[]): QuickCandidate[] {
   if (hits.size === 0) return [];
 
   // 片方のバリアントだけ当たった場合でも、切り替えられるように兄弟を全部集める
-  const members = new Map<string, Food[]>();
-  for (const food of foods) {
-    const groupKey = groupKeyOf(food);
-    if (!hits.has(groupKey)) continue;
-    const list = members.get(groupKey);
-    if (list === undefined) members.set(groupKey, [food]);
-    else list.push(food);
-  }
+  const members = groupBy(
+    foods.filter((food) => hits.has(groupKeyOf(food))),
+    groupKeyOf,
+  );
 
   const candidates: QuickCandidate[] = [];
   for (const [groupKey, hit] of hits) {

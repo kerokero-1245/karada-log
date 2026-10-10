@@ -7,7 +7,7 @@
  */
 import type { Food, FoodCategory, IsoDateTime } from "../../db/types";
 import { aliasesOf } from "../../lib/aliases";
-import { normalize } from "../../lib/quickText";
+import { groupKeyOf, normalize, sortVariants } from "../../lib/quickText";
 
 export interface FoodGroup {
   key: string;
@@ -45,7 +45,7 @@ export function matchesQuery(food: Food, query: string): boolean {
 export function groupFoods(foods: Food[]): FoodGroup[] {
   const groups = new Map<string, FoodGroup>();
   for (const food of foods) {
-    const key = food.variantGroupId ?? `food-${food.id}`;
+    const key = groupKeyOf(food);
     const existing = groups.get(key);
     if (existing) {
       existing.foods.push(food);
@@ -65,14 +65,8 @@ export function groupFoods(foods: Food[]): FoodGroup[] {
     }
   }
   for (const group of groups.values()) {
-    // 使った回数が同じなら塩分の低い順（「汁は必ず残す」側を先に出す）
-    group.foods.sort(
-      (a, b) =>
-        b.useCount - a.useCount ||
-        (a.per.saltG ?? Number.POSITIVE_INFINITY) -
-          (b.per.saltG ?? Number.POSITIVE_INFINITY) ||
-        (a.variantLabel ?? "").localeCompare(b.variantLabel ?? "", "ja"),
-    );
+    // 使った回数が同じなら塩分の低い順（「汁は必ず残す」側を先に出す）。テキスト記録の既定と同じ並び
+    group.foods = sortVariants(group.foods);
   }
   return [...groups.values()];
 }

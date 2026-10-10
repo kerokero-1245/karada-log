@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { db } from "../db/db";
 import type { DayMeta, DayType, LogDate } from "../db/types";
-import { DAY_BOUNDARY_HOUR, toIsoDateTime, todayLogDate } from "./date";
+import { DAY_BOUNDARY_HOUR, nowIso, todayLogDate } from "./date";
 
 /**
  * 現在時刻の論理日付。1分ごとに評価し直すので、
@@ -61,7 +61,7 @@ export async function setManualDayType(
     dayType,
     source: "manual",
     note: "画面で手動切替",
-    updatedAt: toIsoDateTime(new Date()),
+    updatedAt: nowIso(),
   });
 }
 

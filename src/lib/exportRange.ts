@@ -12,8 +12,9 @@ import type { LogDate } from "../db/types";
 import {
   WEEK_STARTS_ON,
   addDays,
+  compactDate,
   diffDays,
-  formatLogDate,
+  formatSlashDate,
   parseIso,
   weekStartOf,
 } from "./date";
@@ -88,10 +89,10 @@ export function inRange(range: DateRange, logDate: LogDate): boolean {
 
 /** '2026/09/07〜2026/09/22' */
 export function formatRange(range: DateRange): string {
-  return `${formatLogDate(range.start).slice(0, 10)}〜${formatLogDate(range.end).slice(0, 10)}`;
+  return `${formatSlashDate(range.start)}〜${formatSlashDate(range.end)}`;
 }
 
 /** ファイル名用。'20260907-20260922' */
 export function rangeFileStamp(range: DateRange): string {
-  return `${range.start.replace(/-/g, "")}-${range.end.replace(/-/g, "")}`;
+  return `${compactDate(range.start)}-${compactDate(range.end)}`;
 }

@@ -5,18 +5,14 @@
  * 書き込みは一切しない。書き出しが記録を変えることは無い。
  */
 import { db } from "../db/db";
-import type {
-  BodyComposition,
-  LogDate,
-  PendingText,
-  SetRecord,
-  Settings,
-} from "../db/types";
-import { toIsoDateTime, toLogDate } from "./date";
+import type { BodyComposition, PendingText, Settings } from "../db/types";
+import { groupBy, idsOf } from "./collections";
+import { nowIso, toLogDate } from "./date";
 import { resolveDayType } from "./day";
 import type { DateRange } from "./exportRange";
 import { inRange, rangeDates } from "./exportRange";
 import type { ExportDay, ExportInput, ExportSession } from "./exportMarkdown";
+import { loadSetsFor } from "./training";
 
 export async function collectExport(
   range: DateRange,
@@ -42,9 +38,7 @@ export async function collectExport(
       db.pendingTexts.orderBy("recordedAt").toArray(),
     ]);
 
-  const sessionIds = sessions
-    .map((s) => s.id)
-    .filter((id): id is number => id !== undefined);
+  const sessionIds = idsOf(sessions);
   const sessionExercises =
     sessionIds.length === 0
       ? []
@@ -52,28 +46,16 @@ export async function collectExport(
           .where("sessionId")
           .anyOf(sessionIds)
           .toArray();
-  const sessionExerciseIds = sessionExercises
-    .map((item) => item.id)
-    .filter((id): id is number => id !== undefined);
-  const setRecords =
-    sessionExerciseIds.length === 0
-      ? []
-      : await db.setRecords
-          .where("sessionExerciseId")
-          .anyOf(sessionExerciseIds)
-          .toArray();
+  const setRecords = await loadSetsFor(idsOf(sessionExercises));
 
-  const setsByExercise = new Map<number, SetRecord[]>();
-  for (const record of setRecords) {
-    const list = setsByExercise.get(record.sessionExerciseId);
-    if (list) list.push(record);
-    else setsByExercise.set(record.sessionExerciseId, [record]);
-  }
+  const setsByExercise = groupBy(
+    setRecords,
+    (record) => record.sessionExerciseId,
+  );
   for (const list of setsByExercise.values())
     list.sort((a, b) => a.setNo - b.setNo);
 
-  const sessionsByDate = new Map<LogDate, ExportSession[]>();
-  for (const session of sessions) {
+  const exportSessions = sessions.map((session): ExportSession => {
     const items = sessionExercises
       .filter((item) => item.sessionId === session.id)
       .sort((a, b) => a.order - b.order)
@@ -81,11 +63,12 @@ export async function collectExport(
         item,
         sets: item.id === undefined ? [] : (setsByExercise.get(item.id) ?? []),
       }));
-    const list = sessionsByDate.get(session.logDate);
-    const value: ExportSession = { session, items };
-    if (list) list.push(value);
-    else sessionsByDate.set(session.logDate, [value]);
-  }
+    return { session, items };
+  });
+  const sessionsByDate = groupBy(
+    exportSessions,
+    (value) => value.session.logDate,
+  );
 
   const metaByDate = new Map(dayMetaRows.map((row) => [row.logDate, row]));
 
@@ -114,7 +97,7 @@ export async function collectExport(
 
   return {
     range,
-    generatedAt: toIsoDateTime(new Date()),
+    generatedAt: nowIso(),
     settings,
     days,
     bodies: bodiesInRange,

@@ -37,7 +37,7 @@ import type {
   TrainingSession,
   ValueSource,
 } from "./types";
-import { toIsoDateTime, toLogDate } from "../lib/date";
+import { nowIso, toLogDate } from "../lib/date";
 import { evaluateConditions } from "../lib/measurement";
 import { aliasesOf, mergeAliases } from "../lib/aliases";
 
@@ -639,12 +639,12 @@ export async function seedIfEmpty(): Promise<void> {
     await upgradeSeed(existing.seedVersion);
     await db.settings.update(1, {
       seedVersion: SEED_VERSION,
-      updatedAt: toIsoDateTime(new Date()),
+      updatedAt: nowIso(),
     });
     return;
   }
 
-  const now = toIsoDateTime(new Date());
+  const now = nowIso();
 
   await db.transaction(
     "rw",

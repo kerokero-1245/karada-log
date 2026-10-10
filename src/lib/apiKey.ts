@@ -6,7 +6,7 @@
  */
 import { db } from "../db/db";
 import type { Settings } from "../db/types";
-import { toIsoDateTime } from "./date";
+import { nowIso } from "./date";
 
 /** 設定からキーを取り出す。未設定・空文字はすべて null に寄せる */
 export function apiKeyOf(settings: Settings | undefined | null): string | null {
@@ -25,13 +25,13 @@ export function maskApiKey(key: string): string {
 export async function saveApiKey(key: string): Promise<void> {
   await db.settings.update(1, {
     anthropicApiKey: key.trim(),
-    updatedAt: toIsoDateTime(new Date()),
+    updatedAt: nowIso(),
   });
 }
 
 export async function clearApiKey(): Promise<void> {
   await db.settings.update(1, {
     anthropicApiKey: null,
-    updatedAt: toIsoDateTime(new Date()),
+    updatedAt: nowIso(),
   });
 }

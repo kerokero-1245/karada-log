@@ -127,7 +127,7 @@ const LABEL_SCHEMA: Record<string, unknown> = {
       type: ["string", "null"],
       description: "商品名。写っていなければ null",
     },
-    basis: { type: "string", enum: ["per_unit", "per_100g", "per_package"] },
+    basis: { type: "string", enum: [...LABEL_BASES] },
     basisLabel: {
       type: "string",
       description: "ラベルの表記そのまま。例: 1食（80g）あたり",
@@ -141,7 +141,7 @@ const LABEL_SCHEMA: Record<string, unknown> = {
     fatG: { type: ["number", "null"] },
     carbG: { type: ["number", "null"] },
     saltG: { type: ["number", "null"], description: "食塩相当量(g)" },
-    confidence: { type: "string", enum: ["high", "medium", "low"] },
+    confidence: { type: "string", enum: [...CONFIDENCES] },
     notes: { type: "string" },
   },
   required: [
@@ -252,7 +252,7 @@ const MEAL_SCHEMA: Record<string, unknown> = {
           fatG: { type: ["number", "null"] },
           carbG: { type: ["number", "null"] },
           saltG: { type: ["number", "null"] },
-          confidence: { type: "string", enum: ["high", "medium", "low"] },
+          confidence: { type: "string", enum: [...CONFIDENCES] },
         },
         required: [
           "name",

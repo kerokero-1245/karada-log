@@ -26,6 +26,8 @@ import type {
   SetRecord,
   TrainingSession,
 } from "../db/types";
+import { MENU_IDS } from "../db/types";
+import { idsOf } from "./collections";
 import { toIsoDateTime } from "./date";
 import {
   isSetAchieved,
@@ -178,9 +180,7 @@ export async function deleteSession(sessionId: number): Promise<void> {
         .where("sessionId")
         .equals(sessionId)
         .toArray();
-      const ids = items
-        .map((item) => item.id)
-        .filter((id): id is number => id !== undefined);
+      const ids = idsOf(items);
       if (ids.length > 0)
         await db.setRecords.where("sessionExerciseId").anyOf(ids).delete();
       await db.sessionExercises.where("sessionId").equals(sessionId).delete();
@@ -216,13 +216,7 @@ export async function loadHistory(
       .filter((s): s is TrainingSession => s !== undefined)
       .map((s) => [s.id as number, s]),
   );
-  const itemIds = items
-    .map((item) => item.id)
-    .filter((id): id is number => id !== undefined);
-  const sets =
-    itemIds.length === 0
-      ? []
-      : await db.setRecords.where("sessionExerciseId").anyOf(itemIds).toArray();
+  const sets = await loadSetsFor(idsOf(items));
 
   const points: HistoryPoint[] = [];
   for (const item of items) {
@@ -244,9 +238,22 @@ export async function loadHistory(
 
 /** 次に回すメニュー（A → B → C → A）。記録が無ければ A */
 export function nextMenuAfter(last: MenuId | null): MenuId {
-  if (last === "A") return "B";
-  if (last === "B") return "C";
-  return "A";
+  const index = last === null ? -1 : MENU_IDS.indexOf(last);
+  return MENU_IDS[(index + 1) % MENU_IDS.length];
+}
+
+/**
+ * 種目の記録（SessionExercise）の id から、そのセット記録をまとめて読む。
+ * id が空なら読みに行かない。並びは DB が返したまま（setNo では整列しない）。
+ */
+export async function loadSetsFor(
+  sessionExerciseIds: number[],
+): Promise<SetRecord[]> {
+  if (sessionExerciseIds.length === 0) return [];
+  return db.setRecords
+    .where("sessionExerciseId")
+    .anyOf(sessionExerciseIds)
+    .toArray();
 }
 
 /** セッション内の保存済みの種目記録とセット */
@@ -257,12 +264,6 @@ export async function loadSessionRecords(
     .where("sessionId")
     .equals(sessionId)
     .toArray();
-  const ids = items
-    .map((item) => item.id)
-    .filter((id): id is number => id !== undefined);
-  const sets =
-    ids.length === 0
-      ? []
-      : await db.setRecords.where("sessionExerciseId").anyOf(ids).toArray();
+  const sets = await loadSetsFor(idsOf(items));
   return { items, sets };
 }

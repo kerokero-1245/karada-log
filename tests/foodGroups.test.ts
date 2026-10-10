@@ -12,6 +12,7 @@ import {
   sortByFrequency,
 } from "../src/screens/meal/foodGroups.ts";
 import type { FoodGroup } from "../src/screens/meal/foodGroups.ts";
+import { groupKeyOf, sortVariants } from "../src/lib/quickText.ts";
 import { catalogFixture, foodFixture } from "./helpers.ts";
 
 test("foodGroups.matchesQuery: 名前・バリアント名・カテゴリ・呼び名の部分一致（正規化して比べる）", () => {
@@ -276,4 +277,16 @@ test("foodGroups.sortByFrequency: 使った回数の多い順 → 最後に使�
     groups.map((group) => group.key),
     ["a", "b", "c", "d", "e", "f"],
   );
+});
+
+test("foodGroups.groupFoods: 行のキーと行の中の並びは、テキスト記録（quickText）の groupKeyOf / sortVariants と同じ", () => {
+  const catalog = catalogFixture();
+  for (const group of groupFoods(catalog)) {
+    const members = catalog.filter((food) => groupKeyOf(food) === group.key);
+    assert.deepEqual(
+      group.foods.map((food) => food.id),
+      sortVariants(members).map((food) => food.id),
+      group.key,
+    );
+  }
 });

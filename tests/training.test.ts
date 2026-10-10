@@ -14,11 +14,13 @@ import type {
   SetRecord,
   TrainingSession,
 } from "../src/db/types.ts";
+import { MENU_IDS } from "../src/db/types.ts";
 import {
   deleteSession,
   judgeTargetOf,
   loadHistory,
   loadSessionRecords,
+  loadSetsFor,
   nextMenuAfter,
   plannedTargetOf,
   saveExerciseRecord,
@@ -558,4 +560,38 @@ test("training.loadSessionRecords: セッションの種目の記録と、その
 
   const none = await loadSessionRecords(99);
   assert.deepEqual(none, { items: [], sets: [] });
+});
+
+test("training: メニューの並びは MENU_IDS（A → B → C）。次のメニューはその並びで一つ進み、C の次は A", () => {
+  assert.deepEqual([...MENU_IDS], ["A", "B", "C"]);
+  MENU_IDS.forEach((menu, index) => {
+    assert.equal(nextMenuAfter(menu), MENU_IDS[(index + 1) % MENU_IDS.length]);
+  });
+});
+
+test("training.loadSetsFor: 種目の記録の id が空なら読みに行かない。あれば該当のセットを DB が返した並びのまま返す", async () => {
+  let queries = 0;
+  const sets = fakeTable<SetRecord>(db.setRecords, [
+    setRecordFixture({ id: 1, sessionExerciseId: 2, setNo: 2, reps: 9 }),
+    setRecordFixture({ id: 2, sessionExerciseId: 1, setNo: 1, reps: 8 }),
+    setRecordFixture({ id: 3, sessionExerciseId: 2, setNo: 1, reps: 10 }),
+    setRecordFixture({ id: 4, sessionExerciseId: 3, setNo: 1, reps: 7 }),
+  ]);
+  const where = db.setRecords.where.bind(db.setRecords);
+  stub(db.setRecords, "where", (index: string) => {
+    queries += 1;
+    return where(index);
+  });
+
+  assert.deepEqual(await loadSetsFor([]), []);
+  assert.equal(queries, 0);
+
+  const loaded = await loadSetsFor([2, 1]);
+  assert.equal(queries, 1);
+  // 種目 1・2 のセットだけ。setNo では整列しない（DB の返した並び = 索引の値 → 主キーの順）
+  assert.deepEqual(
+    loaded.map((set) => set.id),
+    [2, 1, 3],
+  );
+  assert.equal(loaded.length, sets.length - 1);
 });

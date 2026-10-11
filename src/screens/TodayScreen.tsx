@@ -22,7 +22,6 @@ import {
   clearManualDayType,
   resolveDayType,
   setManualDayType,
-  useTodayLogDate,
 } from "../lib/day";
 import { timeOf } from "../lib/date";
 import { buildBars, dayTargetKcal } from "../lib/goals";
@@ -31,6 +30,7 @@ import { fmtNum, scaleNutrition, sumNutrition } from "../lib/nutrition";
 import { deletePendingText } from "../lib/quickRecord";
 import type { QuickCommitResult } from "../lib/quickRecord";
 import { useLiveQuery } from "../lib/useLiveQuery";
+import { useTodayLogDate } from "../lib/useTodayLogDate";
 import { DayHeader } from "./today/DayHeader";
 import { FirstRunGuideCard } from "./today/FirstRunGuideCard";
 import { MealList } from "./today/MealList";

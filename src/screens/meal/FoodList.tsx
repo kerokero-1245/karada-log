@@ -1,5 +1,5 @@
 /** 食品の一覧（バリアントは1行）。タップで選択に進む。 */
-import type { FoodGroup } from "./foodGroups";
+import type { FoodGroup } from "../../lib/foodGroups";
 import { fmtNum } from "../../lib/nutrition";
 import { Badge } from "../../components/ui";
 import { fmtKcalItem } from "../../lib/formatKcal";

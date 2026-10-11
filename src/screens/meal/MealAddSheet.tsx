@@ -30,8 +30,12 @@ import { QuickTextSheet } from "./QuickTextSheet";
 import { VariantPicker } from "./VariantPicker";
 import { ModeTabs } from "./ModeTabs";
 import type { MealAddMode } from "./ModeTabs";
-import type { FoodGroup } from "./foodGroups";
-import { groupFoods, matchesQuery, sortByFrequency } from "./foodGroups";
+import type { FoodGroup } from "../../lib/foodGroups";
+import {
+  groupFoods,
+  matchesQuery,
+  sortByFrequency,
+} from "../../lib/foodGroups";
 
 const FREQUENT_LIMIT = 10;
 

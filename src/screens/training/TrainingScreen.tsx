@@ -15,7 +15,7 @@ import type { MenuId, Settings } from "../../db/types";
 import { DAY_TYPE_LABELS, MENU_IDS, MENU_LABELS } from "../../db/types";
 import { Card, Note } from "../../components/ui";
 import { formatLogDate, timeOf } from "../../lib/date";
-import { resolveDayType, useTodayLogDate } from "../../lib/day";
+import { resolveDayType } from "../../lib/day";
 import { dayTargetKcal, formatAmount } from "../../lib/goals";
 import { entryNutrition } from "../../lib/meals";
 import { sumNutrition } from "../../lib/nutrition";
@@ -28,6 +28,7 @@ import {
   startSession,
 } from "../../lib/training";
 import { useLiveQuery } from "../../lib/useLiveQuery";
+import { useTodayLogDate } from "../../lib/useTodayLogDate";
 import { describeLoadShort } from "../../lib/weight";
 import { ExerciseCard } from "./ExerciseCard";
 

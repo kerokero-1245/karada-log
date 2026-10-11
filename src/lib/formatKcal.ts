@@ -33,13 +33,6 @@ export function fmtKcalItem(value: number | null): string {
   return format(value, ITEM, 1);
 }
 
-const STORED = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 20 });
-
-/**
- * 開発用のデータ確認画面向け。保存されている値を丸めずに出す（桁区切りだけ付ける）。
- * null は '—'、負のゼロは '0'。
- */
-export function fmtStored(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return "—";
-  return STORED.format(value === 0 ? 0 : value);
-}
+// 保存値をそのまま出す fmtStored は kcal 専用ではないので lib/format.ts に置く。
+// tests/rounding.test.ts・tests/formatKcal.test.ts が従来のこのパスから読むため、ここからも出す
+export { fmtStored } from "./format";

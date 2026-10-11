@@ -5,9 +5,9 @@
  * 一覧では1行にまとめ、タップしたときにだけ選択させる。
  * 頻度は行単位（= バリアントの合計）で数えるが、記録は必ず1バリアントに落ちる。
  */
-import type { Food, FoodCategory, IsoDateTime } from "../../db/types";
-import { aliasesOf } from "../../lib/aliases";
-import { groupKeyOf, normalize, sortVariants } from "../../lib/quickText";
+import type { Food, FoodCategory, IsoDateTime } from "../db/types";
+import { aliasesOf } from "./aliases";
+import { groupKeyOf, normalize, sortVariants } from "./quickText";
 
 export interface FoodGroup {
   key: string;

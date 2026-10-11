@@ -3,7 +3,7 @@
  * 選ぶ基準は塩分なので、塩分だけ大きく出す。
  */
 import type { Food } from "../../db/types";
-import type { FoodGroup } from "./foodGroups";
+import type { FoodGroup } from "../../lib/foodGroups";
 import { Sheet } from "../../components/Sheet";
 import { Badge } from "../../components/ui";
 import { fmtNum } from "../../lib/nutrition";

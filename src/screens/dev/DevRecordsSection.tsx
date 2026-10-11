@@ -15,7 +15,7 @@ import { formatDateTime } from "../../lib/date";
 import { fmtNum } from "../../lib/nutrition";
 import { describeLoad, describeProgression } from "../../lib/weight";
 import { useLiveQuery } from "../../lib/useLiveQuery";
-import { fmtStored } from "../../lib/formatKcal";
+import { fmtStored } from "../../lib/format";
 
 export function DevRecordsSection() {
   const data = useLiveQuery(async () => {

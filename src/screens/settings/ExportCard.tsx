@@ -13,8 +13,8 @@ import type { LogDate, Settings } from "../../db/types";
 import { Button, Card, Chip, Note } from "../../components/ui";
 import { backupFileName, buildBackup } from "../../lib/backup";
 import { addDays } from "../../lib/date";
-import { useTodayLogDate } from "../../lib/day";
-import { copyText, downloadText } from "../../lib/download";
+import { copyText } from "../../lib/clipboard";
+import { downloadText } from "../../lib/download";
 import { collectExport } from "../../lib/exportData";
 import { buildMarkdown } from "../../lib/exportMarkdown";
 import type { RangePresetKey } from "../../lib/exportRange";
@@ -27,6 +27,7 @@ import {
   resolveRange,
 } from "../../lib/exportRange";
 import { useLiveQuery } from "../../lib/useLiveQuery";
+import { useTodayLogDate } from "../../lib/useTodayLogDate";
 
 type CopyState = "idle" | "copied" | "manual";
 

@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { Button, Note } from "./ui";
-import { copyText } from "../lib/download";
+import { copyText } from "../lib/clipboard";
 import { IMPORT_PROMPT } from "../lib/importPrompt";
 
 type CopyState = "idle" | "copied" | "manual";

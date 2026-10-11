@@ -1,5 +1,5 @@
 /**
- * 食品一覧の絞り込みと、バリアントの束ね（screens/meal/foodGroups.ts）の今の出力を固定する特性テスト。
+ * 食品一覧の絞り込みと、バリアントの束ね（lib/foodGroups.ts）の今の出力を固定する特性テスト。
  *
  * 絞り込みはテキスト記録（lib/quickText.ts）と同じ normalize で比べる。バリアントは一覧では 1 行にまとめ、
  * 使った回数は行単位（= バリアントの合計）で数える。値は架空のサンプル。
@@ -10,8 +10,8 @@ import {
   groupFoods,
   matchesQuery,
   sortByFrequency,
-} from "../src/screens/meal/foodGroups.ts";
-import type { FoodGroup } from "../src/screens/meal/foodGroups.ts";
+} from "../src/lib/foodGroups.ts";
+import type { FoodGroup } from "../src/lib/foodGroups.ts";
 import { groupKeyOf, sortVariants } from "../src/lib/quickText.ts";
 import { catalogFixture, foodFixture } from "./helpers.ts";
 

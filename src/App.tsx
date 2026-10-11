@@ -11,7 +11,7 @@ import type { TabKey } from "./components/BottomNav";
 import { TodayScreen } from "./screens/TodayScreen";
 import { PlaceholderScreen } from "./screens/PlaceholderScreen";
 import { TrainingScreen } from "./screens/training/TrainingScreen";
-import { DevDataScreen } from "./screens/dev/DevDataScreen";
+import { SettingsScreen } from "./screens/settings/SettingsScreen";
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("today");
@@ -66,7 +66,7 @@ export default function App() {
           plan="1 週間のカロリーの合計、日ごとの目標の達成状況、塩分の週平均、トレーニングの回数。"
         />
       )}
-      {tab === "settings" && <DevDataScreen settings={settings} />}
+      {tab === "settings" && <SettingsScreen settings={settings} />}
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );

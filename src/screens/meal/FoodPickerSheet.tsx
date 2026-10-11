@@ -12,8 +12,12 @@ import { Button } from "../../components/ui";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { FoodList } from "./FoodList";
 import { VariantPicker } from "./VariantPicker";
-import type { FoodGroup } from "./foodGroups";
-import { groupFoods, matchesQuery, sortByFrequency } from "./foodGroups";
+import type { FoodGroup } from "../../lib/foodGroups";
+import {
+  groupFoods,
+  matchesQuery,
+  sortByFrequency,
+} from "../../lib/foodGroups";
 
 export function FoodPickerSheet({
   subtitle,

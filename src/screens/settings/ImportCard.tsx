@@ -7,7 +7,7 @@
 import { useState } from "react";
 import type { Settings } from "../../db/types";
 import { Button, Card, Note } from "../../components/ui";
-import { useTodayLogDate } from "../../lib/day";
+import { useTodayLogDate } from "../../lib/useTodayLogDate";
 import { ImportSheet } from "../import/ImportSheet";
 
 export function ImportCard({ settings }: { settings: Settings }) {

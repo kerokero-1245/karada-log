@@ -30,7 +30,7 @@ import { useLiveQuery } from "../../lib/useLiveQuery";
 import { describeLoad, describeProgression } from "../../lib/weight";
 import { HistoryChart } from "./HistoryChart";
 import { LoadEditor } from "./LoadEditor";
-import { NumberField } from "./NumberField";
+import { NumberField } from "../../components/NumberField";
 
 const EMPTY_SET: SetInput = { reps: null, seconds: null };
 

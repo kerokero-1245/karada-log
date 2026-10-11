@@ -7,7 +7,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtKcal, fmtKcalItem, fmtStored } from "../src/lib/formatKcal.ts";
+import { fmtKcal, fmtKcalItem } from "../src/lib/formatKcal.ts";
+import { fmtStored } from "../src/lib/format.ts";
 import { buildBars, formatAmount } from "../src/lib/goals.ts";
 import { scaleNutrition, sumNutrition } from "../src/lib/nutrition.ts";
 import { settingsFixture } from "./helpers.ts";

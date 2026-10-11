@@ -32,7 +32,3 @@ export function fmtKcal(value: number | null): string {
 export function fmtKcalItem(value: number | null): string {
   return format(value, ITEM, 1);
 }
-
-// 保存値をそのまま出す fmtStored は kcal 専用ではないので lib/format.ts に置く。
-// tests/rounding.test.ts・tests/formatKcal.test.ts が従来のこのパスから読むため、ここからも出す
-export { fmtStored } from "./format";

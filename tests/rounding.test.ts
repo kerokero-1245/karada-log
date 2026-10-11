@@ -15,7 +15,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtKcal, fmtKcalItem, fmtStored } from "../src/lib/formatKcal.ts";
+import { fmtKcal, fmtKcalItem } from "../src/lib/formatKcal.ts";
+import { fmtStored } from "../src/lib/format.ts";
 import { formatAmount } from "../src/lib/goals.ts";
 import { formatQuantity } from "../src/lib/meals.ts";
 import { fmtNum, scaleNutrition, sumNutrition } from "../src/lib/nutrition.ts";

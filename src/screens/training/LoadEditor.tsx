@@ -8,7 +8,7 @@
 import type { BarType, LoadSpec, Progression } from "../../db/types";
 import { BAR_LABELS, BAR_WEIGHT_KG } from "../../db/types";
 import { describeLoad } from "../../lib/weight";
-import { NumberField } from "./NumberField";
+import { NumberField } from "../../components/NumberField";
 
 const BAR_TYPES: BarType[] = ["ez", "short"];
 

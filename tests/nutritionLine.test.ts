@@ -7,7 +7,10 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nutritionLineText } from "../src/lib/nutritionLine.ts";
+import {
+  nutritionLineParts,
+  nutritionLineText,
+} from "../src/lib/nutritionLine.ts";
 import { nutrition } from "./helpers.ts";
 
 const VALUE = nutrition({
@@ -81,5 +84,57 @@ test("nutritionLineText: 負のゼロは 0 と出す（'-0' にしない）", ()
       nutrition({ kcal: -0, proteinG: -0.004, fatG: 0, saltG: 0 }),
     ),
     "0kcal / P0g / 脂質0g / 塩分0g",
+  );
+});
+
+test("nutritionLineParts: 値と「単位 / 見出し」を別のテキストノードに分ける（区切りは元の画面のまま。つなぐと nutritionLineText）", () => {
+  assert.deepEqual(nutritionLineParts(VALUE), [
+    "1,234.6",
+    "kcal / P",
+    "2.68",
+    "g / 脂質",
+    "0.15",
+    "g / 塩分",
+    "0.06",
+    "g",
+  ]);
+  // 塩分を出さない: 最後は脂質の単位
+  assert.deepEqual(nutritionLineParts(VALUE, { salt: false }), [
+    "1,234.6",
+    "kcal / P",
+    "2.68",
+    "g / 脂質",
+    "0.15",
+    "g",
+  ]);
+  // 単位なし: 区切りは「 / 脂質」で、最後の単位は出ない
+  assert.deepEqual(nutritionLineParts(VALUE, { kcal: "stored", unit: false }), [
+    "1,234.56",
+    "kcal / P",
+    "2.68",
+    " / 脂質",
+    "0.15",
+    " / 塩分",
+    "0.06",
+  ]);
+  // 炭水化物つき（開発用の食品マスタの行）
+  assert.deepEqual(
+    nutritionLineParts(VALUE, { kcal: "stored", grams: "stored", carb: true }),
+    [
+      "1,234.56",
+      "kcal / P",
+      "2.675",
+      "g / 脂質",
+      "0.15",
+      "g / 炭水",
+      "4.345",
+      "g / 塩分",
+      "0.055",
+      "g",
+    ],
+  );
+  assert.equal(
+    nutritionLineParts(VALUE, { carb: true }).join(""),
+    nutritionLineText(VALUE, { carb: true }),
   );
 });

@@ -143,7 +143,8 @@ export function DevDataSection() {
                   </div>
                   <div className="mt-0.5 text-xs tabular-nums text-slate-600">
                     {/* 保存値をそのままの精度で出す（開発用の確認なので丸めない） */}
-                    {food.unitLabel} /{" "}
+                    {food.unitLabel}
+                    {" / "}
                     <NutritionLine
                       value={food.per}
                       kcal="stored"

@@ -37,7 +37,13 @@ export interface NutritionLineOptions {
   salt?: boolean;
 }
 
-export function nutritionLineText(
+/**
+ * 1 行を、値と「kcal / P」「g / 脂質」のような区切りに分けた配列で返す。
+ * 画面（components/NutritionLine.tsx）はこの配列の 1 つずつを別のテキストノードとして出す。
+ * 以前の画面は値ごとに {…} で書いていたのでテキストノードが値と区切りで分かれており、1 つの文字列にまとめると
+ * 全体の幅が 1/64px 単位で変わって字の位置がずれるため、区切りを元のままにしている。
+ */
+export function nutritionLineParts(
   value: Nutrition,
   {
     kcal = "item",
@@ -46,16 +52,33 @@ export function nutritionLineText(
     carb = false,
     salt = true,
   }: NutritionLineOptions = {},
-): string {
+): string[] {
   const formatGram = GRAM_FORMATS[grams];
   const suffix = unit ? "g" : "";
-  const gram = (key: NutrientKey) =>
-    `${NUTRIENT_LABELS[key]}${formatGram(value[key])}${suffix}`;
-  return [
-    `${KCAL_FORMATS[kcal](value.kcal)}${NUTRIENT_LABELS.kcal}`,
-    gram("proteinG"),
-    gram("fatG"),
-    ...(carb ? [gram("carbG")] : []),
-    ...(salt ? [gram("saltG")] : []),
-  ].join(" / ");
+  const keys: NutrientKey[] = [
+    "proteinG",
+    "fatG",
+    ...(carb ? (["carbG"] as const) : []),
+    ...(salt ? (["saltG"] as const) : []),
+  ];
+  // 値 → 「単位 / 次の見出し」→ 値 → … → 単位（単位が無いときは最後の単位を出さない）
+  const parts = [
+    KCAL_FORMATS[kcal](value.kcal),
+    `${NUTRIENT_LABELS.kcal} / ${NUTRIENT_LABELS[keys[0]]}`,
+  ];
+  keys.forEach((key, i) => {
+    parts.push(formatGram(value[key]));
+    const next = keys[i + 1];
+    if (next !== undefined) parts.push(`${suffix} / ${NUTRIENT_LABELS[next]}`);
+    else if (suffix !== "") parts.push(suffix);
+  });
+  return parts;
+}
+
+/** 1 行の文字列（区切りをつないだもの） */
+export function nutritionLineText(
+  value: Nutrition,
+  options: NutritionLineOptions = {},
+): string {
+  return nutritionLineParts(value, options).join("");
 }

@@ -46,7 +46,8 @@ export function VariantPicker({
                   />
                 </span>
                 <span className="mt-1 block text-xs tabular-nums text-slate-500">
-                  {food.unitLabel} /{" "}
+                  {food.unitLabel}
+                  {" / "}
                   <NutritionLine value={food.per} salt={false} />
                 </span>
               </span>

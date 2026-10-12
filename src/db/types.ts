@@ -389,7 +389,7 @@ export type ExerciseOutcome =
 export const OUTCOME_LABELS: Record<ExerciseOutcome, string> = {
   achieved: "達成",
   held: "据え置き",
-  unknown: "記録なし",
+  unknown: "判定なし",
 };
 
 export interface SessionExercise {

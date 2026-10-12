@@ -7,6 +7,7 @@ import { db } from "./db/db";
 import { ensureSeed } from "./lib/ensureSeed";
 import { useLiveQuery } from "./lib/useLiveQuery";
 import { errorMessage } from "./lib/errors";
+import { ErrorText } from "./components/ui";
 import { BottomNav } from "./components/BottomNav";
 import type { TabKey } from "./components/BottomNav";
 import { TodayScreen } from "./screens/TodayScreen";
@@ -37,8 +38,8 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-center text-sm text-red-700">
-        読み込みに失敗しました: {error}
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-center">
+        <ErrorText label="読み込みに失敗しました">{error}</ErrorText>
       </div>
     );
   }

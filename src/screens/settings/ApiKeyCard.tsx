@@ -9,7 +9,7 @@
  */
 import { useState } from "react";
 import type { Settings } from "../../db/types";
-import { Button, Card, Note } from "../../components/ui";
+import { Button, Card, ErrorDetail, Note } from "../../components/ui";
 import { FieldLabel } from "../../components/Field";
 import {
   apiKeyOf,
@@ -17,7 +17,7 @@ import {
   maskApiKey,
   saveApiKey,
 } from "../../lib/apiKey";
-import { errorMessage } from "../../lib/errors";
+import { errorMessage, failureText, SAVE_FAILED } from "../../lib/errors";
 import { OFFLINE_SHORT, photoErrorMessage } from "../../lib/photoError";
 import { useOnline } from "../../lib/useOnline";
 import { testConnection } from "../../lib/vision";
@@ -25,6 +25,8 @@ import { testConnection } from "../../lib/vision";
 interface Status {
   ok: boolean;
   text: string;
+  /** 保存・削除の失敗のとき、例外のメッセージ（本文に混ぜず、末尾に小さく添える） */
+  detail?: string;
 }
 
 export function ApiKeyCard({ settings }: { settings: Settings }) {
@@ -49,7 +51,11 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
         text: "キーを保存しました。写真からの入力が使えます。",
       });
     } catch (e) {
-      setStatus({ ok: false, text: errorMessage(e) });
+      setStatus({
+        ok: false,
+        text: failureText(SAVE_FAILED),
+        detail: errorMessage(e),
+      });
     } finally {
       setBusy(false);
     }
@@ -64,7 +70,11 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
         text: "キーを削除しました。写真からの入力は出なくなります。",
       });
     } catch (e) {
-      setStatus({ ok: false, text: errorMessage(e) });
+      setStatus({
+        ok: false,
+        text: failureText(SAVE_FAILED),
+        detail: errorMessage(e),
+      });
     } finally {
       setBusy(false);
     }
@@ -149,6 +159,9 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
           className={`mt-2 text-sm ${status.ok ? "text-emerald-700" : "text-red-700"}`}
         >
           {status.text}
+          {status.detail !== undefined && (
+            <ErrorDetail>{status.detail}</ErrorDetail>
+          )}
         </p>
       )}
 

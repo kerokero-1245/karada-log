@@ -1,11 +1,12 @@
 /**
- * 例外から画面に出す文字列を取り出す（lib/errors.ts の errorMessage）。
+ * 失敗の表示に使う文字列（lib/errors.ts）。
  *
- * DB への保存の失敗などは、写真の読み取り用の文言（lib/photoError.ts）ではなく、例外そのものの message を出す。
+ * 本文は固定の日本語（failureText）で、例外そのものの message（errorMessage）は本文に混ぜず、末尾に小さく添える。
+ * DB への保存の失敗などは、写真の読み取り用の文言（lib/photoError.ts）には直さない。
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { errorMessage } from "../src/lib/errors.ts";
+import { errorMessage, failureText, SAVE_FAILED } from "../src/lib/errors.ts";
 import { photoErrorMessage } from "../src/lib/photoError.ts";
 
 test("errors.errorMessage: Error は message、それ以外は String() の結果", () => {
@@ -29,5 +30,20 @@ test("errors.errorMessage: 写真用の文言には変換しない（photoErrorM
   assert.equal(
     photoErrorMessage(failure),
     "読み取れませんでした。もう一度お試しください。",
+  );
+});
+
+test("errors.failureText: 本文は「○○。もう一度お試しください。」の固定の日本語", () => {
+  assert.equal(
+    failureText(SAVE_FAILED),
+    "保存できませんでした。もう一度お試しください。",
+  );
+  assert.equal(
+    failureText("取り込めませんでした"),
+    "取り込めませんでした。もう一度お試しください。",
+  );
+  assert.equal(
+    failureText("読み込みに失敗しました"),
+    "読み込みに失敗しました。もう一度お試しください。",
   );
 });

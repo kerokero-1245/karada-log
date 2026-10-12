@@ -8,6 +8,7 @@
 - **純関数は DB と React を触らない**: 計算・整形・解釈は純関数にして、`tests/` で `node --test` する。DB を読み書きする処理は別のファイルに分けて（食品の追加は `src/db/foods.ts`、画面が読む問い合わせは `src/lib/queries.ts`）、純関数のテストが DB なしで回るようにする。
 - **テスト**: 純関数と書き出しは必ずテストを書く。画面の見た目を変えない直しは、前後で撮影して全画素を比べる。
 - **整形**: Prettier の既定設定。`npm run format` で整形、`npm run format:check` で検査する。CI は format:check → lint → test → build の順に回す。
+- **失敗の表示**: 利用者に読ませる本文は固定の日本語にする（`lib/errors.ts` の `failureText`。例: 「保存できませんでした。もう一度お試しください。」）。例外のメッセージ（`errorMessage`）は本文に混ぜず、`components/ui.tsx` の `ErrorText`・`ErrorDetail` で末尾に小さく添える。写真の読み取り（Claude API）の失敗だけ、`photoErrorMessage` で日本語に直した文を本文にする。
 - **直すときは「挙動と見た目を変えない」**: 変える場合は理由を書いて、別のコミットにする。
 
 ## 守る境界（変えない）

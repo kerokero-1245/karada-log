@@ -7,6 +7,7 @@ import { NUTRIENT_DISPLAY_ORDER, NUTRIENT_LABELS } from "../db/types";
 import type { Nutrition } from "../db/types";
 import { fmtNum } from "../lib/nutrition";
 import { fmtKcalItem } from "../lib/formatKcal";
+import { failureText } from "../lib/errors";
 
 const BADGE_TONES = {
   blue: "bg-blue-100 text-blue-800",
@@ -186,21 +187,32 @@ export function Chip({
 }
 
 /**
- * 失敗の表示（赤い 1 行）。「保存できませんでした: ○○」のように、何が失敗したか（label）と
- * 理由（children。例外のメッセージ）を並べる。
+ * 失敗の表示（赤い本文 + 末尾の小さな理由）。本文は固定の日本語で、何が失敗したか（label）に
+ * 「もう一度お試しください。」を続ける（例: 「保存できませんでした。もう一度お試しください。」）。
+ * 理由（children。例外のメッセージ）は本文に混ぜず、末尾に小さく添える。
  */
 export function ErrorText({
   label,
   children,
 }: {
   label: string;
-  children: ReactNode;
+  children: string;
 }) {
   return (
     <p className="text-sm text-red-700">
-      {`${label}: `}
-      {children}
+      {failureText(label)}
+      <ErrorDetail>{children}</ErrorDetail>
     </p>
+  );
+}
+
+/** 失敗の本文の末尾に添える、例外のメッセージ（開発時の手掛かり。小さい muted の文字）。空なら何も出さない */
+export function ErrorDetail({ children }: { children: string }) {
+  if (children === "") return null;
+  return (
+    <span className="mt-0.5 block text-[11px] break-words text-slate-500">
+      {children}
+    </span>
   );
 }
 

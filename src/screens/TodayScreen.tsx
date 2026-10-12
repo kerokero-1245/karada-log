@@ -243,11 +243,9 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         )}
 
         <Card title="あと何を食べればいいか">
-          <p className="text-sm text-slate-600">
-            提案は次のステップで追加します。
-          </p>
+          <p className="text-sm text-slate-600">この機能は準備中です。</p>
           <Note>
-            残りのカロリー・P・塩分の枠から、食品マスタで組み合わせを出す予定です（F6）。
+            残りのカロリー・P・塩分の枠に合わせて、食べるものの組み合わせを提案します。
           </Note>
         </Card>
       </main>

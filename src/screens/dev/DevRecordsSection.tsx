@@ -1,174 +1,29 @@
 /**
- * データ確認（開発用）のうち、トレーニング・体組成・骨密度の部分。
- * 旧 App.tsx の確認ページから移したもの。F4/F5 の画面ができたら不要になる。
+ * データ確認（開発用）のうち、体組成・骨密度の部分。
+ * 旧 App.tsx の確認ページから移したもの。からだタブ（準備中）の画面ができたら不要になる。
+ * トレーニングの部分は、トレタブができたので外した（件数は DevDataSection の「件数」に残っている）。
  */
 import { db } from "../../db/db";
-import {
-  MENU_IDS,
-  MENU_LABELS,
-  OUTCOME_LABELS,
-  SEGMENT_KEYS,
-  SEGMENT_LABELS,
-} from "../../db/types";
-import { Badge, Row } from "../../components/ui";
+import { SEGMENT_KEYS, SEGMENT_LABELS } from "../../db/types";
+import { Row } from "../../components/ui";
 import { formatDateTime } from "../../lib/date";
 import { fmtNum } from "../../lib/nutrition";
-import { describeLoad, describeProgression } from "../../lib/weight";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { fmtStored } from "../../lib/format";
 
 export function DevRecordsSection() {
   const data = useLiveQuery(async () => {
-    const [exercises, sessions, sessionExercises, setRecords, bodies, bones] =
-      await Promise.all([
-        db.exercises.toArray(),
-        db.trainingSessions.orderBy("startedAt").toArray(),
-        db.sessionExercises.toArray(),
-        db.setRecords.toArray(),
-        db.bodyCompositions.toArray(),
-        db.boneDensities.toArray(),
-      ]);
-    return { exercises, sessions, sessionExercises, setRecords, bodies, bones };
+    const [bodies, bones] = await Promise.all([
+      db.bodyCompositions.toArray(),
+      db.boneDensities.toArray(),
+    ]);
+    return { bodies, bones };
   }, []);
 
   if (!data) return <p className="text-xs text-slate-400">読み込み中…</p>;
 
   return (
     <>
-      <div>
-        <h3 className="mb-1 text-xs font-bold text-slate-500">
-          種目マスタ（{data.exercises.length}件）
-        </h3>
-        {MENU_IDS.map((menu) => (
-          <div key={menu} className="mb-2 last:mb-0">
-            <h4 className="text-xs font-bold text-slate-600">
-              {MENU_LABELS[menu]}
-            </h4>
-            <ul className="divide-y divide-slate-100">
-              {data.exercises
-                .filter((exercise) => exercise.menu === menu)
-                .sort((a, b) => a.order - b.order)
-                .map((exercise) => (
-                  <li key={exercise.id} className="py-1.5">
-                    <div className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="text-xs text-slate-400">
-                        {exercise.order}.
-                      </span>
-                      <span className="text-sm font-medium">
-                        {exercise.name}
-                      </span>
-                      {!exercise.verified && <Badge tone="amber">未検証</Badge>}
-                      {exercise.kind === "timed" && (
-                        <Badge tone="blue">時間ベース</Badge>
-                      )}
-                      {exercise.kind === "amrap" && (
-                        <Badge tone="slate">限界まで</Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-700">
-                      現在: {describeLoad(exercise.current.load)}
-                      {exercise.current.reps !== null &&
-                        ` × ${exercise.current.reps}回 × ${exercise.sets}セット`}
-                      {exercise.current.seconds !== null &&
-                        ` × ${exercise.current.seconds}秒 × ${exercise.sets}セット`}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      次回:{" "}
-                      {exercise.next
-                        ? `${describeLoad(exercise.next.load)}${
-                            exercise.next.seconds !== null
-                              ? ` × ${exercise.next.seconds}秒`
-                              : ""
-                          }`
-                        : "実測して確定させる"}
-                      {" / "}増分: {describeProgression(exercise.progression)}
-                    </div>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        <h3 className="mb-1 text-xs font-bold text-slate-500">
-          トレーニング記録（{data.sessions.length}件）
-        </h3>
-        <ul className="space-y-2">
-          {data.sessions.map((session) => {
-            const items = data.sessionExercises
-              .filter((item) => item.sessionId === session.id)
-              .sort((a, b) => a.order - b.order);
-            return (
-              <li
-                key={session.id}
-                className="rounded border border-slate-200 p-2"
-              >
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-sm font-medium">
-                    {formatDateTime(session.startedAt)}
-                  </span>
-                  <Badge tone="blue">{MENU_LABELS[session.menu]}</Badge>
-                  {session.startedAtIsEstimated && (
-                    <Badge tone="slate">開始時刻は仮置き</Badge>
-                  )}
-                </div>
-                {items.length === 0 ? (
-                  <p className="mt-1 text-xs text-slate-500">種目の記録なし</p>
-                ) : (
-                  <ul className="mt-1 divide-y divide-slate-100">
-                    {items.map((item) => {
-                      const sets = data.setRecords
-                        .filter(
-                          (record) => record.sessionExerciseId === item.id,
-                        )
-                        .sort((a, b) => a.setNo - b.setNo);
-                      return (
-                        <li key={item.id} className="py-1">
-                          <div className="flex flex-wrap items-baseline gap-x-2">
-                            <span className="text-xs text-slate-400">
-                              {item.order}.
-                            </span>
-                            <span className="text-sm font-medium">
-                              {item.exerciseName}
-                            </span>
-                            <Badge
-                              tone={
-                                item.outcome === "achieved"
-                                  ? "emerald"
-                                  : "slate"
-                              }
-                            >
-                              {OUTCOME_LABELS[item.outcome]}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-slate-700">
-                            {describeLoad(item.load)}
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            {sets.length > 0
-                              ? sets
-                                  .map((record) =>
-                                    record.reps !== null
-                                      ? `${record.setNo}set ${record.reps}回`
-                                      : record.seconds !== null
-                                        ? `${record.setNo}set ${record.seconds}秒`
-                                        : `${record.setNo}set 記録なし`,
-                                  )
-                                  .join(" / ")
-                              : "各セットの記録なし（回数は不明のまま保持）"}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
       {data.bodies.map((body) => (
         <div key={body.id}>
           <h3 className="mb-1 text-xs font-bold text-slate-500">体組成</h3>

@@ -56,7 +56,7 @@ test("goals.dayTargetKcal / toneTextClass: 日の区分で目標が変わり、�
   );
 });
 
-test("goals.formatAmount: kcal は整数＋桁区切り、塩分は小数 2 桁、それ以外は小数 1 桁（末尾の 0 は落とす）", () => {
+test("goals.formatAmount: kcal は整数＋桁区切り、それ以外は Math.round 系（round2）の値をそのまま（末尾の 0 は付かない）", () => {
   assert.equal(formatAmount("kcal", 2000), "2,000");
   assert.equal(formatAmount("kcal", 1234.5), "1,235");
   assert.equal(formatAmount("proteinG", 140), "140");

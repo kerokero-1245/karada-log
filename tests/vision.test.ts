@@ -143,7 +143,7 @@ const VALID_LABEL = {
   notes: "",
 };
 
-test("vision: モデルは日付サフィックスなしの claude-opus-5、出力は 4096 トークンまで、確度の表示名", () => {
+test("vision: モデルは日付サフィックスなしの claude-opus-5-5、出力は 4096 トークンまで、確度の表示名", () => {
   assert.equal(VISION_MODEL, "claude-opus-5-5");
   assert.equal(VISION_MAX_TOKENS, 4096);
   assert.deepEqual(CONFIDENCE_LABELS, {

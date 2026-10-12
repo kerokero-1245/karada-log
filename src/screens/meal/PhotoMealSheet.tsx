@@ -22,7 +22,7 @@ import { formatQuantity } from "../../lib/meals";
 import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { buildPhotoRows } from "../../lib/photoMeal";
 import type { PhotoMealRow } from "../../lib/photoMeal";
-import { photoErrorMessage } from "../../lib/photoError";
+import { errorMessage } from "../../lib/errors";
 import { commitPhotoMeal } from "../../lib/photoRecord";
 import type { PhotoCommitResult, PhotoEntryPlan } from "../../lib/photoRecord";
 import { useLiveQuery } from "../../lib/useLiveQuery";
@@ -77,7 +77,7 @@ export function PhotoMealSheet({
       }));
       onRecorded(await commitPhotoMeal(logDate, plans, boundaryHour));
     } catch (e) {
-      setError(photoErrorMessage(e));
+      setError(errorMessage(e));
       setSaving(false);
     }
   };

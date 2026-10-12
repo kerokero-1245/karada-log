@@ -16,6 +16,7 @@ import {
   maskApiKey,
   saveApiKey,
 } from "../../lib/apiKey";
+import { errorMessage } from "../../lib/errors";
 import { photoErrorMessage } from "../../lib/photoError";
 import { useOnline } from "../../lib/useOnline";
 import { testConnection } from "../../lib/vision";
@@ -47,7 +48,7 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
         text: "キーを保存しました。写真からの入力が使えます。",
       });
     } catch (e) {
-      setStatus({ ok: false, text: photoErrorMessage(e) });
+      setStatus({ ok: false, text: errorMessage(e) });
     } finally {
       setBusy(false);
     }
@@ -62,7 +63,7 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
         text: "キーを削除しました。写真からの入力は出なくなります。",
       });
     } catch (e) {
-      setStatus({ ok: false, text: photoErrorMessage(e) });
+      setStatus({ ok: false, text: errorMessage(e) });
     } finally {
       setBusy(false);
     }

@@ -80,9 +80,6 @@ export const FOOD_CATEGORIES = [
 
 export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
 
-/** F7「麺類を2日連続で記録」アラートの判定に使うカテゴリ。ラーメン・うどん・パスタを含む。 */
-export const NOODLE_CATEGORY: FoodCategory = "麺類";
-
 /** ラベル実測値か、推定値か。推定値は画面上で区別して表示する（F3）。 */
 export type ValueSource = "label" | "estimated";
 

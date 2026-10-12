@@ -21,6 +21,7 @@ export function useLiveQuery<T>(
       error: (error) => console.error("[useLiveQuery]", error),
     });
     return () => subscription.unsubscribe();
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- deps は呼び手から受ける設計（liveQuery を貼り直す条件を呼び手が決める）。配列リテラルでは書けない
   }, deps);
 
   return value;

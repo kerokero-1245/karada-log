@@ -11,7 +11,14 @@ import type { Food, LogDate, ShortcutSet } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, ErrorText, Note } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  ErrorText,
+  Note,
+  Notice,
+  Panel,
+} from "../../components/ui";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { hasTime, nowTime } from "../../lib/date";
 import { UNKNOWN_MARK } from "../../lib/format";
@@ -118,11 +125,11 @@ export function ShortcutSheet({
       }
     >
       <div className="space-y-3">
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        <Notice tone="amber">
           これは「毎日これを食べる」という計画です。
           <strong>開いただけでは記録に入りません。</strong>
           下の「記録に追加」を押したぶんだけが今日の集計に入ります。
-        </div>
+        </Notice>
 
         <ul className="divide-y divide-slate-100 rounded-xl bg-white">
           {rows.map((row) => (
@@ -162,7 +169,7 @@ export function ShortcutSheet({
           ))}
         </ul>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <TimeField
             value={time}
             onChange={setTime}
@@ -173,7 +180,7 @@ export function ShortcutSheet({
           <p className="mt-1 text-xs text-slate-500">
             あとで1件ずつ変えられます。
           </p>
-        </div>
+        </Panel>
 
         {set.note && <Note>※ {set.note}</Note>}
         {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}

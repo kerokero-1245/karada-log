@@ -7,7 +7,13 @@ import type { MealEntry } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, ErrorText, NutritionGrid } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  ErrorText,
+  NutritionGrid,
+  Panel,
+} from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, timeOf } from "../../lib/date";
 import { deleteMealEntry, updateMealEntry } from "../../lib/meals";
@@ -70,20 +76,20 @@ export function MealEditSheet({
           )}
         </div>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <p className="mb-2 text-xs font-bold text-slate-600">数量</p>
           <QuantityStepper
             value={quantity}
             unitLabel={entry.snapshot.unitLabel}
             onChange={setQuantity}
           />
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <NutritionGrid value={value} />
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <TimeField
             value={time}
             onChange={setTime}
@@ -94,9 +100,9 @@ export function MealEditSheet({
             時刻を変えても {formatLogDateShort(entry.logDate)}{" "}
             の記録のままです。
           </p>
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           {confirmingDelete ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-slate-700">
@@ -125,7 +131,7 @@ export function MealEditSheet({
               この記録を削除
             </Button>
           )}
-        </div>
+        </Panel>
 
         {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
       </div>

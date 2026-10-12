@@ -10,7 +10,7 @@
  */
 import { useState } from "react";
 import { Sheet } from "../../components/Sheet";
-import { Note } from "../../components/ui";
+import { Note, Panel } from "../../components/ui";
 import { fileToPhoto } from "../../lib/photo";
 import {
   OFFLINE_MESSAGE,
@@ -75,7 +75,7 @@ export function PhotoPickSheet({
       onClose={onClose}
     >
       <div className="space-y-3">
-        <div className="space-y-2 rounded-xl bg-white p-3 shadow-sm">
+        <Panel className="space-y-2">
           <div>
             <PhotoFileButton
               variant="primary"
@@ -101,7 +101,7 @@ export function PhotoPickSheet({
               パッケージの表示を読み取って、新しい食品の登録フォームを埋めます。
             </Note>
           </div>
-        </div>
+        </Panel>
 
         {!online && (
           <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">

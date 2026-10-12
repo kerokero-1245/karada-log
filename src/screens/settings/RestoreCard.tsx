@@ -9,6 +9,7 @@
  */
 import { useRef, useState } from "react";
 import { Button, Card, Note } from "../../components/ui";
+import { FieldLabel } from "../../components/Field";
 import type { BackupCount, BackupFile } from "../../lib/backup";
 import { parseBackup, restoreBackup } from "../../lib/backup";
 import { formatDateTime } from "../../lib/date";
@@ -83,9 +84,7 @@ export function RestoreCard() {
   return (
     <Card title="JSON から復元">
       <label className="block">
-        <span className="block text-xs font-bold text-slate-600">
-          バックアップファイル
-        </span>
+        <FieldLabel>バックアップファイル</FieldLabel>
         <input
           ref={inputRef}
           type="file"

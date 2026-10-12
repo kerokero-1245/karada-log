@@ -16,7 +16,15 @@ import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
 import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, ErrorText, Note } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorText,
+  Note,
+  Notice,
+  Panel,
+} from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
@@ -116,9 +124,9 @@ export function PhotoMealSheet({
     >
       <div className="space-y-3">
         {rows.length === 0 ? (
-          <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
+          <EmptyState>
             写真からは品目を読み取れませんでした。テキストで書くか、検索から選んでください。
-          </p>
+          </EmptyState>
         ) : (
           <ul className="divide-y divide-slate-100 rounded-xl bg-white px-3">
             {rows.map((row) => (
@@ -135,19 +143,17 @@ export function PhotoMealSheet({
         )}
 
         {read.notes.trim() !== "" && (
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900">
-            読み取りのメモ: {read.notes.trim()}
-          </div>
+          <Notice tone="sky">読み取りのメモ: {read.notes.trim()}</Notice>
         )}
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <TimeField
             value={time}
             onChange={setTime}
             logDate={logDate}
             boundaryHour={boundaryHour}
           />
-        </div>
+        </Panel>
 
         {error !== null && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
 

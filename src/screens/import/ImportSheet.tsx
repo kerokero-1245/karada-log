@@ -17,9 +17,19 @@ import type { Food, LogDate, Nutrition } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
 import { NutritionLine } from "../../components/NutritionLine";
-import { Badge, Button, Chip, ErrorText, Note } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  Chip,
+  EmptyState,
+  ErrorText,
+  Note,
+  Notice,
+  Panel,
+} from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { LearnedNotes, PendingNote } from "../../components/CommitNotes";
+import { FieldLabel } from "../../components/Field";
 import { formatLogDate, formatLogDateShort } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
@@ -358,15 +368,13 @@ export function ImportSheet({
       }
     >
       <div className="space-y-3">
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <CopyPromptButton />
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <label className="block">
-            <span className="block text-xs font-bold text-slate-600">
-              貼り付けたテキスト
-            </span>
+            <FieldLabel>貼り付けたテキスト</FieldLabel>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -389,26 +397,23 @@ export function ImportSheet({
             数量単位=kcal/P/脂質/炭水化物/塩分」。値はその行の数量ぶんの合計で、
             分からない値は「-」。日付だけの行で日をまたげます。押しても、まだ記録には入りません。
           </Note>
-        </div>
+        </Panel>
 
         {parsed !== null && parsed.rows.length === 0 && (
-          <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
+          <EmptyState>
             読み取れる品目がありませんでした。1行に1品目で書いてください。
-          </p>
+          </EmptyState>
         )}
 
         {parsed !== null && parsed.usedToday && (
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900">
+          <Notice tone="sky">
             日付の行が無いので、すべて今日（{formatLogDateShort(today)}
             ）の記録として読みました。
-          </div>
+          </Notice>
         )}
 
         {days.map((day) => (
-          <section
-            key={day.logDate}
-            className="rounded-xl bg-white p-3 shadow-sm"
-          >
+          <Panel as="section" key={day.logDate}>
             <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-slate-200 pb-1">
               <h3 className="text-sm font-bold text-slate-700">
                 {formatLogDate(day.logDate)}
@@ -471,15 +476,15 @@ export function ImportSheet({
                 件を消してから入れます。この操作は戻せません。
               </p>
             )}
-          </section>
+          </Panel>
         ))}
 
         {pendingCount > 0 && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          <Notice tone="amber">
             解決できていない{pendingCount}
             件は、栄養値を付けずに原文のまま預かります。
             集計には入りません。あとで「未処理のテキスト」から続きができます。
-          </div>
+          </Notice>
         )}
 
         {error !== null && (

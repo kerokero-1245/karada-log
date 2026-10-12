@@ -35,6 +35,28 @@ export function Badge({
   );
 }
 
+/**
+ * 白い面（角丸・影・余白）。シートやカードの中身をまとめる枠。
+ * 要素の種類は as で選ぶ（div / section / details）。足りない余白や並びは className で足す（上書きはしない）。
+ */
+export function Panel({
+  as: Tag = "div",
+  className = "",
+  children,
+}: {
+  as?: "div" | "section" | "details";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tag
+      className={`rounded-xl bg-white p-3 shadow-sm${className === "" ? "" : ` ${className}`}`}
+    >
+      {children}
+    </Tag>
+  );
+}
+
 export function Card({
   title,
   children,
@@ -43,14 +65,43 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl bg-white p-3 shadow-sm">
+    <Panel as="section">
       {title && (
         <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-slate-200 pb-1">
           <h2 className="text-sm font-bold text-slate-700">{title}</h2>
         </div>
       )}
       {children}
-    </section>
+    </Panel>
+  );
+}
+
+const NOTICE_TONES = {
+  sky: "border-sky-200 bg-sky-50 text-sky-900",
+  amber: "border-amber-300 bg-amber-50 text-amber-900",
+} as const;
+
+/** 枠つきのお知らせ（小さな文字）。sky は情報、amber は注意 */
+export function Notice({
+  tone,
+  children,
+}: {
+  tone: keyof typeof NOTICE_TONES;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`rounded-xl border p-3 text-xs ${NOTICE_TONES[tone]}`}>
+      {children}
+    </div>
+  );
+}
+
+/** 一覧の中身がまだ無いときの表示（中央寄せの 1 行） */
+export function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
+      {children}
+    </p>
   );
 }
 
@@ -90,20 +141,45 @@ export function Button({
   );
 }
 
-/** 選択状態を持つチップ（日の区分の切替など） */
+const CHIP_SIZES = {
+  md: "px-4 text-sm",
+  sm: "text-xs px-3",
+} as const;
+
+/** light は白い面の上、dark は濃い背景（画面のヘッダー）の上 */
+const CHIP_TONES = {
+  light: {
+    on: "bg-slate-900 text-white",
+    off: "border border-slate-300 bg-white text-slate-600",
+  },
+  dark: {
+    on: "bg-white text-slate-900",
+    off: "border border-slate-600 text-slate-300",
+  },
+} as const;
+
+/**
+ * 選択状態を持つチップ（日の区分の切替など）。
+ * 大きさ（size）と背景の明るさ（tone）は props で選ぶ。className で上書きはしない
+ * （Tailwind は同じ項目のクラスのうち CSS の並びが後のものが勝つので、足しても効くとは限らない）。
+ */
 export function Chip({
   selected = false,
+  size = "md",
+  tone = "light",
   className = "",
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  selected?: boolean;
+  size?: keyof typeof CHIP_SIZES;
+  tone?: keyof typeof CHIP_TONES;
+}) {
   return (
     <button
       type="button"
       {...rest}
-      className={`min-h-11 rounded-full px-4 text-sm font-bold ${
-        selected
-          ? "bg-slate-900 text-white"
-          : "border border-slate-300 bg-white text-slate-600"
+      className={`min-h-11 rounded-full ${CHIP_SIZES[size]} font-bold ${
+        CHIP_TONES[tone][selected ? "on" : "off"]
       } ${className}`}
     />
   );

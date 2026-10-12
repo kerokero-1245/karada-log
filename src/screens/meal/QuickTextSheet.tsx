@@ -18,8 +18,18 @@ import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
 import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, ErrorText, Note } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  Chip,
+  EmptyState,
+  ErrorText,
+  Note,
+  Notice,
+  Panel,
+} from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
+import { FieldLabel } from "../../components/Field";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { buildEntryView, planEntries } from "../../lib/importText";
 import type { EntryView } from "../../lib/importText";
@@ -334,11 +344,9 @@ export function QuickTextSheet({
           </Button>
         )}
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <label className="block">
-            <span className="block text-xs font-bold text-slate-600">
-              食べたもの
-            </span>
+            <FieldLabel>食べたもの</FieldLabel>
             <textarea
               value={text}
               onChange={(e) => changeText(e.target.value)}
@@ -355,24 +363,24 @@ export function QuickTextSheet({
             1杯=252/3.8/0.5/55.7/0」のように =kcal/P/脂質/炭水化物/塩分
             を付けると、 マスタに無いものもその値で記録できます。
           </Note>
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <CopyPromptButton />
-        </div>
+        </Panel>
 
         {otherDates.length > 0 && (
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900">
+          <Notice tone="sky">
             日付の行がありますが、この画面は{formatLogDateShort(logDate)}
             の記録として保存します。
             何日ぶんかをまとめて入れるときは、設定タブの「記録を貼り付けて取り込む」を使ってください。
-          </div>
+          </Notice>
         )}
 
         {rows.length === 0 ? (
-          <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
+          <EmptyState>
             食べたものを書くと、ここに解釈した結果が出ます。まだ記録には入りません。
-          </p>
+          </EmptyState>
         ) : (
           <ul className="divide-y divide-slate-100 rounded-xl bg-white px-3">
             {rows.map((row) => (
@@ -397,7 +405,7 @@ export function QuickTextSheet({
           </ul>
         )}
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <TimeField
             value={time}
             onChange={setTime}
@@ -406,14 +414,14 @@ export function QuickTextSheet({
             label="時刻（時刻を書いた項目はそちらが優先されます）"
             required={fallbackTimeUsed}
           />
-        </div>
+        </Panel>
 
         {pending.length > 0 && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          <Notice tone="amber">
             解決できていない{pending.length}
             件は、栄養値を付けずに原文のまま預かります。
             集計には入りません。あとで「未処理のテキスト」から続きができます。
-          </div>
+          </Notice>
         )}
 
         {error !== null && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
@@ -496,19 +504,15 @@ function PreviewRow({
           {row.variants.length > 1 && food !== null && (
             <div className="mt-1 flex flex-wrap gap-1.5">
               {row.variants.map((variant) => (
-                <button
+                <Chip
                   key={variant.id}
-                  type="button"
+                  size="sm"
+                  selected={variant.id === food.id}
                   onClick={() => onPickVariant(variant)}
-                  className={`min-h-11 rounded-full px-3 text-xs font-bold ${
-                    variant.id === food.id
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-300 bg-white text-slate-600"
-                  }`}
                 >
                   {variant.variantLabel ?? "標準"}（塩分
                   {fmtNum(variant.per.saltG)}g）
-                </button>
+                </Chip>
               ))}
             </div>
           )}

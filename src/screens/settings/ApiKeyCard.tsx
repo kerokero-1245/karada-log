@@ -10,6 +10,7 @@
 import { useState } from "react";
 import type { Settings } from "../../db/types";
 import { Button, Card, Note } from "../../components/ui";
+import { FieldLabel } from "../../components/Field";
 import {
   apiKeyOf,
   clearApiKey,
@@ -99,14 +100,15 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
       )}
 
       <label className="mt-3 block">
-        <span className="block text-xs font-bold text-slate-600">
-          APIキー
-          <span className="ml-1 font-normal text-slate-400">
-            {saved === null
+        <FieldLabel
+          hint={
+            saved === null
               ? "console.anthropic.com で作れます"
-              : "入れ替えるときだけ入力"}
-          </span>
-        </span>
+              : "入れ替えるときだけ入力"
+          }
+        >
+          APIキー
+        </FieldLabel>
         <input
           type="password"
           value={draft}

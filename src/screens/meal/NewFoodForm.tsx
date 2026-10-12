@@ -23,7 +23,9 @@ import {
   NutritionGrid,
   Note,
   ErrorText,
+  Panel,
 } from "../../components/ui";
+import { FieldLabel } from "../../components/Field";
 import {
   BASIS_OPTIONS,
   NUTRIENT_FIELDS,
@@ -138,7 +140,7 @@ export function NewFoodForm({
     >
       <div className="space-y-3">
         {apiKey !== null && (
-          <div className="rounded-xl bg-white p-3 shadow-sm">
+          <Panel>
             <PhotoFileButton
               className="w-full"
               label="ラベルを撮る"
@@ -160,7 +162,7 @@ export function NewFoodForm({
             <Note>
               読み取った値はこの下の欄に入ります。「登録」を押すまでは保存されません。
             </Note>
-          </div>
+          </Panel>
         )}
 
         {notice !== null && (
@@ -169,7 +171,7 @@ export function NewFoodForm({
           </div>
         )}
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <Field label="名前">
             <input
               type="text"
@@ -209,9 +211,9 @@ export function NewFoodForm({
               />
             </Field>
           </div>
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <p className="text-xs font-bold text-slate-600">表記の基準</p>
           <div className="mt-1 flex flex-wrap gap-2">
             {BASIS_OPTIONS.map((option) => (
@@ -255,9 +257,9 @@ export function NewFoodForm({
               </Field>
             </div>
           )}
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <p className="text-xs font-bold text-slate-600">
             栄養成分（{result.basisLabel}）
           </p>
@@ -289,9 +291,9 @@ export function NewFoodForm({
               推定値
             </Chip>
           </div>
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <div className="mb-2 flex items-baseline justify-between">
             <p className="text-xs font-bold text-slate-600">
               保存する値（{values.unitLabel || "1単位"} あたり）
@@ -301,7 +303,7 @@ export function NewFoodForm({
             )}
           </div>
           <NutritionGrid value={result.preview} />
-        </div>
+        </Panel>
 
         {submitted && result.errors.length > 0 && (
           <ul className="list-disc space-y-1 rounded-xl bg-red-50 p-3 pl-7 text-sm text-red-800">
@@ -330,12 +332,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-bold text-slate-600">
-        {label}
-        {hint && (
-          <span className="ml-1 font-normal text-slate-400">{hint}</span>
-        )}
-      </span>
+      <FieldLabel hint={hint}>{label}</FieldLabel>
       <span className="mt-1 block">{children}</span>
       {note && (
         <span className="mt-1 block text-[11px] text-slate-400">{note}</span>

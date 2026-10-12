@@ -9,6 +9,7 @@ import type { BarType, LoadSpec, Progression } from "../../db/types";
 import { BAR_LABELS, BAR_WEIGHT_KG } from "../../db/types";
 import { describeLoad, toBarbell } from "../../lib/weight";
 import { NumberField } from "../../components/NumberField";
+import { Chip } from "../../components/ui";
 
 const BAR_TYPES: BarType[] = ["ez", "short"];
 
@@ -38,19 +39,14 @@ export function LoadEditor({
             {BAR_TYPES.map((type) => {
               const active = load.barType === type;
               return (
-                <button
+                <Chip
                   key={type}
-                  type="button"
+                  selected={active}
                   aria-pressed={active}
                   onClick={() => onChange({ ...load, barType: type })}
-                  className={`min-h-11 rounded-full px-4 text-sm font-bold ${
-                    active
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-300 bg-white text-slate-600"
-                  }`}
                 >
                   {BAR_LABELS[type]} {BAR_WEIGHT_KG[type]}kg
-                </button>
+                </Chip>
               );
             })}
           </div>

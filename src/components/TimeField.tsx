@@ -12,6 +12,7 @@ import {
   toLogDate,
 } from "../lib/date";
 import type { LogDate } from "../db/types";
+import { FieldLabel } from "./Field";
 
 export function TimeField({
   value,
@@ -39,7 +40,7 @@ export function TimeField({
   return (
     <div>
       <label className="block">
-        <span className="block text-xs font-bold text-slate-600">{label}</span>
+        <FieldLabel>{label}</FieldLabel>
         <input
           type="time"
           value={value}

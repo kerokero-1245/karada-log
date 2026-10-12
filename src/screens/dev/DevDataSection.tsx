@@ -4,7 +4,7 @@
  */
 import { db } from "../../db/db";
 import { NutritionLine } from "../../components/NutritionLine";
-import { Row } from "../../components/ui";
+import { Panel, Row } from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { aliasesOf } from "../../lib/aliases";
 import { UNKNOWN_MARK } from "../../lib/format";
@@ -54,7 +54,7 @@ export function DevDataSection() {
   const foodById = new Map((foods ?? []).map((food) => [food.id, food]));
 
   return (
-    <details className="rounded-xl bg-white p-3 shadow-sm">
+    <Panel as="details">
       <summary className="min-h-11 cursor-pointer list-none py-2 text-sm font-bold text-slate-700">
         ▸ データ確認（開発用）
       </summary>
@@ -164,6 +164,6 @@ export function DevDataSection() {
 
         <DevRecordsSection />
       </div>
-    </details>
+    </Panel>
   );
 }

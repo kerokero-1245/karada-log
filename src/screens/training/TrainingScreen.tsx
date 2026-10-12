@@ -14,6 +14,7 @@ import { db } from "../../db/db";
 import type { MenuId, Settings } from "../../db/types";
 import { DAY_TYPE_LABELS, MENU_IDS, MENU_LABELS } from "../../db/types";
 import { Card, Note } from "../../components/ui";
+import { ScreenLayout } from "../../components/ScreenLayout";
 import { formatLogDate, timeOf } from "../../lib/date";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { formatAmount } from "../../lib/goals";
@@ -97,156 +98,156 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
     (exercises ?? []).filter((e) => e.menu === menu && e.active);
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-[calc(6rem+env(safe-area-inset-bottom))]">
-      <header className="sticky top-0 z-30 bg-slate-900 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-white">
-        <div className="mx-auto max-w-md">
-          <div className="flex items-baseline justify-between gap-2">
-            <h1 className="text-xl font-bold">トレーニング</h1>
-            <span className="text-xs text-slate-300">
-              {formatLogDate(logDate)}
-            </span>
+    <ScreenLayout
+      header={
+        <header className="sticky top-0 z-30 bg-slate-900 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-white">
+          <div className="mx-auto max-w-md">
+            <div className="flex items-baseline justify-between gap-2">
+              <h1 className="text-xl font-bold">トレーニング</h1>
+              <span className="text-xs text-slate-300">
+                {formatLogDate(logDate)}
+              </span>
+            </div>
+            <div
+              className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-lg bg-slate-800 px-3 py-2 tabular-nums"
+              data-testid="intake-strip"
+            >
+              <span className="text-sm">
+                当日摂取{" "}
+                <b className="text-base">{formatAmount("kcal", intakeKcal)}</b>{" "}
+                kcal
+              </span>
+              <span className="text-sm">
+                残り{" "}
+                <b className="text-base">
+                  {formatAmount("kcal", Math.max(0, remain))}
+                </b>{" "}
+                kcal
+                {remain < 0 && (
+                  <span className="ml-1 text-xs text-slate-300">
+                    （目標に到達 +{formatAmount("kcal", -remain)}）
+                  </span>
+                )}
+              </span>
+              <span className="w-full text-[11px] text-slate-400">
+                {DAY_TYPE_LABELS[dayType]}の目標 {formatAmount("kcal", target)}{" "}
+                kcal
+                {unknownKcal > 0 &&
+                  ` ・ kcal が分からない記録 ${unknownKcal}件は含めていません`}
+              </span>
+            </div>
           </div>
-          <div
-            className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-lg bg-slate-800 px-3 py-2 tabular-nums"
-            data-testid="intake-strip"
-          >
-            <span className="text-sm">
-              当日摂取{" "}
-              <b className="text-base">{formatAmount("kcal", intakeKcal)}</b>{" "}
-              kcal
-            </span>
-            <span className="text-sm">
-              残り{" "}
-              <b className="text-base">
-                {formatAmount("kcal", Math.max(0, remain))}
-              </b>{" "}
-              kcal
-              {remain < 0 && (
-                <span className="ml-1 text-xs text-slate-300">
-                  （目標に到達 +{formatAmount("kcal", -remain)}）
-                </span>
-              )}
-            </span>
-            <span className="w-full text-[11px] text-slate-400">
-              {DAY_TYPE_LABELS[dayType]}の目標 {formatAmount("kcal", target)}{" "}
-              kcal
-              {unknownKcal > 0 &&
-                ` ・ kcal が分からない記録 ${unknownKcal}件は含めていません`}
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-md space-y-3 p-3">
-        {session === null ? (
-          <>
-            <Card title="メニューを選んで始める">
-              <p className="text-sm text-slate-700">
-                始めると、今日は自動で「ジムの日」になります（目標{" "}
-                {formatAmount("kcal", settings.gymDayKcal)}{" "}
-                kcal）。食事の記録は変わりません。
-              </p>
-              {previous && (
-                <Note>
-                  前回は {MENU_LABELS[previous.menu]}（{previous.logDate}
-                  ）。ローテーションでは次は {MENU_LABELS[suggested]} です。
-                </Note>
-              )}
-            </Card>
-            {MENU_IDS.map((menu) => (
-              <Card key={menu}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-base font-bold text-slate-800">
-                    {MENU_LABELS[menu]}
-                  </h2>
-                  {menu === suggested && (
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                      次はこれ
-                    </span>
-                  )}
-                </div>
-                <ol className="mt-1 space-y-0.5 text-sm text-slate-700">
-                  {menuExercises(menu).map((exercise) => {
-                    const planned = plannedTargetOf(exercise);
-                    const detail =
-                      exercise.kind === "amrap"
-                        ? `限界まで × ${exercise.sets}`
-                        : exercise.kind === "timed"
-                          ? `${describeLoadShort(planned.load)} ${planned.seconds ?? UNKNOWN_MARK}秒 × ${exercise.sets}`
-                          : `${describeLoadShort(planned.load)} × ${planned.reps ?? DEFAULT_TARGET_REPS}回 × ${exercise.sets}`;
-                    return (
-                      <li
-                        key={exercise.id}
-                        className="flex justify-between gap-2"
-                      >
-                        <span>
-                          {exercise.order}. {exercise.name}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-slate-500">
-                          {detail}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ol>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void begin(menu)}
-                  className="mt-2 h-12 w-full rounded-lg bg-emerald-600 text-sm font-bold text-white active:bg-emerald-700 disabled:bg-slate-300"
-                >
-                  {menu} を始める
-                </button>
-              </Card>
-            ))}
-          </>
-        ) : (
-          <>
-            <Card>
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-bold text-slate-800">
-                    {MENU_LABELS[session.menu]}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    {timeOf(session.startedAt)} 開始 ・
-                    上から順に。時間がなければ下から切る
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void cancel()}
-                  className="min-h-11 shrink-0 rounded-lg px-2 text-xs text-slate-500 active:bg-slate-100"
-                >
-                  取り消す
-                </button>
+        </header>
+      }
+    >
+      {session === null ? (
+        <>
+          <Card title="メニューを選んで始める">
+            <p className="text-sm text-slate-700">
+              始めると、今日は自動で「ジムの日」になります（目標{" "}
+              {formatAmount("kcal", settings.gymDayKcal)}{" "}
+              kcal）。食事の記録は変わりません。
+            </p>
+            {previous && (
+              <Note>
+                前回は {MENU_LABELS[previous.menu]}（{previous.logDate}
+                ）。ローテーションでは次は {MENU_LABELS[suggested]} です。
+              </Note>
+            )}
+          </Card>
+          {MENU_IDS.map((menu) => (
+            <Card key={menu}>
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="text-base font-bold text-slate-800">
+                  {MENU_LABELS[menu]}
+                </h2>
+                {menu === suggested && (
+                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                    次はこれ
+                  </span>
+                )}
               </div>
-            </Card>
-            {records === undefined
-              ? null
-              : menuExercises(session.menu).map((exercise) => {
-                  const saved =
-                    records?.items.find(
-                      (item) => item.exerciseId === exercise.id,
-                    ) ?? null;
-                  const savedSets = saved
-                    ? (records?.sets ?? [])
-                        .filter((s) => s.sessionExerciseId === saved.id)
-                        .sort((a, b) => a.setNo - b.setNo)
-                    : [];
+              <ol className="mt-1 space-y-0.5 text-sm text-slate-700">
+                {menuExercises(menu).map((exercise) => {
+                  const planned = plannedTargetOf(exercise);
+                  const detail =
+                    exercise.kind === "amrap"
+                      ? `限界まで × ${exercise.sets}`
+                      : exercise.kind === "timed"
+                        ? `${describeLoadShort(planned.load)} ${planned.seconds ?? UNKNOWN_MARK}秒 × ${exercise.sets}`
+                        : `${describeLoadShort(planned.load)} × ${planned.reps ?? DEFAULT_TARGET_REPS}回 × ${exercise.sets}`;
                   return (
-                    <ExerciseCard
-                      key={`${session.id}-${exercise.id}`}
-                      sessionId={session.id as number}
-                      exercise={exercise}
-                      saved={saved}
-                      savedSets={savedSets}
-                    />
+                    <li
+                      key={exercise.id}
+                      className="flex justify-between gap-2"
+                    >
+                      <span>
+                        {exercise.order}. {exercise.name}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-slate-500">
+                        {detail}
+                      </span>
+                    </li>
                   );
                 })}
-          </>
-        )}
-      </main>
-    </div>
+              </ol>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void begin(menu)}
+                className="mt-2 h-12 w-full rounded-lg bg-emerald-600 text-sm font-bold text-white active:bg-emerald-700 disabled:bg-slate-300"
+              >
+                {menu} を始める
+              </button>
+            </Card>
+          ))}
+        </>
+      ) : (
+        <>
+          <Card>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-bold text-slate-800">
+                  {MENU_LABELS[session.menu]}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {timeOf(session.startedAt)} 開始 ・
+                  上から順に。時間がなければ下から切る
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void cancel()}
+                className="min-h-11 shrink-0 rounded-lg px-2 text-xs text-slate-500 active:bg-slate-100"
+              >
+                取り消す
+              </button>
+            </div>
+          </Card>
+          {records === undefined
+            ? null
+            : menuExercises(session.menu).map((exercise) => {
+                const saved =
+                  records?.items.find(
+                    (item) => item.exerciseId === exercise.id,
+                  ) ?? null;
+                const savedSets = saved
+                  ? (records?.sets ?? [])
+                      .filter((s) => s.sessionExerciseId === saved.id)
+                      .sort((a, b) => a.setNo - b.setNo)
+                  : [];
+                return (
+                  <ExerciseCard
+                    key={`${session.id}-${exercise.id}`}
+                    sessionId={session.id as number}
+                    exercise={exercise}
+                    saved={saved}
+                    savedSets={savedSets}
+                  />
+                );
+              })}
+        </>
+      )}
+    </ScreenLayout>
   );
 }

@@ -7,7 +7,13 @@ import type { Food, LogDate } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, ErrorText, NutritionGrid } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  ErrorText,
+  NutritionGrid,
+  Panel,
+} from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { hasTime, nowTime } from "../../lib/date";
 import { addMealEntries } from "../../lib/meals";
@@ -80,31 +86,31 @@ export function QuantityStep({
           />
         </div>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <p className="mb-2 text-xs font-bold text-slate-600">数量</p>
           <QuantityStepper
             value={quantity}
             unitLabel={food.unitLabel}
             onChange={setQuantity}
           />
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <NutritionGrid value={value} />
           <p className="mt-2 text-[11px] text-slate-500">
             「{food.unitLabel}」あたりの値 × 数量です（登録時の表記:{" "}
             {food.basis.label}）。
           </p>
-        </div>
+        </Panel>
 
-        <div className="rounded-xl bg-white p-3 shadow-sm">
+        <Panel>
           <TimeField
             value={time}
             onChange={setTime}
             logDate={logDate}
             boundaryHour={boundaryHour}
           />
-        </div>
+        </Panel>
 
         {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
       </div>

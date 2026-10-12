@@ -7,10 +7,12 @@ import type { MealEntry } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, NutritionGrid } from "../../components/ui";
+import { Badge, Button, ErrorText, NutritionGrid } from "../../components/ui";
+import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, timeOf } from "../../lib/date";
 import { deleteMealEntry, updateMealEntry } from "../../lib/meals";
 import { scaleNutrition } from "../../lib/nutrition";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 
 export function MealEditSheet({
   entry,
@@ -36,7 +38,7 @@ export function MealEditSheet({
       await action();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setBusy(false);
     }
   };
@@ -49,7 +51,7 @@ export function MealEditSheet({
       footer={
         <Button
           variant="primary"
-          className="h-14 w-full text-base"
+          className="h-14 w-full"
           disabled={busy || !hasTime(time)}
           onClick={() =>
             run(() => updateMealEntry(entry, quantity, time, boundaryHour))
@@ -62,9 +64,7 @@ export function MealEditSheet({
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
           <Badge tone="slate">{entry.snapshot.category}</Badge>
-          {entry.snapshot.source === "estimated" && (
-            <Badge tone="amber">推定値</Badge>
-          )}
+          <FoodBadges estimated={entry.snapshot.source === "estimated"} />
           {entry.fromShortcutSetId !== null && (
             <Badge tone="slate">固定ベースから追加</Badge>
           )}
@@ -127,9 +127,7 @@ export function MealEditSheet({
           )}
         </div>
 
-        {error && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
       </div>
     </Sheet>
   );

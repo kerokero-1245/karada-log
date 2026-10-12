@@ -17,7 +17,7 @@ import {
   saveApiKey,
 } from "../../lib/apiKey";
 import { errorMessage } from "../../lib/errors";
-import { photoErrorMessage } from "../../lib/photoError";
+import { OFFLINE_SHORT, photoErrorMessage } from "../../lib/photoError";
 import { useOnline } from "../../lib/useOnline";
 import { testConnection } from "../../lib/vision";
 
@@ -139,9 +139,7 @@ export function ApiKeyCard({ settings }: { settings: Settings }) {
       </div>
 
       {!online && saved !== null && (
-        <p className="mt-2 text-xs text-amber-800">
-          オフラインでは使えません。
-        </p>
+        <p className="mt-2 text-xs text-amber-800">{OFFLINE_SHORT}</p>
       )}
 
       {status !== null && (

@@ -5,11 +5,9 @@
  * ここでは記録しない。選んだ食品を呼び出し元に返すだけ（記録は「記録する」を押したとき）。
  */
 import { useMemo, useState } from "react";
-import { db } from "../../db/db";
 import type { Food } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { Button } from "../../components/ui";
-import { useLiveQuery } from "../../lib/useLiveQuery";
 import { FoodList } from "./FoodList";
 import { VariantPicker } from "./VariantPicker";
 import type { FoodGroup } from "../../lib/foodGroups";
@@ -18,6 +16,7 @@ import {
   matchesQuery,
   sortByFrequency,
 } from "../../lib/foodGroups";
+import { useFoods } from "../../lib/queries";
 
 export function FoodPickerSheet({
   subtitle,
@@ -34,7 +33,7 @@ export function FoodPickerSheet({
   onBack: () => void;
   onClose: () => void;
 }) {
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const foods = useFoods();
   const [query, setQuery] = useState(initialQuery);
   const [showArchived, setShowArchived] = useState(false);
   const [group, setGroup] = useState<FoodGroup | null>(null);

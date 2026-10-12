@@ -13,13 +13,13 @@
  *    その値のまま記録する。マスタに当たったときは **マスタの値** を使い、そう書く
  */
 import { useMemo, useState } from "react";
-import { db } from "../../db/db";
 import type { Food, LogDate, Nutrition } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
+import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, Note } from "../../components/ui";
-import { useLiveQuery } from "../../lib/useLiveQuery";
+import { Badge, Button, ErrorText, Note } from "../../components/ui";
+import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { buildEntryView, planEntries } from "../../lib/importText";
 import type { EntryView } from "../../lib/importText";
@@ -43,7 +43,8 @@ import type { QuickResolution, QuickStatus } from "../../lib/quickText";
 import { ModeTabs } from "./ModeTabs";
 import { FoodPickerSheet } from "./FoodPickerSheet";
 import { NewFoodForm } from "./NewFoodForm";
-import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
+import { useFoods } from "../../lib/queries";
 
 const NO_FOODS: Food[] = [];
 
@@ -94,7 +95,7 @@ export function QuickTextSheet({
   onSwitchToSearch: () => void;
   onPhoto?: () => void;
 }) {
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const foods = useFoods();
   const foodList = foods ?? NO_FOODS;
 
   const [text, setText] = useState(initialText);
@@ -192,7 +193,7 @@ export function QuickTextSheet({
       );
       onRecorded(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setSaving(false);
     }
   };
@@ -256,14 +257,10 @@ export function QuickTextSheet({
                         バリアント{candidate.foods.length}件
                       </Badge>
                     )}
-                    {first.source === "estimated" && (
-                      <Badge tone="amber">推定値</Badge>
-                    )}
+                    <FoodBadges estimated={first.source === "estimated"} />
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P
-                    {fmtNum(first.per.proteinG)}g / 脂質
-                    {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
+                    {first.unitLabel} / <NutritionLine value={first.per} />
                   </span>
                   <span className="mt-0.5 block text-[11px] text-slate-400">
                     {candidate.reason}
@@ -302,14 +299,12 @@ export function QuickTextSheet({
               記録する{entries.length}件の合計
             </p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g
-              / 脂質
-              {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
+              <NutritionLine value={total.value} kcal="total" />
             </p>
           </div>
           <Button
             variant="primary"
-            className="h-14 w-full text-base"
+            className="h-14 w-full"
             disabled={
               saving ||
               timeMissing ||
@@ -421,9 +416,7 @@ export function QuickTextSheet({
           </div>
         )}
 
-        {error !== null && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error !== null && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
 
         <Note>
           栄養値は記録した時点の値をコピーして残します。原文もそのまま記録に残ります。
@@ -475,20 +468,18 @@ function PreviewRow({
             <span className="text-sm font-bold text-slate-800">
               {food?.name ?? parsed.name}
             </span>
-            {food?.variantLabel != null && (
-              <Badge tone="blue">{food.variantLabel}</Badge>
-            )}
-            {food?.source === "estimated" && <Badge tone="amber">推定値</Badge>}
-            {food?.archived === true && <Badge tone="slate">在庫切れ</Badge>}
+            <FoodBadges
+              variantLabel={food?.variantLabel}
+              estimated={food?.source === "estimated"}
+              archived={food?.archived === true}
+            />
             <span className="text-sm tabular-nums text-slate-700">
               {formatQuantity(view.quantity)} × {view.unitLabel}
             </span>
           </div>
 
           <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質
-            {fmtNum(value.fatG)}g / 塩分
-            {fmtNum(value.saltG)}g
+            <NutritionLine value={value} />
             {hasUnknown && (
               <span className="ml-1 text-slate-500">
                 （「{UNKNOWN_MARK}」は未確認）
@@ -538,15 +529,15 @@ function PreviewRow({
 
       <div className="mt-1 flex flex-wrap gap-2">
         {row.resolution.candidates.length > 1 && (
-          <Button className="px-3 text-xs" onClick={onOpenCandidates}>
+          <Button className="text-xs" onClick={onOpenCandidates}>
             候補から選ぶ（{row.resolution.candidates.length}件）
           </Button>
         )}
-        <Button className="px-3 text-xs" onClick={onOpenPicker}>
+        <Button className="text-xs" onClick={onOpenPicker}>
           食品を選ぶ
         </Button>
         {view.status === "missing" && (
-          <Button className="px-3 text-xs" onClick={onOpenNewFood}>
+          <Button className="text-xs" onClick={onOpenNewFood}>
             この名前で新規登録
           </Button>
         )}

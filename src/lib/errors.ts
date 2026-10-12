@@ -8,3 +8,6 @@
 export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
+
+/** 保存に失敗したときの見出し（ErrorText の label）。理由は errorMessage(e) で並べる */
+export const SAVE_FAILED = "保存できませんでした";

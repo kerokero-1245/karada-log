@@ -6,31 +6,17 @@
  */
 import { useMemo, useState } from "react";
 import { db } from "../db/db";
-import type {
-  DayType,
-  MealEntry,
-  PendingText,
-  Settings,
-  TrainingSession,
-} from "../db/types";
+import type { DayType, PendingText, Settings } from "../db/types";
 import { MENU_LABELS } from "../db/types";
 import { NutrientBar } from "../components/NutrientBar";
+import { NutritionLine } from "../components/NutritionLine";
 import { Badge, Card, Note } from "../components/ui";
+import { LearnedNotes, PendingNote } from "../components/CommitNotes";
 import { apiKeyOf } from "../lib/apiKey";
-import {
-  clearManualDayType,
-  resolveDayType,
-  setManualDayType,
-} from "../lib/day";
+import { clearManualDayType, setManualDayType } from "../lib/day";
 import { timeOf } from "../lib/date";
-import { buildBars, dayTargetKcal } from "../lib/goals";
-import { entryNutrition } from "../lib/mealView";
-import {
-  fmtNum,
-  plannedNutrition,
-  plannedTotal,
-  sumNutrition,
-} from "../lib/nutrition";
+import { buildBars } from "../lib/goals";
+import { plannedNutrition, plannedTotal } from "../lib/nutrition";
 import { deletePendingText } from "../lib/quickRecord";
 import type { QuickCommitResult } from "../lib/quickRecord";
 import { useLiveQuery } from "../lib/useLiveQuery";
@@ -43,10 +29,8 @@ import { QuickTextBar } from "./today/QuickTextBar";
 import { MealAddSheet } from "./meal/MealAddSheet";
 import { MealEditSheet } from "./meal/MealEditSheet";
 import { ShortcutSheet } from "./meal/ShortcutSheet";
-import { fmtKcal } from "../lib/formatKcal";
+import { useDaySummary, useFoods, useShortcutSets } from "../lib/queries";
 
-const NO_ENTRIES: MealEntry[] = [];
-const NO_SESSIONS: TrainingSession[] = [];
 const NO_PENDING: PendingText[] = [];
 
 interface AddSheetState {
@@ -58,21 +42,16 @@ export function TodayScreen({ settings }: { settings: Settings }) {
   const boundaryHour = settings.dayBoundaryHour;
   const logDate = useTodayLogDate(boundaryHour);
 
-  const entries = useLiveQuery(
-    () => db.mealEntries.where("logDate").equals(logDate).sortBy("recordedAt"),
-    [logDate],
-  );
-  const sessions = useLiveQuery(
-    () =>
-      db.trainingSessions.where("logDate").equals(logDate).sortBy("startedAt"),
-    [logDate],
-  );
-  const dayMeta = useLiveQuery(() => db.dayMeta.get(logDate), [logDate]);
-  const shortcutSets = useLiveQuery(
-    () => db.shortcutSets.orderBy("order").toArray(),
-    [],
-  );
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const {
+    entries: list,
+    sessions: sessionList,
+    dayType,
+    source,
+    targetKcal,
+    totals,
+  } = useDaySummary(logDate, settings);
+  const shortcutSets = useShortcutSets();
+  const foods = useFoods();
   // 未処理テキストは日付で絞らない。前の日のぶんが残っていても見えるようにする
   const pendingTexts = useLiveQuery(
     () => db.pendingTexts.orderBy("recordedAt").toArray(),
@@ -84,11 +63,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [flash, setFlash] = useState<QuickCommitResult | null>(null);
 
-  const list = entries ?? NO_ENTRIES;
-  const sessionList = sessions ?? NO_SESSIONS;
   const pendingList = pendingTexts ?? NO_PENDING;
-  const totals = useMemo(() => sumNutrition(list.map(entryNutrition)), [list]);
-  const { dayType, source } = resolveDayType(dayMeta, sessionList.length);
   const bars = buildBars(totals, settings, dayType);
 
   const editing = list.find((entry) => entry.id === editingId) ?? null;
@@ -114,7 +89,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         logDate={logDate}
         dayType={dayType}
         source={source}
-        targetKcal={dayTargetKcal(settings, dayType)}
+        targetKcal={targetKcal}
         trainingCount={sessionList.length}
         boundaryHour={boundaryHour}
         onSelect={selectDayType}
@@ -128,18 +103,8 @@ export function TodayScreen({ settings }: { settings: Settings }) {
           <div className="flex items-start gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3">
             <div className="min-w-0 flex-1 space-y-0.5 text-sm text-emerald-900">
               {flash.added > 0 && <p>{flash.added}件を記録しました。</p>}
-              {flash.pending > 0 && (
-                <p>
-                  {flash.pending}
-                  件は未処理として預かりました。集計には入っていません。
-                </p>
-              )}
-              {flash.learned.map((item) => (
-                <p key={item.text}>
-                  次回から「{item.text}」はこの食品として認識します（
-                  {item.foodName}）。
-                </p>
-              ))}
+              {flash.pending > 0 && <PendingNote count={flash.pending} />}
+              <LearnedNotes items={flash.learned} />
             </div>
             <button
               type="button"
@@ -196,10 +161,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
                       </span>
                       <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
                         {set.items.length}品 ・ 全部で{" "}
-                        {fmtKcal(planned.value.kcal)}kcal / P
-                        {fmtNum(planned.value.proteinG)}g / 脂質
-                        {fmtNum(planned.value.fatG)}g / 塩分
-                        {fmtNum(planned.value.saltG)}g
+                        <NutritionLine value={planned.value} kcal="total" />
                       </span>
                       <span className="mt-0.5 block text-[11px] text-amber-700">
                         これは計画です。タップして選んだぶんだけが記録に入ります。

@@ -44,8 +44,11 @@ export class PhotoError extends Error {
   }
 }
 
-export const OFFLINE_MESSAGE =
-  "オフラインでは使えません。電波の届くところでお試しください。";
+/** 圏外で押せないときの短い言い方。写真の読み取り・ラベルを撮る・接続テストの横に出す */
+export const OFFLINE_SHORT = "オフラインでは使えません。";
+export const OFFLINE_MESSAGE = `${OFFLINE_SHORT}電波の届くところでお試しください。`;
+/** 読み取りの待ち時間の目安 */
+export const WAIT_NOTE = "（10〜30秒ほどかかります）";
 export const AUTH_MESSAGE = "APIキーを確認してください。";
 export const RATE_LIMIT_MESSAGE =
   "短い時間に何度も呼んでいます。少し待ってからもう一度お試しください。";

@@ -109,6 +109,25 @@ export function Chip({
   );
 }
 
+/**
+ * 失敗の表示（赤い 1 行）。「保存できませんでした: ○○」のように、何が失敗したか（label）と
+ * 理由（children。例外のメッセージ）を並べる。
+ */
+export function ErrorText({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <p className="text-sm text-red-700">
+      {`${label}: `}
+      {children}
+    </p>
+  );
+}
+
 export function Note({ children }: { children: ReactNode }) {
   return (
     <p className="text-[11px] leading-relaxed text-slate-500">{children}</p>

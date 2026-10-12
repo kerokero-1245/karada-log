@@ -28,6 +28,7 @@ import {
 } from "../../lib/exportRange";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { useTodayLogDate } from "../../lib/useTodayLogDate";
+import { errorMessage } from "../../lib/errors";
 
 type CopyState = "idle" | "copied" | "manual";
 
@@ -95,9 +96,7 @@ export function ExportCard({ settings }: { settings: Settings }) {
       );
       setJsonNote("JSON を保存しました。APIキーは入っていません。");
     } catch (e) {
-      setJsonNote(
-        `書き出せませんでした（${e instanceof Error ? e.message : String(e)}）`,
-      );
+      setJsonNote(`書き出せませんでした（${errorMessage(e)}）`);
     }
   };
 
@@ -113,7 +112,7 @@ export function ExportCard({ settings }: { settings: Settings }) {
               key={item.key}
               selected={preset === item.key}
               aria-pressed={preset === item.key}
-              className="px-3 text-xs"
+              className="text-xs"
               onClick={() => changeRange(() => setPreset(item.key))}
             >
               {item.label}

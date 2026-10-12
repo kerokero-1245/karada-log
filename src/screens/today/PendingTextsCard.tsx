@@ -47,7 +47,7 @@ export function PendingTextsCard({
             </button>
             <Button
               variant="ghost"
-              className="shrink-0 px-3 text-xs"
+              className="shrink-0 text-xs"
               onClick={() => onDelete(item)}
             >
               削除

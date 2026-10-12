@@ -5,9 +5,9 @@
 import type { Food } from "../../db/types";
 import type { FoodGroup } from "../../lib/foodGroups";
 import { Sheet } from "../../components/Sheet";
-import { Badge } from "../../components/ui";
+import { NutritionLine } from "../../components/NutritionLine";
+import { FoodBadges } from "../../components/FoodBadges";
 import { fmtNum } from "../../lib/nutrition";
-import { fmtKcalItem } from "../../lib/formatKcal";
 
 export function VariantPicker({
   group,
@@ -40,15 +40,14 @@ export function VariantPicker({
                   <span className="text-base font-bold text-slate-800">
                     {food.variantLabel ?? "標準"}
                   </span>
-                  {food.source === "estimated" && (
-                    <Badge tone="amber">推定値</Badge>
-                  )}
-                  {food.archived && <Badge tone="slate">在庫切れ</Badge>}
+                  <FoodBadges
+                    estimated={food.source === "estimated"}
+                    archived={food.archived}
+                  />
                 </span>
                 <span className="mt-1 block text-xs tabular-nums text-slate-500">
-                  {food.unitLabel} / {fmtKcalItem(food.per.kcal)}kcal / P
-                  {fmtNum(food.per.proteinG)}g / 脂質
-                  {fmtNum(food.per.fatG)}g
+                  {food.unitLabel} /{" "}
+                  <NutritionLine value={food.per} salt={false} />
                 </span>
               </span>
               <span className="shrink-0 text-right">

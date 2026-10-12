@@ -16,7 +16,14 @@ import type { Food } from "../../db/types";
 import { FOOD_CATEGORIES } from "../../db/types";
 import { addFood } from "../../db/foods";
 import { Sheet } from "../../components/Sheet";
-import { Badge, Button, Chip, NutritionGrid, Note } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  Chip,
+  NutritionGrid,
+  Note,
+  ErrorText,
+} from "../../components/ui";
 import {
   BASIS_OPTIONS,
   NUTRIENT_FIELDS,
@@ -26,10 +33,15 @@ import {
 import type { FoodFormValues } from "../../lib/foodForm";
 import { round3 } from "../../lib/number";
 import { fileToPhoto } from "../../lib/photo";
-import { photoErrorMessage } from "../../lib/photoError";
+import {
+  OFFLINE_SHORT,
+  WAIT_NOTE,
+  photoErrorMessage,
+} from "../../lib/photoError";
 import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
 import { useOnline } from "../../lib/useOnline";
 import { readNutritionLabel } from "../../lib/vision";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { PhotoFileButton } from "./PhotoFileButton";
 
 export function NewFoodForm({
@@ -100,7 +112,7 @@ export function NewFoodForm({
     try {
       onSaved(await addFood(draft));
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e));
+      setSaveError(errorMessage(e));
       setSaving(false);
     }
   };
@@ -116,7 +128,7 @@ export function NewFoodForm({
       footer={
         <Button
           variant="primary"
-          className="h-14 w-full text-base"
+          className="h-14 w-full"
           disabled={saving}
           onClick={save}
         >
@@ -136,13 +148,11 @@ export function NewFoodForm({
             />
             {reading && (
               <p className="mt-2 text-sm text-sky-800" role="status">
-                読み取っています…（10〜30秒ほどかかります）
+                {`読み取っています…${WAIT_NOTE}`}
               </p>
             )}
             {!online && (
-              <p className="mt-2 text-xs text-amber-800">
-                オフラインでは使えません。
-              </p>
+              <p className="mt-2 text-xs text-amber-800">{OFFLINE_SHORT}</p>
             )}
             {readError !== null && (
               <p className="mt-2 text-sm text-red-700">{readError}</p>
@@ -300,11 +310,7 @@ export function NewFoodForm({
             ))}
           </ul>
         )}
-        {saveError && (
-          <p className="text-sm text-red-700">
-            保存できませんでした: {saveError}
-          </p>
-        )}
+        {saveError && <ErrorText label={SAVE_FAILED}>{saveError}</ErrorText>}
       </div>
     </Sheet>
   );

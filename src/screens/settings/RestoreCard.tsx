@@ -13,6 +13,7 @@ import type { BackupCount, BackupFile } from "../../lib/backup";
 import { parseBackup, restoreBackup } from "../../lib/backup";
 import { formatDateTime } from "../../lib/date";
 import { UNKNOWN_MARK } from "../../lib/format";
+import { errorMessage } from "../../lib/errors";
 
 interface Staged {
   fileName: string;
@@ -73,9 +74,7 @@ export function RestoreCard() {
       setDone(parts.join(""));
       reset();
     } catch (e) {
-      setError(
-        `復元できませんでした（${e instanceof Error ? e.message : String(e)}）`,
-      );
+      setError(`復元できませんでした（${errorMessage(e)}）`);
     } finally {
       setBusy(false);
     }

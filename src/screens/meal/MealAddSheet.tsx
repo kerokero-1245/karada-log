@@ -11,11 +11,9 @@
  * ★ どの経路でも、記録に入るのはユーザーが最後のボタンを押したときだけ（原則1）。★
  */
 import { useMemo, useState } from "react";
-import { db } from "../../db/db";
 import type { Food, LogDate } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { Button, Note } from "../../components/ui";
-import { useLiveQuery } from "../../lib/useLiveQuery";
 import { formatLogDateShort } from "../../lib/date";
 import type { FoodFormValues } from "../../lib/foodForm";
 import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
@@ -36,6 +34,7 @@ import {
   matchesQuery,
   sortByFrequency,
 } from "../../lib/foodGroups";
+import { useFoods } from "../../lib/queries";
 
 const FREQUENT_LIMIT = 10;
 
@@ -77,7 +76,7 @@ export function MealAddSheet({
   onClose: () => void;
   onRecorded: (result: QuickCommitResult) => void;
 }) {
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const foods = useFoods();
   const [mode, setMode] = useState<MealAddMode>("text");
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);

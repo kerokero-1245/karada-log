@@ -11,7 +11,7 @@ import type {
   SessionExercise,
   SetRecord,
 } from "../../db/types";
-import { Badge, Card } from "../../components/ui";
+import { Badge, Card, ErrorText } from "../../components/ui";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { formatNumber } from "../../lib/number";
 import {
@@ -30,6 +30,7 @@ import {
 } from "../../lib/training";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { describeLoad, describeProgression } from "../../lib/weight";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { HistoryChart } from "./HistoryChart";
 import { LoadEditor } from "./LoadEditor";
 import { NumberField } from "../../components/NumberField";
@@ -134,7 +135,7 @@ export function ExerciseCard({
       });
       setDirty(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -284,9 +285,7 @@ export function ExerciseCard({
           )}
         </div>
 
-        {error && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
 
         <button
           type="button"

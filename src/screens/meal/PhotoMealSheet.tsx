@@ -11,30 +11,29 @@
  *  - 数量は直せる
  */
 import { useMemo, useState } from "react";
-import { db } from "../../db/db";
 import type { Food, LogDate, Nutrition } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
+import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, Note } from "../../components/ui";
+import { Badge, Button, ErrorText, Note } from "../../components/ui";
+import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
 import {
-  fmtNum,
   hasUnknownCore,
   scaleNutrition,
   sumNutrition,
 } from "../../lib/nutrition";
 import { buildPhotoRows } from "../../lib/photoMeal";
 import type { PhotoMealRow } from "../../lib/photoMeal";
-import { errorMessage } from "../../lib/errors";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { commitPhotoMeal } from "../../lib/photoRecord";
 import type { PhotoCommitResult, PhotoEntryPlan } from "../../lib/photoRecord";
-import { useLiveQuery } from "../../lib/useLiveQuery";
 import { CONFIDENCE_LABELS } from "../../lib/vision";
 import type { MealPhotoRead } from "../../lib/vision";
-import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
+import { useFoods } from "../../lib/queries";
 
 const NO_FOODS: Food[] = [];
 
@@ -53,7 +52,7 @@ export function PhotoMealSheet({
   onClose: () => void;
   onRecorded: (result: PhotoCommitResult) => void;
 }) {
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const foods = useFoods();
   const rows = useMemo(
     () => buildPhotoRows(read, foods ?? NO_FOODS),
     [read, foods],
@@ -101,14 +100,12 @@ export function PhotoMealSheet({
               記録する{rows.length}件の合計（概算）
             </p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g
-              / 脂質
-              {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
+              <NutritionLine value={total.value} kcal="total" />
             </p>
           </div>
           <Button
             variant="primary"
-            className="h-14 w-full text-base"
+            className="h-14 w-full"
             disabled={saving || rows.length === 0 || !hasTime(time)}
             onClick={record}
           >
@@ -152,9 +149,7 @@ export function PhotoMealSheet({
           />
         </div>
 
-        {error !== null && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error !== null && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
 
         <Note>
           写真は保存されません。「推定」の値は写真からの概算です。ラベルのある食品は、
@@ -196,19 +191,17 @@ function PhotoRow({
         <span className="text-sm font-bold text-slate-800">
           {food === null ? row.item.name : food.name}
         </span>
-        {food !== null && food.variantLabel !== null && (
-          <Badge tone="blue">{food.variantLabel}</Badge>
-        )}
-        {food !== null && food.archived && <Badge tone="slate">在庫切れ</Badge>}
+        <FoodBadges
+          variantLabel={food?.variantLabel}
+          archived={food?.archived}
+        />
         <span className="text-sm tabular-nums text-slate-700">
           {formatQuantity(quantity)} × {row.unitLabel}
         </span>
       </div>
 
       <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-        {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質
-        {fmtNum(value.fatG)}g / 塩分
-        {fmtNum(value.saltG)}g
+        <NutritionLine value={value} />
         {hasUnknown && (
           <span className="ml-1 text-slate-500">
             （「{UNKNOWN_MARK}」は未確認）

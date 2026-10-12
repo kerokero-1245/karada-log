@@ -9,17 +9,14 @@
  *  - 種目ごとに重量（バー種別 + プレート）/ 回数（時間種目は秒数）/ セット / 達成 / メモを記録し、
  *    進捗ルールで「次回 +○kg」か「据え置き」を出す。
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { db } from "../../db/db";
 import type { MenuId, Settings } from "../../db/types";
 import { DAY_TYPE_LABELS, MENU_IDS, MENU_LABELS } from "../../db/types";
 import { Card, Note } from "../../components/ui";
 import { formatLogDate, timeOf } from "../../lib/date";
-import { resolveDayType } from "../../lib/day";
 import { UNKNOWN_MARK } from "../../lib/format";
-import { dayTargetKcal, formatAmount } from "../../lib/goals";
-import { entryNutrition } from "../../lib/mealView";
-import { sumNutrition } from "../../lib/nutrition";
+import { formatAmount } from "../../lib/goals";
 import { DEFAULT_TARGET_REPS } from "../../lib/progression";
 import {
   deleteSession,
@@ -31,21 +28,18 @@ import {
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { useTodayLogDate } from "../../lib/useTodayLogDate";
 import { describeLoadShort } from "../../lib/weight";
+import { useDaySummary } from "../../lib/queries";
 import { ExerciseCard } from "./ExerciseCard";
 
 export function TrainingScreen({ settings }: { settings: Settings }) {
   const logDate = useTodayLogDate(settings.dayBoundaryHour);
 
-  const entries = useLiveQuery(
-    () => db.mealEntries.where("logDate").equals(logDate).toArray(),
-    [logDate],
-  );
-  const sessions = useLiveQuery(
-    () =>
-      db.trainingSessions.where("logDate").equals(logDate).sortBy("startedAt"),
-    [logDate],
-  );
-  const dayMeta = useLiveQuery(() => db.dayMeta.get(logDate), [logDate]);
+  const {
+    sessions: sessionList,
+    dayType,
+    targetKcal: target,
+    totals: intake,
+  } = useDaySummary(logDate, settings);
   const exercises = useLiveQuery(
     () => db.exercises.orderBy("[menu+order]").toArray(),
     [],
@@ -56,7 +50,6 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
     [logDate],
   );
 
-  const sessionList = sessions ?? [];
   const session =
     sessionList.length > 0 ? sessionList[sessionList.length - 1] : null;
   const records = useLiveQuery(
@@ -69,12 +62,6 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
 
   const [busy, setBusy] = useState(false);
 
-  const { dayType } = resolveDayType(dayMeta, sessionList.length);
-  const target = dayTargetKcal(settings, dayType);
-  const intake = useMemo(
-    () => sumNutrition((entries ?? []).map(entryNutrition)),
-    [entries],
-  );
   const intakeKcal = intake.value.kcal ?? 0;
   const remain = target - intakeKcal;
   const unknownKcal = intake.unknown.kcal ?? 0;

@@ -7,10 +7,12 @@ import type { Food, LogDate } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { QuantityStepper } from "../../components/QuantityStepper";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, NutritionGrid } from "../../components/ui";
+import { Badge, Button, ErrorText, NutritionGrid } from "../../components/ui";
+import { FoodBadges } from "../../components/FoodBadges";
 import { hasTime, nowTime } from "../../lib/date";
 import { addMealEntries } from "../../lib/meals";
 import { scaleNutrition } from "../../lib/nutrition";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 
 export function QuantityStep({
   food,
@@ -47,7 +49,7 @@ export function QuantityStep({
       );
       onAdded();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setSaving(false);
     }
   };
@@ -61,7 +63,7 @@ export function QuantityStep({
       footer={
         <Button
           variant="primary"
-          className="h-14 w-full text-base"
+          className="h-14 w-full"
           disabled={saving || !hasTime(time)}
           onClick={add}
         >
@@ -72,8 +74,10 @@ export function QuantityStep({
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
           <Badge tone="slate">{food.category}</Badge>
-          {food.source === "estimated" && <Badge tone="amber">推定値</Badge>}
-          {food.archived && <Badge tone="slate">在庫切れ</Badge>}
+          <FoodBadges
+            estimated={food.source === "estimated"}
+            archived={food.archived}
+          />
         </div>
 
         <div className="rounded-xl bg-white p-3 shadow-sm">
@@ -102,9 +106,7 @@ export function QuantityStep({
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
       </div>
     </Sheet>
   );

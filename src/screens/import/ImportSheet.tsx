@@ -16,12 +16,14 @@ import { db } from "../../db/db";
 import type { Food, LogDate, Nutrition } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
-import { Badge, Button, Chip, Note } from "../../components/ui";
+import { NutritionLine } from "../../components/NutritionLine";
+import { Badge, Button, Chip, ErrorText, Note } from "../../components/ui";
+import { FoodBadges } from "../../components/FoodBadges";
+import { LearnedNotes, PendingNote } from "../../components/CommitNotes";
 import { formatLogDate, formatLogDateShort } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
 import {
-  fmtNum,
   hasUnknownCore,
   scaleNutrition,
   sumNutrition,
@@ -40,7 +42,8 @@ import type { QuickStatus } from "../../lib/quickText";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { FoodPickerSheet } from "../meal/FoodPickerSheet";
 import { NewFoodForm } from "../meal/NewFoodForm";
-import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
+import { errorMessage } from "../../lib/errors";
+import { useFoods } from "../../lib/queries";
 
 const NO_FOODS: Food[] = [];
 
@@ -82,7 +85,7 @@ export function ImportSheet({
   boundaryHour: number;
   onClose: () => void;
 }) {
-  const foods = useLiveQuery(() => db.foods.toArray(), []);
+  const foods = useFoods();
   const foodList = foods ?? NO_FOODS;
 
   const [text, setText] = useState("");
@@ -188,7 +191,7 @@ export function ImportSheet({
     try {
       setResult(await commitImport(plans, boundaryHour));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     }
     setSaving(false);
   };
@@ -201,11 +204,7 @@ export function ImportSheet({
         title="取り込みました"
         onClose={onClose}
         footer={
-          <Button
-            variant="primary"
-            className="h-14 w-full text-base"
-            onClick={onClose}
-          >
+          <Button variant="primary" className="h-14 w-full" onClick={onClose}>
             閉じる
           </Button>
         }
@@ -223,18 +222,8 @@ export function ImportSheet({
               件を消しました。
             </p>
           )}
-          {result.pending > 0 && (
-            <p>
-              {result.pending}
-              件は未処理として預かりました。集計には入っていません。
-            </p>
-          )}
-          {result.learned.map((item) => (
-            <p key={item.text}>
-              次回から「{item.text}」はこの食品として認識します（{item.foodName}
-              ）。
-            </p>
-          ))}
+          {result.pending > 0 && <PendingNote count={result.pending} />}
+          <LearnedNotes items={result.learned} />
         </div>
         <Note>
           ダッシュボードの「今日の進捗」は、今日のぶんだけが動きます。
@@ -305,14 +294,10 @@ export function ImportSheet({
                         バリアント{candidate.foods.length}件
                       </Badge>
                     )}
-                    {first.source === "estimated" && (
-                      <Badge tone="amber">推定値</Badge>
-                    )}
+                    <FoodBadges estimated={first.source === "estimated"} />
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P
-                    {fmtNum(first.per.proteinG)}g / 脂質
-                    {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
+                    {first.unitLabel} / <NutritionLine value={first.per} />
                   </span>
                   <span className="mt-0.5 block text-[11px] text-slate-400">
                     {candidate.reason}
@@ -359,7 +344,7 @@ export function ImportSheet({
             </p>
             <Button
               variant="primary"
-              className="h-14 w-full text-base"
+              className="h-14 w-full"
               disabled={saving || (addedCount === 0 && pendingCount === 0)}
               onClick={() => void run()}
             >
@@ -449,10 +434,8 @@ export function ImportSheet({
             </ul>
 
             <p className="mt-1 border-t border-slate-200 pt-1 text-sm font-medium tabular-nums text-slate-800">
-              この日の合計 {fmtKcal(day.total.value.kcal)}kcal / P
-              {fmtNum(day.total.value.proteinG)}g / 脂質
-              {fmtNum(day.total.value.fatG)}g / 塩分
-              {fmtNum(day.total.value.saltG)}g
+              この日の合計{" "}
+              <NutritionLine value={day.total.value} kcal="total" />
             </p>
             {day.unknown > 0 && (
               <p className="text-[11px] text-slate-500">
@@ -464,7 +447,7 @@ export function ImportSheet({
               <Chip
                 selected={!day.replace}
                 aria-pressed={!day.replace}
-                className="px-3 text-xs"
+                className="text-xs"
                 onClick={() =>
                   setReplacing((prev) => ({ ...prev, [day.logDate]: false }))
                 }
@@ -474,7 +457,7 @@ export function ImportSheet({
               <Chip
                 selected={day.replace}
                 aria-pressed={day.replace}
-                className="px-3 text-xs"
+                className="text-xs"
                 onClick={() =>
                   setReplacing((prev) => ({ ...prev, [day.logDate]: true }))
                 }
@@ -500,7 +483,7 @@ export function ImportSheet({
         )}
 
         {error !== null && (
-          <p className="text-sm text-red-700">取り込めませんでした: {error}</p>
+          <ErrorText label="取り込めませんでした">{error}</ErrorText>
         )}
 
         <Note>
@@ -549,24 +532,18 @@ function PreviewRow({
         <>
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
             <span className="text-sm font-bold text-slate-800">{name}</span>
-            {view.food?.variantLabel != null && (
-              <Badge tone="blue">{view.food.variantLabel}</Badge>
-            )}
-            {view.food?.source === "estimated" && (
-              <Badge tone="amber">推定値</Badge>
-            )}
-            {view.food?.archived === true && (
-              <Badge tone="slate">在庫切れ</Badge>
-            )}
+            <FoodBadges
+              variantLabel={view.food?.variantLabel}
+              estimated={view.food?.source === "estimated"}
+              archived={view.food?.archived === true}
+            />
             <span className="text-sm tabular-nums text-slate-700">
               {formatQuantity(view.quantity)} × {view.unitLabel}
             </span>
           </div>
 
           <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g / 脂質
-            {fmtNum(value.fatG)}g / 塩分
-            {fmtNum(value.saltG)}g
+            <NutritionLine value={value} />
             {hasUnknown && (
               <span className="ml-1 text-slate-500">
                 （「{UNKNOWN_MARK}」は未確認）
@@ -596,11 +573,11 @@ function PreviewRow({
 
       <div className="mt-1 flex flex-wrap gap-2">
         {row.resolution.candidates.length > 1 && (
-          <Button className="px-3 text-xs" onClick={onOpenCandidates}>
+          <Button className="text-xs" onClick={onOpenCandidates}>
             候補から選ぶ（{row.resolution.candidates.length}件）
           </Button>
         )}
-        <Button className="px-3 text-xs" onClick={onOpenPicker}>
+        <Button className="text-xs" onClick={onOpenPicker}>
           食品を選ぶ
         </Button>
       </div>

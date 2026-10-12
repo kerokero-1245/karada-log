@@ -2,8 +2,9 @@
 import type { FoodGroup } from "../../lib/foodGroups";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { fmtNum } from "../../lib/nutrition";
+import { NutritionLine } from "../../components/NutritionLine";
 import { Badge } from "../../components/ui";
-import { fmtKcalItem } from "../../lib/formatKcal";
+import { FoodBadges } from "../../components/FoodBadges";
 
 export function FoodList({
   groups,
@@ -34,10 +35,10 @@ export function FoodList({
                   {hasVariants && (
                     <Badge tone="blue">バリアント{group.foods.length}件</Badge>
                   )}
-                  {!hasVariants && first.source === "estimated" && (
-                    <Badge tone="amber">推定値</Badge>
-                  )}
-                  {group.archived && <Badge tone="slate">在庫切れ</Badge>}
+                  <FoodBadges
+                    estimated={!hasVariants && first.source === "estimated"}
+                    archived={group.archived}
+                  />
                 </span>
                 <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
                   {hasVariants ? (
@@ -51,9 +52,7 @@ export function FoodList({
                     </>
                   ) : (
                     <>
-                      {first.unitLabel} / {fmtKcalItem(first.per.kcal)}kcal / P
-                      {fmtNum(first.per.proteinG)}g / 脂質
-                      {fmtNum(first.per.fatG)}g / 塩分{fmtNum(first.per.saltG)}g
+                      {first.unitLabel} / <NutritionLine value={first.per} />
                     </>
                   )}
                 </span>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { db } from "./db/db";
 import { ensureSeed } from "./lib/ensureSeed";
 import { useLiveQuery } from "./lib/useLiveQuery";
+import { errorMessage } from "./lib/errors";
 import { BottomNav } from "./components/BottomNav";
 import type { TabKey } from "./components/BottomNav";
 import { TodayScreen } from "./screens/TodayScreen";
@@ -26,7 +27,7 @@ export default function App() {
         if (!cancelled) setSeeded(true);
       },
       (e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setError(errorMessage(e));
       },
     );
     return () => {

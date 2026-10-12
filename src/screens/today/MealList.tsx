@@ -6,9 +6,9 @@
 import type { MealEntry } from "../../db/types";
 import { timeOf } from "../../lib/date";
 import { entryNutrition, formatQuantity } from "../../lib/mealView";
-import { fmtNum } from "../../lib/nutrition";
+import { NutritionLine } from "../../components/NutritionLine";
 import { Badge } from "../../components/ui";
-import { fmtKcalItem } from "../../lib/formatKcal";
+import { FoodBadges } from "../../components/FoodBadges";
 
 export function MealList({
   entries,
@@ -44,12 +44,10 @@ export function MealList({
                   <span className="text-sm font-medium text-slate-800">
                     {entry.snapshot.name}
                   </span>
-                  {entry.snapshot.variantLabel && (
-                    <Badge tone="blue">{entry.snapshot.variantLabel}</Badge>
-                  )}
-                  {entry.snapshot.source === "estimated" && (
-                    <Badge tone="amber">推定値</Badge>
-                  )}
+                  <FoodBadges
+                    variantLabel={entry.snapshot.variantLabel}
+                    estimated={entry.snapshot.source === "estimated"}
+                  />
                   {entry.fromShortcutSetId !== null && (
                     <Badge tone="slate">固定ベース</Badge>
                   )}
@@ -58,9 +56,7 @@ export function MealList({
                   {formatQuantity(entry.quantity)} × {entry.snapshot.unitLabel}
                 </span>
                 <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-                  {fmtKcalItem(value.kcal)}kcal / P{fmtNum(value.proteinG)}g /
-                  脂質{fmtNum(value.fatG)}g / 塩分
-                  {fmtNum(value.saltG)}g
+                  <NutritionLine value={value} />
                 </span>
                 {entry.note !== "" && (
                   <span className="mt-0.5 block text-[11px] text-slate-400">

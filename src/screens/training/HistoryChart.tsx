@@ -11,6 +11,15 @@ import { chartData, metricOf } from "../../lib/history";
 import { formatFixed, formatNumber } from "../../lib/number";
 import type { HistoryPoint } from "../../lib/training";
 
+/** 色は Tailwind の emerald-600（線・点）・slate-500（軸の文字）・slate-200（目盛りの線）・slate-900（最新の値）・white（据え置きの回の白抜き）と同じ */
+const COLORS = {
+  line: "#059669",
+  axisText: "#64748b",
+  grid: "#e2e8f0",
+  labelText: "#0f172a",
+  hollow: "#ffffff",
+};
+
 const W = 320;
 const H = 132;
 const PAD = { left: 36, right: 40, top: 14, bottom: 26 };
@@ -84,7 +93,7 @@ export function HistoryChart({
                 x2={W - PAD.right}
                 y1={y(v)}
                 y2={y(v)}
-                stroke="#e2e8f0"
+                stroke={COLORS.grid}
                 strokeWidth={1}
               />
               <text
@@ -92,7 +101,7 @@ export function HistoryChart({
                 y={y(v) + 3}
                 textAnchor="end"
                 fontSize={10}
-                fill="#64748b"
+                fill={COLORS.axisText}
               >
                 {formatNumber(v)}
               </text>
@@ -103,7 +112,7 @@ export function HistoryChart({
           <path
             d={path}
             fill="none"
-            stroke="#059669"
+            stroke={COLORS.line}
             strokeWidth={2}
             strokeLinejoin="round"
           />
@@ -118,8 +127,8 @@ export function HistoryChart({
               cx={x(i)}
               cy={y(d.value)}
               r={4.5}
-              fill={d.outcome === "achieved" ? "#059669" : "#ffffff"}
-              stroke="#059669"
+              fill={d.outcome === "achieved" ? COLORS.line : COLORS.hollow}
+              stroke={COLORS.line}
               strokeWidth={2}
               pointerEvents="none"
             />
@@ -130,7 +139,7 @@ export function HistoryChart({
           y={y(last.value) + 4}
           fontSize={11}
           fontWeight={700}
-          fill="#0f172a"
+          fill={COLORS.labelText}
         >
           {formatNumber(last.value)}
           {unit}
@@ -140,7 +149,7 @@ export function HistoryChart({
           y={H - 6}
           textAnchor={data.length === 1 ? "middle" : "start"}
           fontSize={10}
-          fill="#64748b"
+          fill={COLORS.axisText}
         >
           {data[0].label}
         </text>
@@ -150,7 +159,7 @@ export function HistoryChart({
             y={H - 6}
             textAnchor="end"
             fontSize={10}
-            fill="#64748b"
+            fill={COLORS.axisText}
           >
             {last.label}
           </text>

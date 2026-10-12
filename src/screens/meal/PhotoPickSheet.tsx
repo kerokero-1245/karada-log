@@ -12,7 +12,11 @@ import { useState } from "react";
 import { Sheet } from "../../components/Sheet";
 import { Note } from "../../components/ui";
 import { fileToPhoto } from "../../lib/photo";
-import { photoErrorMessage } from "../../lib/photoError";
+import {
+  OFFLINE_MESSAGE,
+  WAIT_NOTE,
+  photoErrorMessage,
+} from "../../lib/photoError";
 import { useOnline } from "../../lib/useOnline";
 import { estimateMealPhoto, readNutritionLabel } from "../../lib/vision";
 import type { LabelRead, MealPhotoRead } from "../../lib/vision";
@@ -75,7 +79,7 @@ export function PhotoPickSheet({
           <div>
             <PhotoFileButton
               variant="primary"
-              className="h-14 w-full text-base"
+              className="h-14 w-full"
               label="料理の写真"
               inputLabel="料理の写真を選ぶ"
               disabled={disabled}
@@ -87,7 +91,7 @@ export function PhotoPickSheet({
           <div>
             <PhotoFileButton
               variant="primary"
-              className="h-14 w-full text-base"
+              className="h-14 w-full"
               label="栄養成分表示"
               inputLabel="栄養成分表示を選ぶ"
               disabled={disabled}
@@ -101,7 +105,7 @@ export function PhotoPickSheet({
 
         {!online && (
           <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            オフラインでは使えません。電波の届くところでお試しください。
+            {OFFLINE_MESSAGE}
           </p>
         )}
 
@@ -110,7 +114,8 @@ export function PhotoPickSheet({
             className="rounded-xl border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900"
             role="status"
           >
-            {BUSY_LABELS[busy]}（10〜30秒ほどかかります）
+            {BUSY_LABELS[busy]}
+            {WAIT_NOTE}
           </p>
         )}
 

@@ -9,15 +9,20 @@ import { useState } from "react";
 import { db } from "../../db/db";
 import type { Food, LogDate, ShortcutSet } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
+import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
-import { Badge, Button, Note } from "../../components/ui";
+import { Badge, Button, ErrorText, Note } from "../../components/ui";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { hasTime, nowTime } from "../../lib/date";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { addMealEntries } from "../../lib/meals";
 import { formatQuantity } from "../../lib/mealView";
-import { fmtNum, plannedNutrition, plannedTotal } from "../../lib/nutrition";
-import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
+import {
+  emptyNutrition,
+  plannedNutrition,
+  plannedTotal,
+} from "../../lib/nutrition";
+import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 
 export function ShortcutSheet({
   set,
@@ -81,7 +86,7 @@ export function ShortcutSheet({
       );
       onAdded();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
       setSaving(false);
     }
   };
@@ -98,14 +103,12 @@ export function ShortcutSheet({
               選んだ{selected.length}件の合計
             </p>
             <p className="text-sm font-bold tabular-nums text-slate-800">
-              {fmtKcal(total.value.kcal)}kcal / P{fmtNum(total.value.proteinG)}g
-              / 脂質
-              {fmtNum(total.value.fatG)}g / 塩分{fmtNum(total.value.saltG)}g
+              <NutritionLine value={total.value} kcal="total" />
             </p>
           </div>
           <Button
             variant="primary"
-            className="h-14 w-full text-base"
+            className="h-14 w-full"
             disabled={saving || selected.length === 0 || !hasTime(time)}
             onClick={add}
           >
@@ -151,10 +154,7 @@ export function ShortcutSheet({
                     {row.food?.unitLabel ?? UNKNOWN_MARK}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-                    {fmtKcalItem(row.value?.kcal ?? null)}kcal / P
-                    {fmtNum(row.value?.proteinG ?? null)}g / 脂質
-                    {fmtNum(row.value?.fatG ?? null)}g / 塩分
-                    {fmtNum(row.value?.saltG ?? null)}g
+                    <NutritionLine value={row.value ?? emptyNutrition()} />
                   </span>
                 </span>
               </button>
@@ -176,9 +176,7 @@ export function ShortcutSheet({
         </div>
 
         {set.note && <Note>※ {set.note}</Note>}
-        {error && (
-          <p className="text-sm text-red-700">保存できませんでした: {error}</p>
-        )}
+        {error && <ErrorText label={SAVE_FAILED}>{error}</ErrorText>}
       </div>
     </Sheet>
   );

@@ -144,7 +144,7 @@ const VALID_LABEL = {
 };
 
 test("vision: モデルは日付サフィックスなしの claude-opus-5、出力は 4096 トークンまで、確度の表示名", () => {
-  assert.equal(VISION_MODEL, "claude-opus-5");
+  assert.equal(VISION_MODEL, "claude-opus-5-5");
   assert.equal(VISION_MAX_TOKENS, 4096);
   assert.deepEqual(CONFIDENCE_LABELS, {
     high: "読み取れています",
@@ -160,7 +160,7 @@ test("vision.readNutritionLabel: 送る要求の全文（モデル・effort・fa
   assert.equal(sent.length, 1);
   assert.deepEqual(headersOf(sent[0]), EXPECTED_HEADERS);
   const expectedBody = {
-    model: "claude-opus-5",
+    model: "claude-opus-5-5",
     max_tokens: 4096,
     fallbacks: "default",
     system: LABEL_SYSTEM,
@@ -197,7 +197,7 @@ test("vision.estimateMealPhoto: 送る要求の全文（effort は high）", asy
   assert.equal(sent.length, 1);
   assert.deepEqual(headersOf(sent[0]), EXPECTED_HEADERS);
   const expectedBody = {
-    model: "claude-opus-5",
+    model: "claude-opus-5-5",
     max_tokens: 4096,
     fallbacks: "default",
     system: MEAL_SYSTEM,
@@ -231,7 +231,7 @@ test("vision.testConnection: 最小の呼び出し（32 トークン・effort �
   assert.equal(
     JSON.stringify(sent[0].body),
     JSON.stringify({
-      model: "claude-opus-5",
+      model: "claude-opus-5-5",
       max_tokens: 32,
       fallbacks: "default",
       output_config: { effort: "low" },

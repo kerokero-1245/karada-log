@@ -26,8 +26,8 @@ import {
   toPhotoError,
 } from "./photoError";
 
-/** 日付サフィックスを付けない（最新の Opus 5 を指す） */
-export const VISION_MODEL = "claude-opus-5";
+/** 日付サフィックスを付けない（最新の Opus 5.5 を指す） */
+export const VISION_MODEL = "claude-opus-5-5";
 /** 出力は短い JSON なので大きくしない */
 export const VISION_MAX_TOKENS = 4096;
 /** 接続テストはこれだけあれば足りる */
@@ -371,7 +371,8 @@ interface JsonRequest {
 /**
  * 画像1枚 + 指示 → 構造化出力の JSON。
  *
- * thinking は指定しない（Opus 5 は既定で adaptive）。
+ * thinking は指定しない（Opus 5.5 は thinking が常に on で、disabled も budget_tokens も 400。省略は adaptive と同じ）。
+ * effort は毎回明示する（Opus 5.5 の既定は medium で、Opus 5 の high とは違うため）。
  * fallbacks: 'default' を付けて、安全側の判定で止まったときは代替モデルに回してもらう。
  */
 async function requestJson(

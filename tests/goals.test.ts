@@ -60,8 +60,8 @@ test("goals.formatAmount: kcal は整数＋桁区切り、塩分は小数 2 桁�
   assert.equal(formatAmount("kcal", 2000), "2,000");
   assert.equal(formatAmount("kcal", 1234.5), "1,235");
   assert.equal(formatAmount("proteinG", 140), "140");
-  assert.equal(formatAmount("proteinG", 84.84), "84.8");
-  assert.equal(formatAmount("fatG", 12.95), "12.9");
+  assert.equal(formatAmount("proteinG", 84.84), "84.84");
+  assert.equal(formatAmount("fatG", 12.95), "12.95");
   assert.equal(formatAmount("saltG", 2.16), "2.16");
   assert.equal(formatAmount("saltG", 5.8), "5.8");
 });

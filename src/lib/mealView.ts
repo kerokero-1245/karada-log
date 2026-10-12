@@ -9,6 +9,7 @@
 import type { Food, MealEntry, MealSnapshot, Nutrition } from "../db/types";
 import { hasTime } from "./date";
 import { scaleNutrition } from "./nutrition";
+import { formatNumber } from "./number";
 
 export function snapshotOf(food: Food): MealSnapshot {
   return {
@@ -38,5 +39,5 @@ export function entryNutrition(entry: MealEntry): Nutrition {
 
 /** 数量の表示。1 → '1' / 0.5 → '0.5' / 3 → '3' */
 export function formatQuantity(quantity: number): string {
-  return String(Math.round(quantity * 100) / 100);
+  return formatNumber(quantity);
 }

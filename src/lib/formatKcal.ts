@@ -11,6 +11,7 @@
  * どちらも null は '—'、負のゼロ（入力欄の '-0' など）は '0' と出す。
  */
 import { UNKNOWN_MARK } from "./format";
+import { roundTo } from "./number";
 
 const TOTAL = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 const ITEM = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 });
@@ -21,10 +22,8 @@ function format(
   digits: number,
 ): string {
   if (value === null || Number.isNaN(value)) return UNKNOWN_MARK;
-  const scale = 10 ** digits;
-  const rounded = Math.round(value * scale) / scale;
-  // Math.round(-0.04) や入力の '-0' は -0 になり、Intl は '-0' と出す
-  return formatter.format(rounded === 0 ? 0 : rounded);
+  // roundTo は負のゼロを 0 にする（Intl に -0 を渡すと '-0' と出るため）
+  return formatter.format(roundTo(value, digits));
 }
 
 export function fmtKcal(value: number | null): string {

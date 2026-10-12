@@ -17,6 +17,7 @@ import type {
   Progression,
 } from "../db/types";
 import { UNKNOWN_MARK } from "./format";
+import { addRounded } from "./number";
 import {
   applyProgression,
   applySecondsProgression,
@@ -90,7 +91,7 @@ export function judgeProgress(
 
 /** 次回の重量 = 今回 + 増分。小数第2位で丸める（1.25kg プレートを扱うため） */
 export function nextWeight(current: number, increment: number): number {
-  return Math.round((current + increment) * 100) / 100;
+  return addRounded(current, increment);
 }
 
 /**

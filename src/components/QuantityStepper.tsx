@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { formatQuantity } from "../lib/mealView";
+import { addRounded, round2 } from "../lib/number";
 
 const MIN = 0.1;
 
@@ -27,7 +28,7 @@ export function QuantityStepper({
   };
 
   const step = (delta: number) => {
-    const next = Math.max(MIN, round2(value + delta));
+    const next = Math.max(MIN, addRounded(value, delta));
     setText(formatQuantity(next));
     onChange(next);
   };
@@ -66,8 +67,4 @@ export function QuantityStepper({
       </p>
     </div>
   );
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }

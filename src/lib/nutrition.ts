@@ -6,6 +6,7 @@
 import type { Nutrition, NutrientKey } from "../db/types";
 import { NUTRIENT_KEYS } from "../db/types";
 import { UNKNOWN_MARK } from "./format";
+import { addRounded, formatNumber, round2 } from "./number";
 
 export const EMPTY_NUTRITION: Nutrition = {
   kcal: null,
@@ -51,7 +52,7 @@ export function sumNutrition(list: Nutrition[]): NutritionTotal {
     for (const key of NUTRIENT_KEYS) {
       const v = n[key];
       if (v === null) unknown[key] += 1;
-      else value[key] = round2((value[key] ?? 0) + v);
+      else value[key] = addRounded(value[key] ?? 0, v);
     }
   }
   return { value, unknown };
@@ -60,9 +61,5 @@ export function sumNutrition(list: Nutrition[]): NutritionTotal {
 /** 表示。null は '—' */
 export function fmtNum(v: number | null, suffix = ""): string {
   if (v === null || Number.isNaN(v)) return UNKNOWN_MARK;
-  return `${round2(v)}${suffix}`;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return `${formatNumber(v)}${suffix}`;
 }

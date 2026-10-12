@@ -17,6 +17,7 @@ import type {
 } from "../db/types";
 import { NUTRIENT_KEYS, NUTRIENT_NAMES } from "../db/types";
 import { nowIso } from "./date";
+import { round3 } from "./number";
 
 /** 表記の基準 3択 */
 export type BasisKind = "unit" | "per100g" | "bag";
@@ -96,10 +97,6 @@ function parseNumber(
     return null;
   }
   return value;
-}
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000;
 }
 
 export function buildFood(values: FoodFormValues): FoodFormResult {

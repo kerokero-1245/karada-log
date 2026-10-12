@@ -17,6 +17,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { isPlainObject } from "./guards";
+import { round3 } from "./number";
 import type { PhotoMediaType } from "./photo";
 import {
   FORMAT_MESSAGE,
@@ -61,7 +62,7 @@ function requireOnline(): void {
 function numberOrNull(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
     return null;
-  return Math.round(value * 1000) / 1000;
+  return round3(value);
 }
 
 function text(value: unknown): string {

@@ -5,6 +5,7 @@
 import type { DayType, LogDate } from "../../db/types";
 import { DAY_TYPE_LABELS } from "../../db/types";
 import { formatLogDate } from "../../lib/date";
+import { fmtKcal } from "../../lib/formatKcal";
 
 /** 区分のチップを並べる順 */
 const DAY_TYPES: DayType[] = ["rest", "gym"];
@@ -59,7 +60,7 @@ export function DayHeader({
             );
           })}
           <span className="text-sm text-slate-300">
-            目標 {targetKcal.toLocaleString("ja-JP")} kcal
+            目標 {fmtKcal(targetKcal)} kcal
           </span>
         </div>
 

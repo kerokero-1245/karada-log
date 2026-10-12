@@ -7,6 +7,7 @@
  */
 import type { BarType, LoadSpec, Progression } from "../../db/types";
 import { BAR_LABELS, BAR_WEIGHT_KG } from "../../db/types";
+import { round2 } from "../../lib/number";
 import { describeLoad } from "../../lib/weight";
 import { NumberField } from "../../components/NumberField";
 
@@ -112,9 +113,7 @@ export function LoadEditor({
                     barType: type,
                     plateKgPerSide: Math.max(
                       0,
-                      Math.round(
-                        ((load.totalKg - BAR_WEIGHT_KG[type]) / 2) * 100,
-                      ) / 100,
+                      round2((load.totalKg - BAR_WEIGHT_KG[type]) / 2),
                     ),
                   })
                 }

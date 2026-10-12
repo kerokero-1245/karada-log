@@ -16,6 +16,7 @@
 import type { Food, FoodCategory, Nutrition } from "../db/types";
 import { toCalendarDate, toIsoDateTime } from "./date";
 import { formatQuantity } from "./mealView";
+import { round3 } from "./number";
 import {
   ARCHIVED_PENALTY,
   findCandidates,
@@ -65,7 +66,7 @@ export function photoNoteOf(item: MealPhotoItem): string {
 export function perUnitOf(item: MealPhotoItem): Nutrition {
   const quantity = item.quantity > 0 ? item.quantity : 1;
   const per = (value: number | null): number | null =>
-    value === null ? null : Math.round((value / quantity) * 1000) / 1000;
+    value === null ? null : round3(value / quantity);
   return {
     kcal: per(item.kcal),
     proteinG: per(item.proteinG),

@@ -3,10 +3,10 @@
  * 入力途中の文字（'12.' など）を壊さないよう、表示用の文字列を別に持つ。
  */
 import { useState } from "react";
+import { addRounded, formatNumber, round2 } from "../lib/number";
 
-function fmt(value: number | null): string {
-  if (value === null) return "";
-  return String(Math.round(value * 100) / 100);
+function inputText(value: number | null): string {
+  return value === null ? "" : formatNumber(value);
 }
 
 export function NumberField({
@@ -26,13 +26,14 @@ export function NumberField({
   placeholder?: string;
   allowEmpty?: boolean;
 }) {
-  const [text, setText] = useState(() => fmt(value));
+  const [text, setText] = useState(() => inputText(value));
 
   // 外から値が変わったとき（「規定どおりに入れる」など）は表示を合わせる（描画中に前回値と比べる）
   const [shown, setShown] = useState(value);
   if (shown !== value) {
     setShown(value);
-    if (!(text.trim() !== "" && Number(text) === value)) setText(fmt(value));
+    if (!(text.trim() !== "" && Number(text) === value))
+      setText(inputText(value));
   }
 
   const commit = (next: string) => {
@@ -42,14 +43,13 @@ export function NumberField({
       return;
     }
     const parsed = Number(next);
-    if (Number.isFinite(parsed) && parsed >= 0)
-      onChange(Math.round(parsed * 100) / 100);
+    if (Number.isFinite(parsed) && parsed >= 0) onChange(round2(parsed));
   };
 
   const bump = (delta: number) => {
     const base = value ?? 0;
-    const next = Math.max(0, Math.round((base + delta) * 100) / 100);
-    setText(fmt(next));
+    const next = Math.max(0, addRounded(base, delta));
+    setText(inputText(next));
     onChange(next);
   };
 
@@ -70,7 +70,7 @@ export function NumberField({
           value={text}
           placeholder={placeholder}
           onChange={(e) => commit(e.target.value)}
-          onBlur={() => setText(fmt(value))}
+          onBlur={() => setText(inputText(value))}
           aria-label={label}
           className="h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white pr-8 text-center text-lg font-bold tabular-nums placeholder:font-normal placeholder:text-slate-300"
         />

@@ -19,6 +19,7 @@ import type { Food, LogDate, Nutrition } from "../db/types";
 import { groupBy } from "./collections";
 import { toCalendarDate, toIsoDateTime } from "./date";
 import { formatQuantity } from "./mealView";
+import { round3 } from "./number";
 import { gramsPerUnitOf, guessCategory, unitLabelOf } from "./photoMeal";
 import { isGramUnit, parseItems, quantityFor, resolveItem } from "./quickText";
 import type { ParsedItem, QuickResolution, QuickStatus } from "./quickText";
@@ -33,7 +34,7 @@ export const DEFAULT_IMPORT_TIME = "12:00";
 /** 1単位あたりに割る。写真からの推定（lib/photoMeal.ts）と同じ丸め方 */
 function perUnit(values: Nutrition, quantity: number): Nutrition {
   const divide = (value: number | null): number | null =>
-    value === null ? null : Math.round((value / quantity) * 1000) / 1000;
+    value === null ? null : round3(value / quantity);
   return {
     kcal: divide(values.kcal),
     proteinG: divide(values.proteinG),

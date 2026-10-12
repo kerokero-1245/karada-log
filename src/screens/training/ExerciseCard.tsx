@@ -13,6 +13,7 @@ import type {
 } from "../../db/types";
 import { Badge, Card } from "../../components/ui";
 import { UNKNOWN_MARK } from "../../lib/format";
+import { formatNumber } from "../../lib/number";
 import {
   describeJudgement,
   isSetAchieved,
@@ -220,7 +221,7 @@ export function ExerciseCard({
                     )}
                     {achieved === false && goal !== null && value !== null && (
                       <span className="text-slate-500">
-                        あと{fmt(goal - value)}
+                        あと{formatNumber(goal - value)}
                         {unit}
                       </span>
                     )}
@@ -304,8 +305,4 @@ export function ExerciseCard({
       </div>
     </Card>
   );
-}
-
-function fmt(n: number): string {
-  return String(Math.round(n * 100) / 100);
 }

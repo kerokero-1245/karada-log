@@ -13,6 +13,7 @@ import {
   type Progression,
 } from "../db/types";
 import { UNKNOWN_MARK } from "./format";
+import { addRounded, formatNumber, round2 } from "./number";
 
 /** 実際に扱っている総重量。自重は null */
 export function totalWeightKg(load: LoadSpec): number | null {
@@ -85,22 +86,22 @@ export function applyProgression(
     case "barbell":
       return {
         ...load,
-        plateKgPerSide: round2(load.plateKgPerSide + progression.amount / 2),
+        plateKgPerSide: addRounded(load.plateKgPerSide, progression.amount / 2),
       };
     case "dumbbell":
       return {
         ...load,
-        kgPerHand: round2(
-          load.kgPerHand +
-            (progression.basis === "perHand"
-              ? progression.amount
-              : progression.amount / load.hands),
+        kgPerHand: addRounded(
+          load.kgPerHand,
+          progression.basis === "perHand"
+            ? progression.amount
+            : progression.amount / load.hands,
         ),
       };
     case "machine":
-      return { ...load, stackKg: round2(load.stackKg + progression.amount) };
+      return { ...load, stackKg: addRounded(load.stackKg, progression.amount) };
     case "other":
-      return { ...load, totalKg: round2(load.totalKg + progression.amount) };
+      return { ...load, totalKg: addRounded(load.totalKg, progression.amount) };
     case "bodyweight":
       return load;
   }
@@ -125,11 +126,7 @@ export function describeProgression(progression: Progression | null): string {
     : `+${progression.amount}kg`;
 }
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
 function fmtKg(n: number | null): string {
   if (n === null) return UNKNOWN_MARK;
-  return String(round2(n));
+  return formatNumber(n);
 }

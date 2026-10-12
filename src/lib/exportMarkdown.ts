@@ -49,6 +49,7 @@ import { UNKNOWN_MARK } from "./format";
 import { buildBars, dayTargetKcal, formatAmount } from "./goals";
 import { entryNutrition, formatQuantity } from "./mealView";
 import { sumNutrition } from "./nutrition";
+import { formatFixed, formatNumber, roundTo } from "./number";
 import { describeLoad } from "./weight";
 
 /* ------------------------------------------------------------------ */
@@ -108,19 +109,17 @@ function table(headers: string[], rows: string[][]): string {
   ].join("\n");
 }
 
+/** 体組成の値は小数第 1 位（末尾の 0 は付けない）。null は未確認の印 */
 function fmtKg(value: number | null, unit = "kg"): string {
   if (value === null) return UNKNOWN_MARK;
-  return `${trimZeros(value.toFixed(1))}${unit}`;
+  return `${formatNumber(value, 1)}${unit}`;
 }
 
+/** 目標ラインとの差。符号つきで小数第 1 位ちょうど（+2.0kg / -0.5kg / ±0.0kg） */
 function fmtSigned(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
+  const rounded = roundTo(value, 1);
   if (rounded === 0) return "±0.0kg";
-  return `${rounded > 0 ? "+" : "-"}${Math.abs(rounded).toFixed(1)}kg`;
-}
-
-function trimZeros(text: string): string {
-  return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
+  return `${rounded > 0 ? "+" : "-"}${formatFixed(Math.abs(rounded), 1)}kg`;
 }
 
 /** '2026-09-21' → '9/21' */
@@ -489,7 +488,7 @@ function bodySection(input: ExportInput): string {
         fmtKg(body.weightKg),
         body.bodyFatPercent === null
           ? UNKNOWN_MARK
-          : `${trimZeros(body.bodyFatPercent.toFixed(1))}%`,
+          : `${formatNumber(body.bodyFatPercent, 1)}%`,
         fmtKg(body.fatMassKg),
         fmtKg(body.leanMassKg),
         body.bmrKcal === null

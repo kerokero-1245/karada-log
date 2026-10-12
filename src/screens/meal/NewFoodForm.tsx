@@ -25,6 +25,7 @@ import {
   emptyFoodForm,
 } from "../../lib/foodForm";
 import type { FoodFormValues } from "../../lib/foodForm";
+import { round3 } from "../../lib/number";
 import { fileToPhoto } from "../../lib/photo";
 import { photoErrorMessage } from "../../lib/photoError";
 import { formValuesFromLabel, labelNotice } from "../../lib/photoLabel";
@@ -288,9 +289,7 @@ export function NewFoodForm({
               保存する値（{values.unitLabel || "1単位"} あたり）
             </p>
             {result.unitsPerBasis !== null && result.unitsPerBasis !== 1 && (
-              <Badge tone="blue">
-                ÷{Math.round(result.unitsPerBasis * 1000) / 1000} で換算
-              </Badge>
+              <Badge tone="blue">÷{round3(result.unitsPerBasis)} で換算</Badge>
             )}
           </div>
           <NutritionGrid value={result.preview} />

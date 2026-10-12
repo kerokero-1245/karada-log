@@ -20,6 +20,7 @@
 import type { Food, LogDate, Nutrition } from "../db/types";
 import { groupBy } from "./collections";
 import { pad2, todayLogDate } from "./date";
+import { round2 } from "./number";
 
 /* ------------------------------------------------------------------ */
 /* 正規化                                                               */
@@ -556,8 +557,4 @@ export function quantityFor(parsed: ParsedItem, food: Food): QuickQuantity {
   }
 
   return { quantity: parsed.amount, notes };
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
 }

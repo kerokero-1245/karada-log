@@ -11,6 +11,8 @@
  *  - 塩分だけ上限型。上限を超えたら赤。「上限まで あと ○g」/「上限まで -○g」
  */
 import { NUTRIENT_NAMES } from "../db/types";
+import { fmtKcal } from "./formatKcal";
+import { formatNumber } from "./number";
 import type { DayType, NutrientKey, Settings } from "../db/types";
 import type { NutritionTotal } from "./nutrition";
 
@@ -61,17 +63,12 @@ export function dayTargetKcal(settings: Settings, dayType: DayType): number {
 }
 
 /**
- * 表示桁。kcal は整数＋桁区切り、塩分は小数2桁（2.16 のような値を丸めない）、
- * それ以外は小数1桁。末尾の 0 は落とす（140.0 → 140）。
+ * 表示桁。kcal は整数＋桁区切り（lib/formatKcal.ts の fmtKcal）、
+ * それ以外（たんぱく質・脂質・炭水化物・塩分）は小数第 2 位で丸めた値をそのまま出す（lib/number.ts の formatNumber）。
+ * 末尾の 0 は付かない（140 → '140'、84.85 → '84.85'）。行や合計の表示（fmtNum）と同じ桁。
  */
 export function formatAmount(key: NutrientKey, value: number): string {
-  if (key === "kcal") return Math.round(value).toLocaleString("ja-JP");
-  const fixed = key === "saltG" ? value.toFixed(2) : value.toFixed(1);
-  return trimZeros(fixed);
-}
-
-function trimZeros(text: string): string {
-  return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
+  return key === "kcal" ? fmtKcal(value) : formatNumber(value);
 }
 
 function clamp(percent: number): number {

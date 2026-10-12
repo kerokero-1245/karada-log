@@ -8,6 +8,7 @@
 import type { ExerciseKind } from "../../db/types";
 import { OUTCOME_LABELS } from "../../db/types";
 import { formatLogDateShort } from "../../lib/date";
+import { formatFixed, formatNumber } from "../../lib/number";
 import type { HistoryPoint } from "../../lib/training";
 import { describeLoadShort, trackedWeightKg } from "../../lib/weight";
 
@@ -58,10 +59,6 @@ function chartData(points: HistoryPoint[], kind: ExerciseKind): ChartDatum[] {
   return data;
 }
 
-function fmt(n: number): string {
-  return String(Math.round(n * 100) / 100);
-}
-
 export function HistoryChart({
   points,
   kind,
@@ -101,7 +98,7 @@ export function HistoryChart({
   const path = data
     .map(
       (d, i) =>
-        `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`,
+        `${i === 0 ? "M" : "L"}${formatFixed(x(i), 1)},${formatFixed(y(d.value), 1)}`,
     )
     .join(" ");
   const last = data[data.length - 1];
@@ -120,7 +117,7 @@ export function HistoryChart({
         viewBox={`0 0 ${W} ${H}`}
         className="h-auto w-full"
         role="img"
-        aria-label={`${title}。${data.map((d) => `${d.label} ${fmt(d.value)}${unit}`).join("、")}`}
+        aria-label={`${title}。${data.map((d) => `${d.label} ${formatNumber(d.value)}${unit}`).join("、")}`}
       >
         {/* 目盛り（最大・最小）。控えめな線で */}
         {[maxV, minV].map((v, i) =>
@@ -141,7 +138,7 @@ export function HistoryChart({
                 fontSize={10}
                 fill="#64748b"
               >
-                {fmt(v)}
+                {formatNumber(v)}
               </text>
             </g>
           ),
@@ -159,7 +156,7 @@ export function HistoryChart({
           <g key={i}>
             {/* 押しやすいように見えない大きめの当たり判定を置く */}
             <circle cx={x(i)} cy={y(d.value)} r={12} fill="transparent">
-              <title>{`${d.label} ${fmt(d.value)}${unit}（${d.detail}）${OUTCOME_LABELS[d.outcome]}`}</title>
+              <title>{`${d.label} ${formatNumber(d.value)}${unit}（${d.detail}）${OUTCOME_LABELS[d.outcome]}`}</title>
             </circle>
             <circle
               cx={x(i)}
@@ -179,7 +176,7 @@ export function HistoryChart({
           fontWeight={700}
           fill="#0f172a"
         >
-          {fmt(last.value)}
+          {formatNumber(last.value)}
           {unit}
         </text>
         <text
@@ -213,7 +210,7 @@ export function HistoryChart({
               <tr key={i} className="border-t border-slate-100">
                 <td className="py-0.5">{d.label}</td>
                 <td className="py-0.5 text-right">
-                  {fmt(d.value)}
+                  {formatNumber(d.value)}
                   {unit}
                 </td>
                 <td className="py-0.5 pl-2">{d.detail}</td>

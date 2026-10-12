@@ -19,53 +19,36 @@ import { CopyPromptButton } from "../../components/CopyPromptButton";
 import { NutritionLine } from "../../components/NutritionLine";
 import { TimeField } from "../../components/TimeField";
 import {
-  Badge,
   Button,
-  Chip,
   EmptyState,
   ErrorText,
   Note,
   Notice,
   Panel,
 } from "../../components/ui";
-import { FoodBadges } from "../../components/FoodBadges";
 import { FieldLabel } from "../../components/Field";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
-import { buildEntryView, planEntries } from "../../lib/importText";
+import { planEntries } from "../../lib/importText";
 import type { EntryView } from "../../lib/importText";
-import { formatQuantity } from "../../lib/mealView";
-import { UNKNOWN_MARK } from "../../lib/format";
-import {
-  fmtNum,
-  hasUnknownCore,
-  scaleNutrition,
-  sumNutrition,
-} from "../../lib/nutrition";
+import { scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { commitQuickText } from "../../lib/quickRecord";
 import type { QuickCommitResult } from "../../lib/quickRecord";
-import {
-  QUICK_STATUS_LABELS,
-  groupKeyOf,
-  interpret,
-  sortVariants,
-} from "../../lib/quickText";
-import type { QuickResolution, QuickStatus } from "../../lib/quickText";
+import { groupKeyOf, interpret, sortVariants } from "../../lib/quickText";
+import type { QuickResolution } from "../../lib/quickText";
 import { ModeTabs } from "./ModeTabs";
 import { FoodPickerSheet } from "./FoodPickerSheet";
 import { NewFoodForm } from "./NewFoodForm";
+import { ResolvedItemRow } from "./ResolvedItemRow";
+import type { EntrySub } from "./ResolvedItemRow";
+import { CandidatePickerSheet } from "./CandidatePickerSheet";
 import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { useFoods } from "../../lib/queries";
+import { useEntryChoices } from "../../lib/useEntryChoices";
 
 const NO_FOODS: Food[] = [];
 
 const PLACEHOLDER =
   "ザバス2本 / マカダミア30g / スムージー\n21:30 家系ラーメン";
-
-type Sub =
-  | { kind: "preview" }
-  | { kind: "candidates"; index: number }
-  | { kind: "pick"; index: number }
-  | { kind: "newFood"; index: number; name: string };
 
 interface Row {
   index: number;
@@ -74,13 +57,6 @@ interface Row {
   /** 同じ variantGroupId の兄弟。2件以上ならチップで切り替えられる */
   variants: Food[];
 }
-
-const STATUS_TONE: Record<QuickStatus, "emerald" | "amber" | "red"> = {
-  confirmed: "emerald",
-  estimated: "amber",
-  ambiguous: "amber",
-  missing: "red",
-};
 
 export function QuickTextSheet({
   logDate,
@@ -110,10 +86,10 @@ export function QuickTextSheet({
 
   const [text, setText] = useState(initialText);
   const [time, setTime] = useState(() => nowTime());
-  const [choices, setChoices] = useState<
-    Record<number, { foodId: number; manual: boolean }>
-  >({});
-  const [sub, setSub] = useState<Sub>({ kind: "preview" });
+  const [sub, setSub] = useState<EntrySub>({ kind: "preview" });
+  const { viewOf, choose, reset } = useEntryChoices(foodList, () =>
+    setSub({ kind: "preview" }),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -123,12 +99,7 @@ export function QuickTextSheet({
   );
 
   const rows: Row[] = resolutions.map((resolution, index) => {
-    const choice = choices[index];
-    const picked =
-      choice === undefined
-        ? null
-        : (foodList.find((food) => food.id === choice.foodId) ?? null);
-    const view = buildEntryView(resolution, picked, choice?.manual ?? false);
+    const view = viewOf(index, resolution);
     const viewFood = view.food;
     return {
       index,
@@ -175,17 +146,10 @@ export function QuickTextSheet({
       .filter((value): value is Nutrition => value !== null),
   );
 
-  const choose = (index: number, food: Food, manual: boolean) => {
-    const id = food.id;
-    if (id === undefined) return;
-    setChoices((prev) => ({ ...prev, [index]: { foodId: id, manual } }));
-    setSub({ kind: "preview" });
-  };
-
   // テキストを直したら項目の位置がずれるので、手で選んだ結果はいったん捨てる
   const changeText = (next: string) => {
     setText(next);
-    setChoices({});
+    reset();
   };
 
   const record = async () => {
@@ -241,57 +205,15 @@ export function QuickTextSheet({
 
   if (sub.kind === "candidates" && target !== undefined) {
     return (
-      <Sheet
-        title="候補から選ぶ"
-        subtitle={`「${target.resolution.parsed.raw}」`}
+      <CandidatePickerSheet
+        raw={target.resolution.parsed.raw}
+        candidates={target.resolution.candidates}
+        note="選んだ食品は、この原文の呼び名として覚えます（他の食品とぶつからないときだけ）。"
+        onChoose={(food) => choose(sub.index, food, true)}
+        onOpenPicker={() => setSub({ kind: "pick", index: sub.index })}
         onBack={() => setSub({ kind: "preview" })}
         onClose={onClose}
-      >
-        <div className="space-y-2">
-          {target.resolution.candidates.map((candidate) => {
-            const first = candidate.foods[0];
-            return (
-              <button
-                key={candidate.key}
-                type="button"
-                onClick={() => choose(sub.index, first, true)}
-                className="flex w-full items-center gap-3 rounded-xl bg-white p-3 text-left shadow-sm active:bg-slate-50"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="text-sm font-bold text-slate-800">
-                      {candidate.name}
-                    </span>
-                    {candidate.foods.length > 1 && (
-                      <Badge tone="blue">
-                        バリアント{candidate.foods.length}件
-                      </Badge>
-                    )}
-                    <FoodBadges estimated={first.source === "estimated"} />
-                  </span>
-                  <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / <NutritionLine value={first.per} />
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-slate-400">
-                    {candidate.reason}
-                  </span>
-                </span>
-                <span className="text-slate-300">›</span>
-              </button>
-            );
-          })}
-
-          <Button
-            className="w-full"
-            onClick={() => setSub({ kind: "pick", index: sub.index })}
-          >
-            一覧から探す
-          </Button>
-          <Note>
-            選んだ食品は、この原文の呼び名として覚えます（他の食品とぶつからないときだけ）。
-          </Note>
-        </div>
-      </Sheet>
+      />
     );
   }
 
@@ -384,10 +306,12 @@ export function QuickTextSheet({
         ) : (
           <ul className="divide-y divide-slate-100 rounded-xl bg-white px-3">
             {rows.map((row) => (
-              <PreviewRow
+              <ResolvedItemRow
                 key={row.index}
-                row={row}
-                fallbackTime={time}
+                time={row.resolution.parsed.time ?? time}
+                resolution={row.resolution}
+                view={row.view}
+                variants={row.variants}
                 onPickVariant={(food) => choose(row.index, food, false)}
                 onOpenCandidates={() =>
                   setSub({ kind: "candidates", index: row.index })
@@ -431,121 +355,5 @@ export function QuickTextSheet({
         </Note>
       </div>
     </Sheet>
-  );
-}
-
-function PreviewRow({
-  row,
-  fallbackTime,
-  onPickVariant,
-  onOpenCandidates,
-  onOpenPicker,
-  onOpenNewFood,
-}: {
-  row: Row;
-  fallbackTime: string;
-  onPickVariant: (food: Food) => void;
-  onOpenCandidates: () => void;
-  onOpenPicker: () => void;
-  onOpenNewFood: () => void;
-}) {
-  const parsed = row.resolution.parsed;
-  const view = row.view;
-  const food = view.food;
-  const resolved = food !== null || view.estimated !== null;
-  const value = resolved ? scaleNutrition(view.per, view.quantity) : null;
-  const hasUnknown = value !== null && hasUnknownCore(value);
-
-  return (
-    <li className="py-2">
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-xs tabular-nums text-slate-500">
-          {parsed.time ?? fallbackTime}
-        </span>
-        <span className="text-xs text-slate-500">「{parsed.raw}」</span>
-        <Badge tone={STATUS_TONE[view.status]}>
-          {QUICK_STATUS_LABELS[view.status]}
-        </Badge>
-        {view.usesMasterValues && <Badge tone="blue">マスタの値</Badge>}
-        {view.manual && <Badge tone="violet">選んだ</Badge>}
-      </div>
-
-      {resolved && value !== null ? (
-        <>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-            <span className="text-sm font-bold text-slate-800">
-              {food?.name ?? parsed.name}
-            </span>
-            <FoodBadges
-              variantLabel={food?.variantLabel}
-              estimated={food?.source === "estimated"}
-              archived={food?.archived === true}
-            />
-            <span className="text-sm tabular-nums text-slate-700">
-              {formatQuantity(view.quantity)} × {view.unitLabel}
-            </span>
-          </div>
-
-          <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            <NutritionLine value={value} />
-            {hasUnknown && (
-              <span className="ml-1 text-slate-500">
-                （「{UNKNOWN_MARK}」は未確認）
-              </span>
-            )}
-          </p>
-
-          {view.usesMasterValues && (
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              マスタの値を使います。
-            </p>
-          )}
-
-          {row.variants.length > 1 && food !== null && (
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {row.variants.map((variant) => (
-                <Chip
-                  key={variant.id}
-                  size="sm"
-                  selected={variant.id === food.id}
-                  onClick={() => onPickVariant(variant)}
-                >
-                  {variant.variantLabel ?? "標準"}（塩分
-                  {fmtNum(variant.per.saltG)}g）
-                </Chip>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="mt-0.5 text-sm text-slate-700">
-          {view.status === "missing"
-            ? "食品マスタに見つかりませんでした。"
-            : `候補が${row.resolution.candidates.length}件あります。どれか選んでください。`}
-        </p>
-      )}
-
-      {view.notes.map((note) => (
-        <p key={note} className="mt-0.5 text-[11px] text-amber-700">
-          ※ {note}
-        </p>
-      ))}
-
-      <div className="mt-1 flex flex-wrap gap-2">
-        {row.resolution.candidates.length > 1 && (
-          <Button className="text-xs" onClick={onOpenCandidates}>
-            候補から選ぶ（{row.resolution.candidates.length}件）
-          </Button>
-        )}
-        <Button className="text-xs" onClick={onOpenPicker}>
-          食品を選ぶ
-        </Button>
-        {view.status === "missing" && (
-          <Button className="text-xs" onClick={onOpenNewFood}>
-            この名前で新規登録
-          </Button>
-        )}
-      </div>
-    </li>
   );
 }

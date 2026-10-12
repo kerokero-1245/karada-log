@@ -27,13 +27,7 @@ import {
 } from "../../components/ui";
 import { FoodBadges } from "../../components/FoodBadges";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
-import { formatQuantity } from "../../lib/mealView";
-import { UNKNOWN_MARK } from "../../lib/format";
-import {
-  hasUnknownCore,
-  scaleNutrition,
-  sumNutrition,
-} from "../../lib/nutrition";
+import { scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { buildPhotoRows } from "../../lib/photoMeal";
 import type { PhotoMealRow } from "../../lib/photoMeal";
 import { errorMessage, SAVE_FAILED } from "../../lib/errors";
@@ -42,6 +36,7 @@ import type { PhotoCommitResult, PhotoEntryPlan } from "../../lib/photoRecord";
 import { CONFIDENCE_LABELS } from "../../lib/vision";
 import type { MealPhotoRead } from "../../lib/vision";
 import { useFoods } from "../../lib/queries";
+import { EntryNameLine, EntryNotes, EntryValueLine } from "./ResolvedItemRow";
 
 const NO_FOODS: Food[] = [];
 
@@ -177,7 +172,6 @@ function PhotoRow({
 }) {
   const value = scaleNutrition(row.per, quantity);
   const food = row.matched;
-  const hasUnknown = hasUnknownCore(value);
 
   return (
     <li className="py-2">
@@ -193,33 +187,21 @@ function PhotoRow({
         )}
       </div>
 
-      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-        <span className="text-sm font-bold text-slate-800">
-          {food === null ? row.item.name : food.name}
-        </span>
-        <FoodBadges
-          variantLabel={food?.variantLabel}
-          archived={food?.archived}
-        />
-        <span className="text-sm tabular-nums text-slate-700">
-          {formatQuantity(quantity)} × {row.unitLabel}
-        </span>
-      </div>
+      <EntryNameLine
+        name={food === null ? row.item.name : food.name}
+        badges={
+          <FoodBadges
+            variantLabel={food?.variantLabel}
+            archived={food?.archived}
+          />
+        }
+        quantity={quantity}
+        unitLabel={row.unitLabel}
+      />
 
-      <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-        <NutritionLine value={value} />
-        {hasUnknown && (
-          <span className="ml-1 text-slate-500">
-            （「{UNKNOWN_MARK}」は未確認）
-          </span>
-        )}
-      </p>
+      <EntryValueLine value={value} />
 
-      {row.notes.map((note) => (
-        <p key={note} className="mt-0.5 text-[11px] text-amber-700">
-          ※ {note}
-        </p>
-      ))}
+      <EntryNotes notes={row.notes} />
 
       <div className="mt-1.5">
         {/* 食品マスタの読み込みで既定の数量が変わったら、入力欄も入れ直す（古い数字を残さない） */}

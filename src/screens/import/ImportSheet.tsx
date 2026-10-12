@@ -18,7 +18,6 @@ import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
 import { NutritionLine } from "../../components/NutritionLine";
 import {
-  Badge,
   Button,
   Chip,
   EmptyState,
@@ -27,12 +26,9 @@ import {
   Notice,
   Panel,
 } from "../../components/ui";
-import { FoodBadges } from "../../components/FoodBadges";
 import { LearnedNotes, PendingNote } from "../../components/CommitNotes";
 import { FieldLabel } from "../../components/Field";
 import { formatLogDate, formatLogDateShort } from "../../lib/date";
-import { formatQuantity } from "../../lib/mealView";
-import { UNKNOWN_MARK } from "../../lib/format";
 import {
   hasUnknownCore,
   scaleNutrition,
@@ -42,42 +38,25 @@ import { commitImport } from "../../lib/importRecord";
 import type { ImportCommitResult, ImportDayPlan } from "../../lib/importRecord";
 import {
   DEFAULT_IMPORT_TIME,
-  buildEntryView,
   parseImport,
   planEntries,
 } from "../../lib/importText";
 import type { EntryView, ImportRow } from "../../lib/importText";
-import { QUICK_STATUS_LABELS } from "../../lib/quickText";
-import type { QuickStatus } from "../../lib/quickText";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { FoodPickerSheet } from "../meal/FoodPickerSheet";
 import { NewFoodForm } from "../meal/NewFoodForm";
+import { ResolvedItemRow } from "../meal/ResolvedItemRow";
+import type { EntrySub } from "../meal/ResolvedItemRow";
+import { CandidatePickerSheet } from "../meal/CandidatePickerSheet";
 import { errorMessage } from "../../lib/errors";
 import { useFoods } from "../../lib/queries";
+import { useEntryChoices } from "../../lib/useEntryChoices";
 
 const NO_FOODS: Food[] = [];
 
 const PLACEHOLDER = `2026/09/20
 12:30 ご飯 1杯=252/3.8/0.5/55.7/0
 21:00 味付ゆで玉子 2個=130/11.6/8.6/-/1.2`;
-
-const STATUS_TONE: Record<QuickStatus, "emerald" | "amber" | "red"> = {
-  confirmed: "emerald",
-  estimated: "amber",
-  ambiguous: "amber",
-  missing: "red",
-};
-
-type Sub =
-  | { kind: "preview" }
-  | { kind: "candidates"; index: number }
-  | { kind: "pick"; index: number }
-  | { kind: "newFood"; index: number; name: string };
-
-interface Choice {
-  foodId: number;
-  manual: boolean;
-}
 
 interface ViewRow {
   row: ImportRow;
@@ -101,9 +80,11 @@ export function ImportSheet({
   const [text, setText] = useState("");
   /** 「解釈する」を押した時点のテキスト。押すまでプレビューは出ない */
   const [submitted, setSubmitted] = useState<string | null>(null);
-  const [choices, setChoices] = useState<Record<number, Choice>>({});
   const [replacing, setReplacing] = useState<Record<LogDate, boolean>>({});
-  const [sub, setSub] = useState<Sub>({ kind: "preview" });
+  const [sub, setSub] = useState<EntrySub>({ kind: "preview" });
+  const { viewOf, choose, reset } = useEntryChoices(foodList, () =>
+    setSub({ kind: "preview" }),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportCommitResult | null>(null);
@@ -123,22 +104,13 @@ export function ImportSheet({
     return counts;
   }, [dayKeys]);
 
-  const viewOf = (row: ImportRow): ViewRow => {
-    const choice = choices[row.index];
-    const picked =
-      choice === undefined
-        ? null
-        : (foodList.find((food) => food.id === choice.foodId) ?? null);
-    const view = buildEntryView(
-      row.resolution,
-      picked,
-      choice?.manual ?? false,
-    );
+  const viewRow = (row: ImportRow): ViewRow => {
+    const view = viewOf(row.index, row.resolution);
     return { row, view, value: scaleNutrition(view.per, view.quantity) };
   };
 
   const days = (parsed?.days ?? []).map((day) => {
-    const rows = day.rows.map(viewOf);
+    const rows = day.rows.map(viewRow);
     const { entries, pending } = planEntries(
       rows.map((item) => ({
         parsed: item.row.resolution.parsed,
@@ -180,15 +152,8 @@ export function ImportSheet({
     0,
   );
 
-  const choose = (index: number, food: Food, manual: boolean) => {
-    const id = food.id;
-    if (id === undefined) return;
-    setChoices((prev) => ({ ...prev, [index]: { foodId: id, manual } }));
-    setSub({ kind: "preview" });
-  };
-
   const interpretText = () => {
-    setChoices({});
+    reset();
     setReplacing({});
     setError(null);
     setSubmitted(text);
@@ -278,57 +243,15 @@ export function ImportSheet({
 
   if (sub.kind === "candidates" && target !== undefined) {
     return (
-      <Sheet
-        title="候補から選ぶ"
-        subtitle={`「${target.row.resolution.parsed.raw}」`}
+      <CandidatePickerSheet
+        raw={target.row.resolution.parsed.raw}
+        candidates={target.row.resolution.candidates}
+        note="選んだ食品の値を使います（貼り付けた値は使いません）。この原文は、その食品の呼び名として覚えます。"
+        onChoose={(food) => choose(sub.index, food, true)}
+        onOpenPicker={() => setSub({ kind: "pick", index: sub.index })}
         onBack={() => setSub({ kind: "preview" })}
         onClose={onClose}
-      >
-        <div className="space-y-2">
-          {target.row.resolution.candidates.map((candidate) => {
-            const first = candidate.foods[0];
-            return (
-              <button
-                key={candidate.key}
-                type="button"
-                onClick={() => choose(sub.index, first, true)}
-                className="flex w-full items-center gap-3 rounded-xl bg-white p-3 text-left shadow-sm active:bg-slate-50"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="text-sm font-bold text-slate-800">
-                      {candidate.name}
-                    </span>
-                    {candidate.foods.length > 1 && (
-                      <Badge tone="blue">
-                        バリアント{candidate.foods.length}件
-                      </Badge>
-                    )}
-                    <FoodBadges estimated={first.source === "estimated"} />
-                  </span>
-                  <span className="mt-0.5 block text-xs tabular-nums text-slate-500">
-                    {first.unitLabel} / <NutritionLine value={first.per} />
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-slate-400">
-                    {candidate.reason}
-                  </span>
-                </span>
-                <span className="text-slate-300">›</span>
-              </button>
-            );
-          })}
-
-          <Button
-            className="w-full"
-            onClick={() => setSub({ kind: "pick", index: sub.index })}
-          >
-            一覧から探す
-          </Button>
-          <Note>
-            選んだ食品の値を使います（貼り付けた値は使いません）。この原文は、その食品の呼び名として覚えます。
-          </Note>
-        </div>
-      </Sheet>
+      />
     );
   }
 
@@ -425,9 +348,16 @@ export function ImportSheet({
 
             <ul className="divide-y divide-slate-100">
               {day.rows.map((item) => (
-                <PreviewRow
+                <ResolvedItemRow
                   key={item.row.index}
-                  item={item}
+                  time={item.row.time}
+                  timeNote={
+                    item.row.timeMissing ? (
+                      <>時刻なし → {DEFAULT_IMPORT_TIME}</>
+                    ) : undefined
+                  }
+                  resolution={item.row.resolution}
+                  view={item.view}
                   onOpenCandidates={() =>
                     setSub({ kind: "candidates", index: item.row.index })
                   }
@@ -497,95 +427,5 @@ export function ImportSheet({
         </Note>
       </div>
     </Sheet>
-  );
-}
-
-function PreviewRow({
-  item,
-  onOpenCandidates,
-  onOpenPicker,
-}: {
-  item: ViewRow;
-  onOpenCandidates: () => void;
-  onOpenPicker: () => void;
-}) {
-  const { row, view, value } = item;
-  const parsed = row.resolution.parsed;
-  const name = view.food?.name ?? parsed.name;
-  const hasUnknown = hasUnknownCore(value);
-  const resolved = view.food !== null || view.estimated !== null;
-
-  return (
-    <li className="py-2">
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-xs tabular-nums text-slate-500">{row.time}</span>
-        <span className="text-xs text-slate-500">「{parsed.raw}」</span>
-        <Badge tone={STATUS_TONE[view.status]}>
-          {QUICK_STATUS_LABELS[view.status]}
-        </Badge>
-        {view.usesMasterValues && <Badge tone="blue">マスタの値</Badge>}
-        {view.manual && <Badge tone="violet">選んだ</Badge>}
-      </div>
-
-      {row.timeMissing && (
-        <p className="text-[11px] text-slate-500">
-          時刻なし → {DEFAULT_IMPORT_TIME}
-        </p>
-      )}
-
-      {resolved ? (
-        <>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-            <span className="text-sm font-bold text-slate-800">{name}</span>
-            <FoodBadges
-              variantLabel={view.food?.variantLabel}
-              estimated={view.food?.source === "estimated"}
-              archived={view.food?.archived === true}
-            />
-            <span className="text-sm tabular-nums text-slate-700">
-              {formatQuantity(view.quantity)} × {view.unitLabel}
-            </span>
-          </div>
-
-          <p className="mt-0.5 text-xs tabular-nums text-slate-600">
-            <NutritionLine value={value} />
-            {hasUnknown && (
-              <span className="ml-1 text-slate-500">
-                （「{UNKNOWN_MARK}」は未確認）
-              </span>
-            )}
-          </p>
-
-          {view.usesMasterValues && (
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              マスタの値を使います。
-            </p>
-          )}
-        </>
-      ) : (
-        <p className="mt-0.5 text-sm text-slate-700">
-          {view.status === "missing"
-            ? "食品マスタに見つかりませんでした。"
-            : `候補が${row.resolution.candidates.length}件あります。どれか選んでください。`}
-        </p>
-      )}
-
-      {view.notes.map((note) => (
-        <p key={note} className="mt-0.5 text-[11px] text-amber-700">
-          ※ {note}
-        </p>
-      ))}
-
-      <div className="mt-1 flex flex-wrap gap-2">
-        {row.resolution.candidates.length > 1 && (
-          <Button className="text-xs" onClick={onOpenCandidates}>
-            候補から選ぶ（{row.resolution.candidates.length}件）
-          </Button>
-        )}
-        <Button className="text-xs" onClick={onOpenPicker}>
-          食品を選ぶ
-        </Button>
-      </div>
-    </li>
   );
 }

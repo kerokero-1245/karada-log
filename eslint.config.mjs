@@ -17,10 +17,12 @@ export default defineConfig([
   },
   {
     files: ["**/*.{ts,tsx}"],
-    extends: [tseslint.configs.recommended],
-    plugins: { "react-hooks": reactHooks, "react-refresh": reactRefresh },
-    // react-hooks の recommended（reactHooks.configs.flat.recommended）は、rules-of-hooks と exhaustive-deps のほかに
-    // React Compiler 系の 14 規則も有効にする。下の 3 規則の範囲を超えるので recommended は使わず、必要な規則だけを明示する。
+    // react-hooks は recommended 一式（rules-of-hooks・exhaustive-deps と React Compiler 系の規則）を入れる
+    extends: [
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+    ],
+    plugins: { "react-refresh": reactRefresh },
     rules: {
       // 移行前の lint 設定から引き継いだ 2 規則（rules-of-hooks・only-export-components）
       "react-hooks/rules-of-hooks": "error",
@@ -28,8 +30,15 @@ export default defineConfig([
         "warn",
         { allowConstantExport: true },
       ],
-      // src/lib/useLiveQuery.ts の抑止コメントが指す規則。重大度は plugin の recommended と同じ warn
-      "react-hooks/exhaustive-deps": "warn",
+      // react-hooks/refs は、プラグイン（eslint-plugin-react-hooks 7）の README が "React Compiler rules" に
+      // 分類している規則。この repo は React Compiler を使わない（vite.config.ts の react() に設定がない）。
+      // Expo の 4 repo と揃えて off にする。
+      "react-hooks/refs": "off",
+      // const { key: _key, ...rest } = obj のように、rest で落とすためだけに分割した名前は未使用と見なさない
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { ignoreRestSiblings: true },
+      ],
     },
   },
 

@@ -12,6 +12,7 @@ import {
   type LoadSpec,
   type Progression,
 } from "../db/types";
+import { UNKNOWN_MARK } from "./format";
 
 /** 実際に扱っている総重量。自重は null */
 export function totalWeightKg(load: LoadSpec): number | null {
@@ -117,7 +118,7 @@ export function applySecondsProgression(
 
 /** 増分の表示。例: '+2.5kg' '+2kg（片側）' '+5秒' */
 export function describeProgression(progression: Progression | null): string {
-  if (!progression) return "—";
+  if (!progression) return UNKNOWN_MARK;
   if (progression.metric === "seconds") return `+${progression.amount}秒`;
   return progression.basis === "perHand"
     ? `+${progression.amount}kg（片側）`
@@ -129,6 +130,6 @@ function round2(n: number): number {
 }
 
 function fmtKg(n: number | null): string {
-  if (n === null) return "—";
+  if (n === null) return UNKNOWN_MARK;
   return String(round2(n));
 }

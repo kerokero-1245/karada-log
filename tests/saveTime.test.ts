@@ -11,11 +11,8 @@ import { afterEach, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { db } from "../src/db/db.ts";
 import type { Food, MealEntry } from "../src/db/types.ts";
-import {
-  addMealEntries,
-  assertTime,
-  updateMealEntry,
-} from "../src/lib/meals.ts";
+import { addMealEntries, updateMealEntry } from "../src/lib/meals.ts";
+import { assertTime } from "../src/lib/mealView.ts";
 import { addEntryPlans, addPendingPlans } from "../src/lib/quickRecord.ts";
 import type {
   QuickEntryPlan,

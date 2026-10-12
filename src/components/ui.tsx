@@ -3,6 +3,7 @@
  * モバイル前提なので、押せるものは高さ44px以上（min-h-11）を守る。
  */
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { NUTRIENT_DISPLAY_ORDER, NUTRIENT_LABELS } from "../db/types";
 import type { Nutrition } from "../db/types";
 import { fmtNum } from "../lib/nutrition";
 import { fmtKcalItem } from "../lib/formatKcal";
@@ -116,13 +117,10 @@ export function Note({ children }: { children: ReactNode }) {
 
 /** 栄養値の内訳。数量を変えるたびにここがリアルタイムで動く */
 export function NutritionGrid({ value }: { value: Nutrition }) {
-  const cells: { label: string; text: string }[] = [
-    { label: "kcal", text: fmtKcalItem(value.kcal) },
-    { label: "P", text: `${fmtNum(value.proteinG)}g` },
-    { label: "脂質", text: `${fmtNum(value.fatG)}g` },
-    { label: "塩分", text: `${fmtNum(value.saltG)}g` },
-    { label: "炭水", text: `${fmtNum(value.carbG)}g` },
-  ];
+  const cells = NUTRIENT_DISPLAY_ORDER.map((key) => ({
+    label: NUTRIENT_LABELS[key],
+    text: key === "kcal" ? fmtKcalItem(value.kcal) : `${fmtNum(value[key])}g`,
+  }));
   return (
     <div className="grid grid-cols-5 gap-1 text-center">
       {cells.map((cell) => (

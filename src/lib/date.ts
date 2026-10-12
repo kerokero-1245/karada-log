@@ -96,6 +96,11 @@ export function weekdayOf(logDate: LogDate): string {
   return WEEKDAY_JA[parseIso(logDate).getDay()];
 }
 
+/** 週の起点の言い方。1 → '月曜起点'（Settings.weekStartsOn から組む） */
+export function weekStartLabel(weekStartsOn: number): string {
+  return `${WEEKDAY_JA[weekStartsOn]}曜起点`;
+}
+
 /** '2026-09-12' → '2026/09/12'（曜日なし） */
 export function formatSlashDate(logDate: LogDate): string {
   const d = parseIso(logDate);

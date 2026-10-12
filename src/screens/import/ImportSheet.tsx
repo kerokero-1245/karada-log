@@ -18,7 +18,8 @@ import { Sheet } from "../../components/Sheet";
 import { CopyPromptButton } from "../../components/CopyPromptButton";
 import { Badge, Button, Chip, Note } from "../../components/ui";
 import { formatLogDate, formatLogDateShort } from "../../lib/date";
-import { formatQuantity } from "../../lib/meals";
+import { formatQuantity } from "../../lib/mealView";
+import { UNKNOWN_MARK } from "../../lib/format";
 import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { commitImport } from "../../lib/importRecord";
 import type { ImportCommitResult, ImportDayPlan } from "../../lib/importRecord";
@@ -589,7 +590,9 @@ function PreviewRow({
             {fmtNum(value.fatG)}g / 塩分
             {fmtNum(value.saltG)}g
             {hasUnknown && (
-              <span className="ml-1 text-slate-500">（「—」は未確認）</span>
+              <span className="ml-1 text-slate-500">
+                （「{UNKNOWN_MARK}」は未確認）
+              </span>
             )}
           </p>
 

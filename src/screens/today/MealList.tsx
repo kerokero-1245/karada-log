@@ -5,7 +5,7 @@
  */
 import type { MealEntry } from "../../db/types";
 import { timeOf } from "../../lib/date";
-import { entryNutrition, formatQuantity } from "../../lib/meals";
+import { entryNutrition, formatQuantity } from "../../lib/mealView";
 import { fmtNum } from "../../lib/nutrition";
 import { Badge } from "../../components/ui";
 import { fmtKcalItem } from "../../lib/formatKcal";

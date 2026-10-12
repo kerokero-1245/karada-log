@@ -12,11 +12,13 @@ import type { Food, MealEntry } from "../src/db/types.ts";
 import {
   addMealEntries,
   deleteMealEntry,
+  updateMealEntry,
+} from "../src/lib/meals.ts";
+import {
   entryNutrition,
   formatQuantity,
   snapshotOf,
-  updateMealEntry,
-} from "../src/lib/meals.ts";
+} from "../src/lib/mealView.ts";
 import { fakeTable } from "./fakeTable.ts";
 import {
   catalogFixture,

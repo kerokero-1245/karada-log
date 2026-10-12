@@ -10,6 +10,7 @@
  *    「これ以上は使われません」とだけ示す（handover: 害はないがカロリーが無駄になる）
  *  - 塩分だけ上限型。上限を超えたら赤。「上限まで あと ○g」/「上限まで -○g」
  */
+import { NUTRIENT_NAMES } from "../db/types";
 import type { DayType, NutrientKey, Settings } from "../db/types";
 import type { NutritionTotal } from "./nutrition";
 
@@ -87,7 +88,7 @@ export function buildBars(
   return [
     floorBar(
       "kcal",
-      "カロリー",
+      NUTRIENT_NAMES.kcal,
       "kcal",
       total.value.kcal ?? 0,
       dayTargetKcal(settings, dayType),
@@ -96,7 +97,7 @@ export function buildBars(
     ),
     floorBar(
       "proteinG",
-      "たんぱく質",
+      NUTRIENT_NAMES.proteinG,
       "g",
       total.value.proteinG ?? 0,
       settings.proteinTargetG,
@@ -105,7 +106,7 @@ export function buildBars(
     ),
     floorBar(
       "fatG",
-      "脂質",
+      NUTRIENT_NAMES.fatG,
       "g",
       total.value.fatG ?? 0,
       settings.fatTargetG,
@@ -114,7 +115,7 @@ export function buildBars(
     ),
     capBar(
       "saltG",
-      "塩分",
+      NUTRIENT_NAMES.saltG,
       "g",
       total.value.saltG ?? 0,
       settings.saltLimitG,

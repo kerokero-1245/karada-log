@@ -10,6 +10,8 @@
  *
  * どちらも null は '—'、負のゼロ（入力欄の '-0' など）は '0' と出す。
  */
+import { UNKNOWN_MARK } from "./format";
+
 const TOTAL = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 const ITEM = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 });
 
@@ -18,7 +20,7 @@ function format(
   formatter: Intl.NumberFormat,
   digits: number,
 ): string {
-  if (value === null || Number.isNaN(value)) return "—";
+  if (value === null || Number.isNaN(value)) return UNKNOWN_MARK;
   const scale = 10 ** digits;
   const rounded = Math.round(value * scale) / scale;
   // Math.round(-0.04) や入力の '-0' は -0 になり、Intl は '-0' と出す

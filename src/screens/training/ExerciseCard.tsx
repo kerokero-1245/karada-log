@@ -12,6 +12,7 @@ import type {
   SetRecord,
 } from "../../db/types";
 import { Badge, Card } from "../../components/ui";
+import { UNKNOWN_MARK } from "../../lib/format";
 import {
   describeJudgement,
   isSetAchieved,
@@ -141,7 +142,7 @@ export function ExerciseCard({
   const goalText =
     exercise.kind === "amrap"
       ? `限界まで × ${exercise.sets}`
-      : `${goal ?? "—"}${unit} × ${exercise.sets}セット`;
+      : `${goal ?? UNKNOWN_MARK}${unit} × ${exercise.sets}セット`;
 
   return (
     <Card>

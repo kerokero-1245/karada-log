@@ -19,27 +19,36 @@ import type {
   IsoDateTime,
   LogDate,
   MealEntry,
-  Nutrition,
   PendingText,
   SessionExercise,
   SetRecord,
   Settings,
   TrainingSession,
 } from "../db/types";
-import { DAY_TYPE_LABELS, MENU_LABELS, OUTCOME_LABELS } from "../db/types";
+import {
+  CORE_NUTRIENT_KEYS,
+  DAY_TYPE_LABELS,
+  MENU_LABELS,
+  NUTRIENT_LABELS,
+  NUTRIENT_NAMES,
+  OUTCOME_LABELS,
+} from "../db/types";
 import { groupBy } from "./collections";
 import {
   formatDateTime,
   formatLogDateShort,
   parseIso,
   timeOf,
+  weekStartLabel,
   weekStartOf,
   weekdayOf,
 } from "./date";
 import type { DateRange } from "./exportRange";
 import { formatRange, rangeDayCount } from "./exportRange";
+import { UNKNOWN_MARK } from "./format";
 import { buildBars, dayTargetKcal, formatAmount } from "./goals";
-import { scaleNutrition, sumNutrition } from "./nutrition";
+import { entryNutrition, formatQuantity } from "./mealView";
+import { sumNutrition } from "./nutrition";
 import { describeLoad } from "./weight";
 
 /* ------------------------------------------------------------------ */
@@ -81,12 +90,13 @@ export interface ExportInput {
 /* 小さな道具                                                           */
 /* ------------------------------------------------------------------ */
 
-const DASH = "—";
-
 /** 表のセル。区切りの | と改行が表を壊すので逃がす */
 function cell(text: string): string {
   return text.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 }
+
+/** 表の栄養素の列の見出し（kcal・P・脂質・塩分） */
+const CORE_LABELS = CORE_NUTRIENT_KEYS.map((key) => NUTRIENT_LABELS[key]);
 
 function table(headers: string[], rows: string[][]): string {
   const head = `| ${headers.map(cell).join(" | ")} |`;
@@ -98,13 +108,8 @@ function table(headers: string[], rows: string[][]): string {
   ].join("\n");
 }
 
-/** 数量。1 → '1' / 0.5 → '0.5' */
-function fmtQuantity(quantity: number): string {
-  return String(Math.round(quantity * 100) / 100);
-}
-
 function fmtKg(value: number | null, unit = "kg"): string {
-  if (value === null) return DASH;
+  if (value === null) return UNKNOWN_MARK;
   return `${trimZeros(value.toFixed(1))}${unit}`;
 }
 
@@ -122,10 +127,6 @@ function trimZeros(text: string): string {
 function shortDate(logDate: LogDate): string {
   const d = parseIso(logDate);
   return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function entryNutritionOf(entry: MealEntry): Nutrition {
-  return scaleNutrition(entry.snapshot.per, entry.quantity);
 }
 
 /** kcal / P / 脂質 / 塩分 のどれかが分かっていない記録か */
@@ -147,7 +148,7 @@ interface DayTotals {
 
 function totalsOf(day: ExportDay): DayTotals {
   return {
-    nutrition: sumNutrition(day.entries.map(entryNutritionOf)),
+    nutrition: sumNutrition(day.entries.map(entryNutrition)),
     unknownEntries: day.entries.filter(hasUnknownValue).length,
     hasRecords: day.entries.length > 0,
   };
@@ -188,7 +189,7 @@ function assumptions(input: ExportInput): string {
   return [
     "## 前提",
     "",
-    `- 1日の目標: ${DAY_TYPE_LABELS.rest} ${formatAmount("kcal", s.restDayKcal)} kcal ／ ${DAY_TYPE_LABELS.gym} ${formatAmount("kcal", s.gymDayKcal)} kcal、たんぱく質 ${s.proteinTargetG}g（上限 ${s.proteinCapG}g）、脂質 ${s.fatTargetG}g、塩分 ${s.saltLimitG}g以内。基礎代謝 ${formatAmount("kcal", s.bmrKcal)} kcal はこれより下に行かせない下限。週合計は ${formatAmount("kcal", s.weeklyKcalTarget)} ± ${s.weeklyKcalTolerance} kcal。`,
+    `- 1日の目標: ${DAY_TYPE_LABELS.rest} ${formatAmount("kcal", s.restDayKcal)} kcal ／ ${DAY_TYPE_LABELS.gym} ${formatAmount("kcal", s.gymDayKcal)} kcal、${NUTRIENT_NAMES.proteinG} ${s.proteinTargetG}g（上限 ${s.proteinCapG}g）、${NUTRIENT_NAMES.fatG} ${s.fatTargetG}g、${NUTRIENT_NAMES.saltG} ${s.saltLimitG}g以内。基礎代謝 ${formatAmount("kcal", s.bmrKcal)} kcal はこれより下に行かせない下限。週合計は ${formatAmount("kcal", s.weeklyKcalTarget)} ± ${s.weeklyKcalTolerance} kcal。`,
     "- 記録の無い日・時間帯は「未記録」です。「食べていない」という意味ではありません。",
     "- 固定ベースは計画です。ユーザーがタップして記録に入れたぶんだけがここに出ています。計画値は集計に入っていません。",
     "- 「推定」は料理写真からの概算、「未確認」は栄養値が分かっていない項目です。未確認の値は合計に足していません。",
@@ -207,11 +208,11 @@ function summarySection(input: ExportInput): string {
         weekdayOf(day.logDate),
         DAY_TYPE_LABELS[day.dayType],
         "未記録",
-        DASH,
-        DASH,
-        DASH,
-        DASH,
-        menus === "" ? DASH : menus,
+        UNKNOWN_MARK,
+        UNKNOWN_MARK,
+        UNKNOWN_MARK,
+        UNKNOWN_MARK,
+        menus === "" ? UNKNOWN_MARK : menus,
       ];
     }
     const v = totals.nutrition.value;
@@ -224,17 +225,14 @@ function summarySection(input: ExportInput): string {
       formatAmount("fatG", v.fatG ?? 0),
       formatAmount("saltG", v.saltG ?? 0),
       String(totals.unknownEntries),
-      menus === "" ? DASH : menus,
+      menus === "" ? UNKNOWN_MARK : menus,
     ];
   });
 
   return [
     "## 期間サマリー",
     "",
-    table(
-      ["日付", "曜日", "区分", "kcal", "P", "脂質", "塩分", "未確認", "トレ"],
-      rows,
-    ),
+    table(["日付", "曜日", "区分", ...CORE_LABELS, "未確認", "トレ"], rows),
     "",
     weeklySection(input),
     "",
@@ -255,7 +253,7 @@ function weeklySection(input: ExportInput): string {
     const withRecords = days.filter((day) => day.entries.length > 0);
     const kcal = withRecords.reduce(
       (sum, day) =>
-        sum + (sumNutrition(day.entries.map(entryNutritionOf)).value.kcal ?? 0),
+        sum + (sumNutrition(day.entries.map(entryNutrition)).value.kcal ?? 0),
       0,
     );
     const last = days[days.length - 1];
@@ -269,7 +267,7 @@ function weeklySection(input: ExportInput): string {
   });
 
   return [
-    "### 週合計（月曜起点）",
+    `### 週合計（${weekStartLabel(s.weekStartsOn)}）`,
     "",
     rows.length === 0
       ? "なし"
@@ -286,7 +284,7 @@ function saltAverageSection(input: ExportInput): string {
   const s = input.settings;
   const withRecords = input.days.filter((day) => day.entries.length > 0);
   const values = withRecords.map(
-    (day) => sumNutrition(day.entries.map(entryNutritionOf)).value.saltG ?? 0,
+    (day) => sumNutrition(day.entries.map(entryNutrition)).value.saltG ?? 0,
   );
   const body =
     values.length === 0
@@ -301,7 +299,7 @@ function lowFatSection(input: ExportInput): string {
     .filter((day) => day.entries.length > 0)
     .map((day) => ({
       day,
-      fat: sumNutrition(day.entries.map(entryNutritionOf)).value.fatG ?? 0,
+      fat: sumNutrition(day.entries.map(entryNutrition)).value.fatG ?? 0,
     }))
     .filter((row) => row.fat < limit);
 
@@ -313,7 +311,7 @@ function lowFatSection(input: ExportInput): string {
       : rows
           .map(
             (row) =>
-              `- ${formatLogDateShort(row.day.logDate)} 脂質 ${formatAmount("fatG", row.fat)}g ／ ${formatAmount("kcal", sumNutrition(row.day.entries.map(entryNutritionOf)).value.kcal ?? 0)} kcal`,
+              `- ${formatLogDateShort(row.day.logDate)} 脂質 ${formatAmount("fatG", row.fat)}g ／ ${formatAmount("kcal", sumNutrition(row.day.entries.map(entryNutrition)).value.kcal ?? 0)} kcal`,
           )
           .join("\n"),
     "",
@@ -371,7 +369,7 @@ function daySection(day: ExportDay, settings: Settings): string {
     lines.push("");
     lines.push(
       table(
-        ["時刻", "品目", "数量", "kcal", "P", "脂質", "塩分", "備考"],
+        ["時刻", "品目", "数量", ...CORE_LABELS, "備考"],
         day.entries.map((entry) => entryRow(entry)),
       ),
     );
@@ -387,7 +385,7 @@ function daySection(day: ExportDay, settings: Settings): string {
 
 function entryRow(entry: MealEntry): string[] {
   const snapshot = entry.snapshot;
-  const value = entryNutritionOf(entry);
+  const value = entryNutrition(entry);
   const name = snapshot.variantLabel
     ? `${snapshot.name}（${snapshot.variantLabel}）`
     : snapshot.name;
@@ -400,18 +398,18 @@ function entryRow(entry: MealEntry): string[] {
 
   const num = (key: "kcal" | "proteinG" | "fatG" | "saltG") => {
     const v = value[key];
-    return v === null ? DASH : formatAmount(key, v);
+    return v === null ? UNKNOWN_MARK : formatAmount(key, v);
   };
 
   return [
     timeOf(entry.recordedAt),
     name,
-    `${fmtQuantity(entry.quantity)} × ${snapshot.unitLabel}`,
+    `${formatQuantity(entry.quantity)} × ${snapshot.unitLabel}`,
     num("kcal"),
     num("proteinG"),
     num("fatG"),
     num("saltG"),
-    notes.length === 0 ? DASH : notes.join("／"),
+    notes.length === 0 ? UNKNOWN_MARK : notes.join("／"),
   ];
 }
 
@@ -447,9 +445,11 @@ function setsText(sets: SetRecord[]): string {
       ? String(set.reps)
       : set.seconds !== null
         ? `${set.seconds}秒`
-        : DASH,
+        : UNKNOWN_MARK,
   );
-  return parts.every((part) => part === DASH) ? "回数未記録" : parts.join(",");
+  return parts.every((part) => part === UNKNOWN_MARK)
+    ? "回数未記録"
+    : parts.join(",");
 }
 
 /* 5. 体組成 ---------------------------------------------------------- */
@@ -488,14 +488,16 @@ function bodySection(input: ExportInput): string {
         body.device,
         fmtKg(body.weightKg),
         body.bodyFatPercent === null
-          ? DASH
+          ? UNKNOWN_MARK
           : `${trimZeros(body.bodyFatPercent.toFixed(1))}%`,
         fmtKg(body.fatMassKg),
         fmtKg(body.leanMassKg),
         body.bmrKcal === null
-          ? DASH
+          ? UNKNOWN_MARK
           : `${formatAmount("kcal", body.bmrKcal)}kcal`,
-        body.visceralFatLevel === null ? DASH : String(body.visceralFatLevel),
+        body.visceralFatLevel === null
+          ? UNKNOWN_MARK
+          : String(body.visceralFatLevel),
         body.warnings.length === 0
           ? "警告なし"
           : body.warnings.map((w) => w.message).join("／"),
@@ -509,11 +511,11 @@ function bodySection(input: ExportInput): string {
   for (const body of input.bodies) {
     const fat =
       body.fatMassKg === null
-        ? DASH
+        ? UNKNOWN_MARK
         : fmtSigned(body.fatMassKg - goal.fatMassKg);
     const lean =
       body.leanMassKg === null
-        ? DASH
+        ? UNKNOWN_MARK
         : fmtSigned(body.leanMassKg - goal.leanMassKg);
     lines.push(
       `- ${formatDateTime(body.measuredAt)}: 脂肪 ${fat} ／ 除脂肪 ${lean}`,

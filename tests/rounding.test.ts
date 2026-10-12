@@ -18,7 +18,7 @@ import assert from "node:assert/strict";
 import { fmtKcal, fmtKcalItem } from "../src/lib/formatKcal.ts";
 import { fmtStored } from "../src/lib/format.ts";
 import { formatAmount } from "../src/lib/goals.ts";
-import { formatQuantity } from "../src/lib/meals.ts";
+import { formatQuantity } from "../src/lib/mealView.ts";
 import { fmtNum, scaleNutrition, sumNutrition } from "../src/lib/nutrition.ts";
 import { nextWeight } from "../src/lib/progression.ts";
 import { describeLoad } from "../src/lib/weight.ts";

@@ -12,6 +12,7 @@ import { Button, Card, Note } from "../../components/ui";
 import type { BackupCount, BackupFile } from "../../lib/backup";
 import { parseBackup, restoreBackup } from "../../lib/backup";
 import { formatDateTime } from "../../lib/date";
+import { UNKNOWN_MARK } from "../../lib/format";
 
 interface Staged {
   fileName: string;
@@ -109,7 +110,7 @@ export function RestoreCard() {
             <br />
             書き出した日時:{" "}
             {staged.backup.exportedAt === ""
-              ? "—"
+              ? UNKNOWN_MARK
               : formatDateTime(staged.backup.exportedAt)}
           </p>
           {/* 1列にする。2列だと 360 幅で「固定ベース」「0 件（ファイルに無し）」が途中で折り返す */}

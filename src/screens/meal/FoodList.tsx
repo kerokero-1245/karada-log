@@ -1,5 +1,6 @@
 /** 食品の一覧（バリアントは1行）。タップで選択に進む。 */
 import type { FoodGroup } from "../../lib/foodGroups";
+import { UNKNOWN_MARK } from "../../lib/format";
 import { fmtNum } from "../../lib/nutrition";
 import { Badge } from "../../components/ui";
 import { fmtKcalItem } from "../../lib/formatKcal";
@@ -44,7 +45,7 @@ export function FoodList({
                       {group.foods
                         .map(
                           (f) =>
-                            `${f.variantLabel ?? "—"} 塩分${fmtNum(f.per.saltG)}g`,
+                            `${f.variantLabel ?? UNKNOWN_MARK} 塩分${fmtNum(f.per.saltG)}g`,
                         )
                         .join(" / ")}
                     </>

@@ -15,7 +15,7 @@
  */
 import type { Food, FoodCategory, Nutrition } from "../db/types";
 import { toCalendarDate, toIsoDateTime } from "./date";
-import { formatQuantity } from "./meals";
+import { formatQuantity } from "./mealView";
 import {
   ARCHIVED_PENALTY,
   findCandidates,

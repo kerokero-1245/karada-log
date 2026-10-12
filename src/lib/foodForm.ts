@@ -15,7 +15,7 @@ import type {
   NutrientKey,
   ValueSource,
 } from "../db/types";
-import { NUTRIENT_KEYS } from "../db/types";
+import { NUTRIENT_KEYS, NUTRIENT_NAMES } from "../db/types";
 import { nowIso } from "./date";
 
 /** 表記の基準 3択 */
@@ -65,13 +65,11 @@ export const NUTRIENT_FIELDS: {
   key: NutrientKey;
   label: string;
   unit: string;
-}[] = [
-  { key: "kcal", label: "カロリー", unit: "kcal" },
-  { key: "proteinG", label: "たんぱく質", unit: "g" },
-  { key: "fatG", label: "脂質", unit: "g" },
-  { key: "carbG", label: "炭水化物", unit: "g" },
-  { key: "saltG", label: "塩分", unit: "g" },
-];
+}[] = NUTRIENT_KEYS.map((key) => ({
+  key,
+  label: NUTRIENT_NAMES[key],
+  unit: key === "kcal" ? "kcal" : "g",
+}));
 
 export interface FoodFormResult {
   errors: string[];
@@ -154,11 +152,11 @@ export function buildFood(values: FoodFormValues): FoodFormResult {
   }
 
   const entered: Nutrition = {
-    kcal: parseNumber(values.kcal, "カロリー", errors),
-    proteinG: parseNumber(values.proteinG, "たんぱく質", errors),
-    fatG: parseNumber(values.fatG, "脂質", errors),
-    carbG: parseNumber(values.carbG, "炭水化物", errors),
-    saltG: parseNumber(values.saltG, "塩分", errors),
+    kcal: parseNumber(values.kcal, NUTRIENT_NAMES.kcal, errors),
+    proteinG: parseNumber(values.proteinG, NUTRIENT_NAMES.proteinG, errors),
+    fatG: parseNumber(values.fatG, NUTRIENT_NAMES.fatG, errors),
+    carbG: parseNumber(values.carbG, NUTRIENT_NAMES.carbG, errors),
+    saltG: parseNumber(values.saltG, NUTRIENT_NAMES.saltG, errors),
   };
 
   const preview: Nutrition = {

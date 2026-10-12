@@ -5,7 +5,7 @@
 import { db } from "../../db/db";
 import { Badge, Row } from "../../components/ui";
 import { aliasesOf } from "../../lib/aliases";
-import { fmtStored } from "../../lib/format";
+import { UNKNOWN_MARK, fmtStored } from "../../lib/format";
 import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { DevRecordsSection } from "./DevRecordsSection";
@@ -165,7 +165,8 @@ export function DevDataSection() {
                     入力時: {food.basis.label}
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-500">
-                    呼び名: {aliases.length > 0 ? aliases.join(" / ") : "—"}
+                    呼び名:{" "}
+                    {aliases.length > 0 ? aliases.join(" / ") : UNKNOWN_MARK}
                   </div>
                 </li>
               );

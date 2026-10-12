@@ -3,7 +3,7 @@
  * 例: マカダミアは1単位10gなので、30g食べたら数量3。
  */
 import { useState } from "react";
-import { formatQuantity } from "../lib/meals";
+import { formatQuantity } from "../lib/mealView";
 
 const MIN = 0.1;
 

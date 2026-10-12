@@ -15,6 +15,7 @@ export function DayHeader({
   source,
   targetKcal,
   trainingCount,
+  boundaryHour,
   onSelect,
   onReset,
 }: {
@@ -23,13 +24,17 @@ export function DayHeader({
   source: "auto" | "manual";
   targetKcal: number;
   trainingCount: number;
+  /** 1 日の区切り（Settings.dayBoundaryHour）。「朝○時から翌朝○時まで」の文言に使う */
+  boundaryHour: number;
   onSelect: (dayType: DayType) => void;
   onReset: () => void;
 }) {
   return (
     <header className="bg-slate-900 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] text-white">
       <div className="mx-auto max-w-md">
-        <p className="text-xs text-slate-300">今日（朝4時から翌朝4時まで）</p>
+        <p className="text-xs text-slate-300">
+          {`今日（朝${boundaryHour}時から翌朝${boundaryHour}時まで）`}
+        </p>
         <h1 className="text-2xl font-bold tracking-wide">
           {formatLogDate(logDate)}
         </h1>

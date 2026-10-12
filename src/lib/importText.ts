@@ -18,7 +18,7 @@
 import type { Food, LogDate, Nutrition } from "../db/types";
 import { groupBy } from "./collections";
 import { toCalendarDate, toIsoDateTime } from "./date";
-import { formatQuantity } from "./meals";
+import { formatQuantity } from "./mealView";
 import { gramsPerUnitOf, guessCategory, unitLabelOf } from "./photoMeal";
 import { isGramUnit, parseItems, quantityFor, resolveItem } from "./quickText";
 import type { ParsedItem, QuickResolution, QuickStatus } from "./quickText";

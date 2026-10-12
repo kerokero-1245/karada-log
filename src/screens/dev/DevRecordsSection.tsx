@@ -9,7 +9,7 @@ import { Row } from "../../components/ui";
 import { formatDateTime } from "../../lib/date";
 import { fmtNum } from "../../lib/nutrition";
 import { useLiveQuery } from "../../lib/useLiveQuery";
-import { fmtStored } from "../../lib/format";
+import { UNKNOWN_MARK, fmtStored } from "../../lib/format";
 
 export function DevRecordsSection() {
   const data = useLiveQuery(async () => {
@@ -89,7 +89,7 @@ export function DevRecordsSection() {
               value={
                 body.conditions.lastTrainingAt
                   ? formatDateTime(body.conditions.lastTrainingAt)
-                  : "—"
+                  : UNKNOWN_MARK
               }
             />
             <Row

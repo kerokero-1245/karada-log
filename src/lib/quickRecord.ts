@@ -31,7 +31,8 @@
 import { db } from "../db/db";
 import { addedId } from "../db/keys";
 import type { Food, LogDate, PendingText } from "../db/types";
-import { addMealEntries, assertTime } from "./meals";
+import { addMealEntries } from "./meals";
+import { assertTime } from "./mealView";
 import type { NewMealInput } from "./meals";
 import {
   aliasesOf,

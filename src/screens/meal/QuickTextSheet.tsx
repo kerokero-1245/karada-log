@@ -23,7 +23,8 @@ import { useLiveQuery } from "../../lib/useLiveQuery";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { buildEntryView } from "../../lib/importText";
 import type { EntryView } from "../../lib/importText";
-import { formatQuantity } from "../../lib/meals";
+import { formatQuantity } from "../../lib/mealView";
+import { UNKNOWN_MARK } from "../../lib/format";
 import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { commitQuickText } from "../../lib/quickRecord";
 import type {
@@ -512,7 +513,9 @@ function PreviewRow({
             {fmtNum(value.fatG)}g / 塩分
             {fmtNum(value.saltG)}g
             {hasUnknown && (
-              <span className="ml-1 text-slate-500">（「—」は未確認）</span>
+              <span className="ml-1 text-slate-500">
+                （「{UNKNOWN_MARK}」は未確認）
+              </span>
             )}
           </p>
 

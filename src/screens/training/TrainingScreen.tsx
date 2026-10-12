@@ -16,8 +16,9 @@ import { DAY_TYPE_LABELS, MENU_IDS, MENU_LABELS } from "../../db/types";
 import { Card, Note } from "../../components/ui";
 import { formatLogDate, timeOf } from "../../lib/date";
 import { resolveDayType } from "../../lib/day";
+import { UNKNOWN_MARK } from "../../lib/format";
 import { dayTargetKcal, formatAmount } from "../../lib/goals";
-import { entryNutrition } from "../../lib/meals";
+import { entryNutrition } from "../../lib/mealView";
 import { sumNutrition } from "../../lib/nutrition";
 import { DEFAULT_TARGET_REPS } from "../../lib/progression";
 import {
@@ -184,7 +185,7 @@ export function TrainingScreen({ settings }: { settings: Settings }) {
                       exercise.kind === "amrap"
                         ? `限界まで × ${exercise.sets}`
                         : exercise.kind === "timed"
-                          ? `${describeLoadShort(planned.load)} ${planned.seconds ?? "—"}秒 × ${exercise.sets}`
+                          ? `${describeLoadShort(planned.load)} ${planned.seconds ?? UNKNOWN_MARK}秒 × ${exercise.sets}`
                           : `${describeLoadShort(planned.load)} × ${planned.reps ?? DEFAULT_TARGET_REPS}回 × ${exercise.sets}`;
                     return (
                       <li

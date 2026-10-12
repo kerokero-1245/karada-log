@@ -13,7 +13,9 @@ import { TimeField } from "../../components/TimeField";
 import { Badge, Button, Note } from "../../components/ui";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { hasTime, nowTime } from "../../lib/date";
-import { addMealEntries, formatQuantity } from "../../lib/meals";
+import { UNKNOWN_MARK } from "../../lib/format";
+import { addMealEntries } from "../../lib/meals";
+import { formatQuantity } from "../../lib/mealView";
 import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
 import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
 
@@ -148,7 +150,7 @@ export function ShortcutSheet({
                   </span>
                   <span className="mt-0.5 block text-xs text-slate-500">
                     {formatQuantity(row.item.quantity)} ×{" "}
-                    {row.food?.unitLabel ?? "—"}
+                    {row.food?.unitLabel ?? UNKNOWN_MARK}
                   </span>
                   <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
                     {fmtKcalItem(row.value?.kcal ?? null)}kcal / P

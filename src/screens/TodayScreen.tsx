@@ -25,7 +25,7 @@ import {
 } from "../lib/day";
 import { timeOf } from "../lib/date";
 import { buildBars, dayTargetKcal } from "../lib/goals";
-import { entryNutrition } from "../lib/meals";
+import { entryNutrition } from "../lib/mealView";
 import { fmtNum, scaleNutrition, sumNutrition } from "../lib/nutrition";
 import { deletePendingText } from "../lib/quickRecord";
 import type { QuickCommitResult } from "../lib/quickRecord";
@@ -112,6 +112,7 @@ export function TodayScreen({ settings }: { settings: Settings }) {
         source={source}
         targetKcal={dayTargetKcal(settings, dayType)}
         trainingCount={sessionList.length}
+        boundaryHour={boundaryHour}
         onSelect={selectDayType}
         onReset={() => void clearManualDayType(logDate)}
       />

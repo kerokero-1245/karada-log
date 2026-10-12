@@ -50,6 +50,16 @@ export const NUTRIENT_KEYS: NutrientKey[] = [
   "saltG",
 ];
 
+/** 栄養素の表示名（長い名前）。進捗バーの見出し・入力欄のラベル・エラー文に使う */
+export const NUTRIENT_NAMES: Record<NutrientKey, string> = {
+  kcal: "カロリー",
+  proteinG: "たんぱく質",
+  fatG: "脂質",
+  carbG: "炭水化物",
+  saltG: "塩分",
+};
+
+/** 栄養素の表示名（短い名前）。1 行表示・内訳の小さな見出し・書き出しの表の見出しに使う */
 export const NUTRIENT_LABELS: Record<NutrientKey, string> = {
   kcal: "kcal",
   proteinG: "P",
@@ -57,6 +67,23 @@ export const NUTRIENT_LABELS: Record<NutrientKey, string> = {
   carbG: "炭水",
   saltG: "塩分",
 };
+
+/**
+ * 「未確認」の判定・書き出しの表・進捗バーが見る 4 つ（炭水化物を除く）。
+ * 内訳の表示（NutritionGrid）は、この 4 つの後ろに炭水化物を並べる。
+ */
+export const CORE_NUTRIENT_KEYS: readonly NutrientKey[] = [
+  "kcal",
+  "proteinG",
+  "fatG",
+  "saltG",
+];
+
+/** 内訳の並び（kcal・P・脂質・塩分・炭水） */
+export const NUTRIENT_DISPLAY_ORDER: readonly NutrientKey[] = [
+  ...CORE_NUTRIENT_KEYS,
+  "carbG",
+];
 
 /* ------------------------------------------------------------------ */
 /* 食品マスタ                                                           */

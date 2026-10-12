@@ -3,6 +3,13 @@
  *
  * ★ 表示専用。★ 保存する値と計算（lib/nutrition.ts）は小数のまま変えない。
  */
+
+/**
+ * 未確認（null）の印。栄養値の未入力は 0 で埋めず、分からないものは分からないと出す。
+ * 画面にも書き出しにも、この 1 つを使う。
+ */
+export const UNKNOWN_MARK = "—";
+
 const STORED = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 20 });
 
 /**
@@ -10,6 +17,6 @@ const STORED = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 20 });
  * null は '—'、負のゼロは '0'。
  */
 export function fmtStored(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return "—";
+  if (value === null || Number.isNaN(value)) return UNKNOWN_MARK;
   return STORED.format(value === 0 ? 0 : value);
 }

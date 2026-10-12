@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LogDate, Settings } from "../../db/types";
 import { Button, Card, Chip, Note } from "../../components/ui";
 import { backupFileName, buildBackup } from "../../lib/backup";
-import { addDays } from "../../lib/date";
+import { addDays, weekStartLabel } from "../../lib/date";
 import { copyText } from "../../lib/clipboard";
 import { downloadText } from "../../lib/download";
 import { collectExport } from "../../lib/exportData";
@@ -154,7 +154,8 @@ export function ExportCard({ settings }: { settings: Settings }) {
           {formatRange(range)}（{rangeDayCount(range)}日間）
         </p>
         <Note>
-          週は月曜起点、1日の区切りは朝{settings.dayBoundaryHour}時です。
+          週は{weekStartLabel(settings.weekStartsOn)}、1日の区切りは朝
+          {settings.dayBoundaryHour}時です。
         </Note>
       </div>
 

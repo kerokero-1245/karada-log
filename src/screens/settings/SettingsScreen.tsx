@@ -4,10 +4,10 @@
  * 旧 App.tsx の確認ページは <details>「データ確認（開発用）」（DevDataSection）として残してある。
  */
 import type { Settings } from "../../db/types";
-import { DAY_TYPE_LABELS } from "../../db/types";
+import { DAY_TYPE_LABELS, NUTRIENT_NAMES } from "../../db/types";
 import { Card, Note, Row } from "../../components/ui";
 import { formatLogDate } from "../../lib/date";
-import { fmtStored } from "../../lib/format";
+import { UNKNOWN_MARK, fmtStored } from "../../lib/format";
 import { DevDataSection } from "../dev/DevDataSection";
 import { ApiKeyCard } from "./ApiKeyCard";
 import { ExportCard } from "./ExportCard";
@@ -42,12 +42,15 @@ export function SettingsScreen({ settings }: { settings: Settings }) {
               value={`${fmtStored(settings.gymDayKcal)} kcal`}
             />
             <Row
-              label="たんぱく質"
+              label={NUTRIENT_NAMES.proteinG}
               value={`目標 ${settings.proteinTargetG}g / 上限 ${settings.proteinCapG}g`}
             />
-            <Row label="脂質" value={`${settings.fatTargetG} g`} />
             <Row
-              label="塩分"
+              label={NUTRIENT_NAMES.fatG}
+              value={`${settings.fatTargetG} g`}
+            />
+            <Row
+              label={NUTRIENT_NAMES.saltG}
               value={`${settings.saltLimitG}g以内 / 週平均${settings.weeklySaltAverageG}g`}
             />
             <Row
@@ -68,7 +71,7 @@ export function SettingsScreen({ settings }: { settings: Settings }) {
               value={
                 settings.nextMeasurementDate
                   ? formatLogDate(settings.nextMeasurementDate)
-                  : "—"
+                  : UNKNOWN_MARK
               }
             />
             <Row

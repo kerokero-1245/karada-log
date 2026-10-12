@@ -6,18 +6,14 @@
  *
  * 追加時は食品情報のスナップショットを持たせる（後からマスタを直しても実績が動かない）。
  * 同じトランザクションで Food.useCount を +1 し lastUsedAt を更新する（F2 の頻度順表示用）。
+ *
+ * 表示と栄養値の純関数（formatQuantity・entryNutrition・snapshotOf・assertTime）は lib/mealView.ts。
  */
 import { db } from "../db/db";
 import { addedId } from "../db/keys";
-import type {
-  Food,
-  LogDate,
-  MealEntry,
-  MealSnapshot,
-  Nutrition,
-} from "../db/types";
-import { hasTime, isoDateTimeIn, nowIso, toLogDate } from "./date";
-import { scaleNutrition } from "./nutrition";
+import type { Food, LogDate, MealEntry } from "../db/types";
+import { isoDateTimeIn, nowIso, toLogDate } from "./date";
+import { assertTime, snapshotOf } from "./mealView";
 
 export interface NewMealInput {
   food: Food;
@@ -29,32 +25,6 @@ export interface NewMealInput {
    * 省略時は空文字（既存の呼び出しはこれまでどおり）。
    */
   note?: string;
-}
-
-export function snapshotOf(food: Food): MealSnapshot {
-  return {
-    name: food.name,
-    variantLabel: food.variantLabel,
-    unitLabel: food.unitLabel,
-    category: food.category,
-    source: food.source,
-    per: { ...food.per },
-  };
-}
-
-/**
- * 時刻が 'HH:mm' でなければ保存しない。
- * 画面側でも止めているが、空の時刻が isoDateTimeIn に渡ると時刻なしの日時（'2026-10-05T'）が
- * できてしまうので、保存の入口でも弾く（トランザクションごと取り消される）。
- */
-export function assertTime(time: string): void {
-  if (!hasTime(time))
-    throw new Error("時刻が入っていません。時刻を入れてから保存してください");
-}
-
-/** その記録の栄養値（1単位あたり × 数量） */
-export function entryNutrition(entry: MealEntry): Nutrition {
-  return scaleNutrition(entry.snapshot.per, entry.quantity);
 }
 
 /**
@@ -124,9 +94,4 @@ export async function updateMealEntry(
 export async function deleteMealEntry(entry: MealEntry): Promise<void> {
   if (entry.id === undefined) return;
   await db.mealEntries.delete(entry.id);
-}
-
-/** 数量の表示。1 → '1' / 0.5 → '0.5' / 3 → '3' */
-export function formatQuantity(quantity: number): string {
-  return String(Math.round(quantity * 100) / 100);
 }

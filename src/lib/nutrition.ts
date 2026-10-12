@@ -5,6 +5,7 @@
  */
 import type { Nutrition, NutrientKey } from "../db/types";
 import { NUTRIENT_KEYS } from "../db/types";
+import { UNKNOWN_MARK } from "./format";
 
 export const EMPTY_NUTRITION: Nutrition = {
   kcal: null,
@@ -58,7 +59,7 @@ export function sumNutrition(list: Nutrition[]): NutritionTotal {
 
 /** 表示。null は '—' */
 export function fmtNum(v: number | null, suffix = ""): string {
-  if (v === null || Number.isNaN(v)) return "—";
+  if (v === null || Number.isNaN(v)) return UNKNOWN_MARK;
   return `${round2(v)}${suffix}`;
 }
 

@@ -16,6 +16,7 @@ import type {
   ExerciseTarget,
   Progression,
 } from "../db/types";
+import { UNKNOWN_MARK } from "./format";
 import {
   applyProgression,
   applySecondsProgression,
@@ -123,14 +124,14 @@ export function describeJudgement(
   const next = suggestNext(used, outcome, progression);
   if (outcome === "held") {
     return kind === "timed"
-      ? `据え置き（次回も ${used.seconds ?? "—"}秒）`
+      ? `据え置き（次回も ${used.seconds ?? UNKNOWN_MARK}秒）`
       : `据え置き（次回も ${describeLoadShort(used.load)}）`;
   }
   if (!progression || progression.amount === 0) {
     return "規定に届きました（増分が 0 なので次回も同じ設定）";
   }
   if (progression.metric === "seconds") {
-    return `次回 +${progression.amount}秒（${next.seconds ?? "—"}秒）`;
+    return `次回 +${progression.amount}秒（${next.seconds ?? UNKNOWN_MARK}秒）`;
   }
   const unit = progression.basis === "perHand" ? "kg（片側）" : "kg";
   return `次回 +${progression.amount}${unit}（${describeLoadShort(next.load)}）`;

@@ -1,4 +1,4 @@
-// ESLint 10 の flat config（oxlint から移した）。
+// ESLint 10 の flat config。
 // 型情報を使う規則は入れない（型は tsc -b が見る）。
 import js from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
@@ -20,9 +20,9 @@ export default defineConfig([
     extends: [tseslint.configs.recommended],
     plugins: { "react-hooks": reactHooks, "react-refresh": reactRefresh },
     // react-hooks の recommended（reactHooks.configs.flat.recommended）は、rules-of-hooks と exhaustive-deps のほかに
-    // React Compiler 系の 14 規則も有効にする。oxlint から引き継ぐ範囲を超えるので recommended は使わず、必要な規則だけを明示する。
+    // React Compiler 系の 14 規則も有効にする。下の 3 規則の範囲を超えるので recommended は使わず、必要な規則だけを明示する。
     rules: {
-      // .oxlintrc.json から引き継いだ 2 規則（react/rules-of-hooks・react/only-export-components）
+      // 移行前の lint 設定から引き継いだ 2 規則（rules-of-hooks・only-export-components）
       "react-hooks/rules-of-hooks": "error",
       "react-refresh/only-export-components": [
         "warn",

@@ -6,7 +6,7 @@ import { db } from "../../db/db";
 import { Badge, Row } from "../../components/ui";
 import { aliasesOf } from "../../lib/aliases";
 import { UNKNOWN_MARK, fmtStored } from "../../lib/format";
-import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import { fmtNum, plannedNutrition, plannedTotal } from "../../lib/nutrition";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { DevRecordsSection } from "./DevRecordsSection";
 
@@ -87,12 +87,10 @@ export function DevDataSection() {
             return {
               item,
               food,
-              value: food ? scaleNutrition(food.per, item.quantity) : null,
+              value: plannedNutrition(food, item.quantity),
             };
           });
-          const total = sumNutrition(
-            rows.flatMap((row) => (row.value ? [row.value] : [])),
-          );
+          const total = plannedTotal(rows.map((row) => row.value));
           return (
             <div key={set.id}>
               <h3 className="mb-1 text-xs font-bold text-slate-500">

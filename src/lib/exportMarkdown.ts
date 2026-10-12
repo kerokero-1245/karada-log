@@ -48,7 +48,7 @@ import { formatRange, rangeDayCount } from "./exportRange";
 import { UNKNOWN_MARK } from "./format";
 import { buildBars, dayTargetKcal, formatAmount } from "./goals";
 import { entryNutrition, formatQuantity } from "./mealView";
-import { sumNutrition } from "./nutrition";
+import { hasUnknownCore, sumNutrition } from "./nutrition";
 import { formatFixed, formatNumber, roundTo } from "./number";
 import { describeLoad } from "./weight";
 
@@ -130,13 +130,7 @@ function shortDate(logDate: LogDate): string {
 
 /** kcal / P / 脂質 / 塩分 のどれかが分かっていない記録か */
 function hasUnknownValue(entry: MealEntry): boolean {
-  const per = entry.snapshot.per;
-  return (
-    per.kcal === null ||
-    per.proteinG === null ||
-    per.fatG === null ||
-    per.saltG === null
-  );
+  return hasUnknownCore(entry.snapshot.per);
 }
 
 interface DayTotals {

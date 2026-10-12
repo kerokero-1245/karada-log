@@ -15,8 +15,9 @@
  */
 import type { Food, FoodCategory, Nutrition } from "../db/types";
 import { toCalendarDate, toIsoDateTime } from "./date";
+import { newFood } from "./foods";
 import { formatQuantity } from "./mealView";
-import { round3 } from "./number";
+import { divideNutrition } from "./nutrition";
 import {
   ARCHIVED_PENALTY,
   findCandidates,
@@ -64,16 +65,7 @@ export function photoNoteOf(item: MealPhotoItem): string {
 
 /** API の値は quantity × unit ぶんの合計。1単位あたりに割る */
 export function perUnitOf(item: MealPhotoItem): Nutrition {
-  const quantity = item.quantity > 0 ? item.quantity : 1;
-  const per = (value: number | null): number | null =>
-    value === null ? null : round3(value / quantity);
-  return {
-    kcal: per(item.kcal),
-    proteinG: per(item.proteinG),
-    fatG: per(item.fatG),
-    carbG: per(item.carbG),
-    saltG: per(item.saltG),
-  };
+  return divideNutrition(item, item.quantity > 0 ? item.quantity : 1);
 }
 
 /** '杯' → '1杯' / '100g' → '100g'（既存の食品マスタと同じ書き方に揃える） */
@@ -324,26 +316,21 @@ export function estimatedFoodOf(
   const quantity = item.quantity > 0 ? item.quantity : 1;
   const name = item.name.trim();
 
-  return {
-    name: name === "" ? "写真の品目" : name,
-    unitLabel: unitLabelOf(item.unit),
-    gramsPerUnit: gramsPerUnitOf(item.unit),
-    per: perUnitOf(item),
-    source: "estimated",
-    basis: {
-      label: `写真からの推定（${formatQuantity(quantity)}${item.unit}あたり）`,
-      unitsPerBasis: quantity,
+  // 呼び名は付けない。推定の名前で呼び名を増やすと、以後の照合が曖昧になる
+  return newFood(
+    {
+      name: name === "" ? "写真の品目" : name,
+      unitLabel: unitLabelOf(item.unit),
+      gramsPerUnit: gramsPerUnitOf(item.unit),
+      per: perUnitOf(item),
+      source: "estimated",
+      basis: {
+        label: `写真からの推定（${formatQuantity(quantity)}${item.unit}あたり）`,
+        unitsPerBasis: quantity,
+      },
+      category: guessCategory(name),
+      note: `写真から推定 ${toCalendarDate(now)}`,
     },
-    category: guessCategory(name),
-    note: `写真から推定 ${toCalendarDate(now)}`,
-    // 呼び名は付けない。推定の名前で呼び名を増やすと、以後の照合が曖昧になる
-    aliases: [],
-    variantGroupId: null,
-    variantLabel: null,
-    useCount: 0,
-    lastUsedAt: null,
-    archived: false,
-    createdAt: stamp,
-    updatedAt: stamp,
-  };
+    stamp,
+  );
 }

@@ -17,7 +17,8 @@ import type {
 } from "../db/types";
 import { NUTRIENT_KEYS, NUTRIENT_NAMES } from "../db/types";
 import { nowIso } from "./date";
-import { round3 } from "./number";
+import { newFood } from "./foods";
+import { divideNutrition, emptyNutrition, mapNutrition } from "./nutrition";
 
 /** 表記の基準 3択 */
 export type BasisKind = "unit" | "per100g" | "bag";
@@ -148,53 +149,34 @@ export function buildFood(values: FoodFormValues): FoodFormResult {
     }
   }
 
-  const entered: Nutrition = {
-    kcal: parseNumber(values.kcal, NUTRIENT_NAMES.kcal, errors),
-    proteinG: parseNumber(values.proteinG, NUTRIENT_NAMES.proteinG, errors),
-    fatG: parseNumber(values.fatG, NUTRIENT_NAMES.fatG, errors),
-    carbG: parseNumber(values.carbG, NUTRIENT_NAMES.carbG, errors),
-    saltG: parseNumber(values.saltG, NUTRIENT_NAMES.saltG, errors),
-  };
+  const entered = mapNutrition((key) =>
+    parseNumber(values[key], NUTRIENT_NAMES[key], errors),
+  );
 
-  const preview: Nutrition = {
-    kcal: null,
-    proteinG: null,
-    fatG: null,
-    carbG: null,
-    saltG: null,
-  };
-  if (unitsPerBasis !== null && unitsPerBasis > 0) {
-    for (const key of NUTRIENT_KEYS) {
-      const value = entered[key];
-      preview[key] = value === null ? null : round3(value / unitsPerBasis);
-    }
-  }
+  const preview =
+    unitsPerBasis !== null && unitsPerBasis > 0
+      ? divideNutrition(entered, unitsPerBasis)
+      : emptyNutrition();
 
   if (errors.length > 0 || unitsPerBasis === null) {
     return { errors, preview, unitsPerBasis, basisLabel, food: null };
   }
 
-  const now = nowIso();
   const basis: EntryBasis = { label: basisLabel, unitsPerBasis };
-  const food: Omit<Food, "id"> = {
-    name,
-    unitLabel,
-    gramsPerUnit,
-    per: preview,
-    source: values.source,
-    basis,
-    category: values.category,
-    note: "",
-    // 呼び名は登録時には付けない。テキストで手で解決したときに増える（lib/aliases.ts）
-    aliases: [],
-    variantGroupId: null,
-    variantLabel: null,
-    useCount: 0,
-    lastUsedAt: null,
-    archived: false,
-    createdAt: now,
-    updatedAt: now,
-  };
+  // 呼び名は登録時には付けない。テキストで手で解決したときに増える（lib/aliases.ts）
+  const food = newFood(
+    {
+      name,
+      unitLabel,
+      gramsPerUnit,
+      per: preview,
+      source: values.source,
+      basis,
+      category: values.category,
+      note: "",
+    },
+    nowIso(),
+  );
 
   return { errors, preview, unitsPerBasis, basisLabel, food };
 }

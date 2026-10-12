@@ -40,6 +40,7 @@ import type {
 import { nowIso, toLogDate } from "../lib/date";
 import { evaluateConditions } from "../lib/measurement";
 import { aliasesOf, mergeAliases } from "../lib/aliases";
+import { newFood } from "../lib/foods";
 
 /**
  * 2: 呼び名（Food.aliases）と未処理テキスト（pendingTexts）を追加した版。
@@ -662,24 +663,25 @@ export async function seedIfEmpty(): Promise<void> {
     ],
     async () => {
       /* --- 食品マスタ --- */
-      const foods: Food[] = FOOD_SEEDS.map((s) => ({
-        name: s.name,
-        unitLabel: s.unitLabel,
-        gramsPerUnit: s.gramsPerUnit,
-        per: s.per,
-        source: s.source ?? "label",
-        basis: s.basis,
-        category: s.category,
-        note: s.note ?? "",
-        aliases: [...(DEFAULT_ALIASES[s.key] ?? [])],
-        variantGroupId: s.variantGroupId ?? null,
-        variantLabel: s.variantLabel ?? null,
-        useCount: 0,
-        lastUsedAt: null,
-        archived: s.archived ?? false,
-        createdAt: now,
-        updatedAt: now,
-      }));
+      const foods: Food[] = FOOD_SEEDS.map((s) =>
+        newFood(
+          {
+            name: s.name,
+            unitLabel: s.unitLabel,
+            gramsPerUnit: s.gramsPerUnit,
+            per: s.per,
+            source: s.source ?? "label",
+            basis: s.basis,
+            category: s.category,
+            note: s.note ?? "",
+            aliases: [...(DEFAULT_ALIASES[s.key] ?? [])],
+            variantGroupId: s.variantGroupId ?? null,
+            variantLabel: s.variantLabel ?? null,
+            archived: s.archived ?? false,
+          },
+          now,
+        ),
+      );
       const foodIds = (await db.foods.bulkAdd(foods, { allKeys: true })).map(
         addedId,
       );

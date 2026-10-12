@@ -20,16 +20,21 @@ import { Badge, Button, Chip, Note } from "../../components/ui";
 import { formatLogDate, formatLogDateShort } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
-import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import {
+  fmtNum,
+  hasUnknownCore,
+  scaleNutrition,
+  sumNutrition,
+} from "../../lib/nutrition";
 import { commitImport } from "../../lib/importRecord";
 import type { ImportCommitResult, ImportDayPlan } from "../../lib/importRecord";
 import {
   DEFAULT_IMPORT_TIME,
   buildEntryView,
   parseImport,
+  planEntries,
 } from "../../lib/importText";
 import type { EntryView, ImportRow } from "../../lib/importText";
-import type { QuickEntryPlan, QuickPendingPlan } from "../../lib/quickRecord";
 import { QUICK_STATUS_LABELS } from "../../lib/quickText";
 import type { QuickStatus } from "../../lib/quickText";
 import { useLiveQuery } from "../../lib/useLiveQuery";
@@ -121,43 +126,20 @@ export function ImportSheet({
 
   const days = (parsed?.days ?? []).map((day) => {
     const rows = day.rows.map(viewOf);
-    const entries: QuickEntryPlan[] = [];
-    const pending: QuickPendingPlan[] = [];
-
-    for (const item of rows) {
-      const parsedItem = item.row.resolution.parsed;
-      if (item.view.food !== null || item.view.estimated !== null) {
-        entries.push({
-          food: item.view.food,
-          draft: item.view.estimated?.draft ?? null,
-          quantity: item.view.quantity,
-          time: item.row.time,
-          raw: parsedItem.raw,
-          manual: item.view.manual,
-          learnText: parsedItem.name,
-        });
-      } else {
-        pending.push({
-          raw: parsedItem.raw,
-          reason:
-            item.view.status === "missing"
-              ? "見つかりませんでした"
-              : "候補から選べていません",
-          time: item.row.time,
-        });
-      }
-    }
+    const { entries, pending } = planEntries(
+      rows.map((item) => ({
+        parsed: item.row.resolution.parsed,
+        view: item.view,
+        time: item.row.time,
+      })),
+    );
 
     const recorded = rows.filter(
       (item) => item.view.food !== null || item.view.estimated !== null,
     );
     const total = sumNutrition(recorded.map((item) => item.value));
-    const unknown = recorded.filter(
-      (item) =>
-        item.value.kcal === null ||
-        item.value.proteinG === null ||
-        item.value.fatG === null ||
-        item.value.saltG === null,
+    const unknown = recorded.filter((item) =>
+      hasUnknownCore(item.value),
     ).length;
 
     return {
@@ -542,11 +524,7 @@ function PreviewRow({
   const { row, view, value } = item;
   const parsed = row.resolution.parsed;
   const name = view.food?.name ?? parsed.name;
-  const hasUnknown =
-    value.kcal === null ||
-    value.proteinG === null ||
-    value.fatG === null ||
-    value.saltG === null;
+  const hasUnknown = hasUnknownCore(value);
   const resolved = view.food !== null || view.estimated !== null;
 
   return (

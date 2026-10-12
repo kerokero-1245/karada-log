@@ -9,7 +9,6 @@ import { db } from "../db/db";
 import type {
   DayType,
   MealEntry,
-  Nutrition,
   PendingText,
   Settings,
   TrainingSession,
@@ -26,7 +25,12 @@ import {
 import { timeOf } from "../lib/date";
 import { buildBars, dayTargetKcal } from "../lib/goals";
 import { entryNutrition } from "../lib/mealView";
-import { fmtNum, scaleNutrition, sumNutrition } from "../lib/nutrition";
+import {
+  fmtNum,
+  plannedNutrition,
+  plannedTotal,
+  sumNutrition,
+} from "../lib/nutrition";
 import { deletePendingText } from "../lib/quickRecord";
 import type { QuickCommitResult } from "../lib/quickRecord";
 import { useLiveQuery } from "../lib/useLiveQuery";
@@ -175,15 +179,10 @@ export function TodayScreen({ settings }: { settings: Settings }) {
           <Card title="固定ベース（ショートカット）">
             <ul className="space-y-2">
               {(shortcutSets ?? []).map((set) => {
-                const planned = sumNutrition(
-                  set.items
-                    .map((item) => {
-                      const food = foodById.get(item.foodId);
-                      return food
-                        ? scaleNutrition(food.per, item.quantity)
-                        : null;
-                    })
-                    .filter((value): value is Nutrition => value !== null),
+                const planned = plannedTotal(
+                  set.items.map((item) =>
+                    plannedNutrition(foodById.get(item.foodId), item.quantity),
+                  ),
                 );
                 return (
                   <li key={set.id}>

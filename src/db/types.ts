@@ -227,7 +227,7 @@ export interface PendingText {
   id?: number;
   /** 1項目ぶんの原文 */
   text: string;
-  /** なぜ未処理なのか。'見つかりませんでした' / '候補から選べていません' */
+  /** なぜ未処理なのか（2 種類。保存する文字列は lib/importText.ts の planEntries が決める） */
   reason: string;
   /** 入力したときの論理日付。再解決したときはこの日の記録にする */
   logDate: LogDate;

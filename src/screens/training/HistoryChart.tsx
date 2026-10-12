@@ -7,57 +7,13 @@
  */
 import type { ExerciseKind } from "../../db/types";
 import { OUTCOME_LABELS } from "../../db/types";
-import { formatLogDateShort } from "../../lib/date";
+import { chartData, metricOf } from "../../lib/history";
 import { formatFixed, formatNumber } from "../../lib/number";
 import type { HistoryPoint } from "../../lib/training";
-import { describeLoadShort, trackedWeightKg } from "../../lib/weight";
 
 const W = 320;
 const H = 132;
 const PAD = { left: 36, right: 40, top: 14, bottom: 26 };
-
-interface ChartDatum {
-  label: string;
-  value: number;
-  outcome: HistoryPoint["outcome"];
-  detail: string;
-}
-
-function metricOf(kind: ExerciseKind): { unit: string; title: string } {
-  if (kind === "timed")
-    return { unit: "秒", title: "秒数の推移（各回の最長）" };
-  if (kind === "amrap")
-    return { unit: "回", title: "回数の推移（各回の最多）" };
-  return { unit: "kg", title: "重量の推移" };
-}
-
-function chartData(points: HistoryPoint[], kind: ExerciseKind): ChartDatum[] {
-  const data: ChartDatum[] = [];
-  for (const point of points) {
-    let value: number | null;
-    if (kind === "timed") {
-      const values = point.sets
-        .map((set) => set.seconds)
-        .filter((v): v is number => v !== null);
-      value = values.length === 0 ? null : Math.max(...values);
-    } else if (kind === "amrap") {
-      const values = point.sets
-        .map((set) => set.reps)
-        .filter((v): v is number => v !== null);
-      value = values.length === 0 ? null : Math.max(...values);
-    } else {
-      value = trackedWeightKg(point.load);
-    }
-    if (value === null) continue;
-    data.push({
-      label: formatLogDateShort(point.logDate),
-      value,
-      outcome: point.outcome,
-      detail: describeLoadShort(point.load),
-    });
-  }
-  return data;
-}
 
 export function HistoryChart({
   points,

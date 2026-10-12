@@ -14,8 +14,7 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { Food } from "../../db/types";
 import { FOOD_CATEGORIES } from "../../db/types";
-import { db } from "../../db/db";
-import { addedId } from "../../db/keys";
+import { addFood } from "../../db/foods";
 import { Sheet } from "../../components/Sheet";
 import { Badge, Button, Chip, NutritionGrid, Note } from "../../components/ui";
 import {
@@ -99,8 +98,7 @@ export function NewFoodForm({
     setSaving(true);
     setSaveError(null);
     try {
-      const id = addedId(await db.foods.add(draft));
-      onSaved({ ...draft, id });
+      onSaved(await addFood(draft));
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
       setSaving(false);

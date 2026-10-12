@@ -9,6 +9,7 @@
 import {
   BAR_LABELS,
   BAR_WEIGHT_KG,
+  type BarType,
   type LoadSpec,
   type Progression,
 } from "../db/types";
@@ -29,6 +30,19 @@ export function totalWeightKg(load: LoadSpec): number | null {
     case "bodyweight":
       return load.addedKg;
   }
+}
+
+/**
+ * 構成が分からない重量（総重量だけ）を、バー種別を選んでバーベルの内訳に直す。
+ * プレートは片側 =（総重量 − バーの重さ）÷ 2。バーより軽いときは 0（負にしない）。
+ * 保存される LoadSpec を決める（重量はバー種別とセット。原則 2）。
+ */
+export function toBarbell(totalKg: number, barType: BarType): LoadSpec {
+  return {
+    style: "barbell",
+    barType,
+    plateKgPerSide: Math.max(0, round2((totalKg - BAR_WEIGHT_KG[barType]) / 2)),
+  };
 }
 
 /**

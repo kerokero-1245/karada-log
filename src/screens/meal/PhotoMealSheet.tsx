@@ -20,7 +20,12 @@ import { Badge, Button, Note } from "../../components/ui";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
-import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import {
+  fmtNum,
+  hasUnknownCore,
+  scaleNutrition,
+  sumNutrition,
+} from "../../lib/nutrition";
 import { buildPhotoRows } from "../../lib/photoMeal";
 import type { PhotoMealRow } from "../../lib/photoMeal";
 import { errorMessage } from "../../lib/errors";
@@ -171,11 +176,7 @@ function PhotoRow({
 }) {
   const value = scaleNutrition(row.per, quantity);
   const food = row.matched;
-  const hasUnknown =
-    value.kcal === null ||
-    value.proteinG === null ||
-    value.fatG === null ||
-    value.saltG === null;
+  const hasUnknown = hasUnknownCore(value);
 
   return (
     <li className="py-2">

@@ -18,11 +18,13 @@
 import type { Food, LogDate, Nutrition } from "../db/types";
 import { groupBy } from "./collections";
 import { toCalendarDate, toIsoDateTime } from "./date";
+import { newFood } from "./foods";
 import { formatQuantity } from "./mealView";
-import { round3 } from "./number";
+import { divideNutrition, emptyNutrition } from "./nutrition";
 import { gramsPerUnitOf, guessCategory, unitLabelOf } from "./photoMeal";
 import { isGramUnit, parseItems, quantityFor, resolveItem } from "./quickText";
 import type { ParsedItem, QuickResolution, QuickStatus } from "./quickText";
+import type { QuickEntryPlan, QuickPendingPlan } from "./quickRecord";
 
 /** 時刻が書かれていない行の既定。昼に寄せる（朝4時境界の内側で、日付が動かない時刻） */
 export const DEFAULT_IMPORT_TIME = "12:00";
@@ -30,19 +32,6 @@ export const DEFAULT_IMPORT_TIME = "12:00";
 /* ------------------------------------------------------------------ */
 /* 推定食品の下書き                                                      */
 /* ------------------------------------------------------------------ */
-
-/** 1単位あたりに割る。写真からの推定（lib/photoMeal.ts）と同じ丸め方 */
-function perUnit(values: Nutrition, quantity: number): Nutrition {
-  const divide = (value: number | null): number | null =>
-    value === null ? null : round3(value / quantity);
-  return {
-    kcal: divide(values.kcal),
-    proteinG: divide(values.proteinG),
-    fatG: divide(values.fatG),
-    carbG: divide(values.carbG),
-    saltG: divide(values.saltG),
-  };
-}
 
 export interface EstimatedPlan {
   /** 記録時に作る Food。source='estimated' なので画面では「推定値」と出る */
@@ -78,7 +67,8 @@ export function estimatedPlanOf(
       ? "1個"
       : unitLabelOf(parsed.unit);
 
-  const per = perUnit(values, quantity);
+  // 1単位あたりに割る。写真からの推定（lib/photoMeal.ts）と同じ丸め方
+  const per = divideNutrition(values, quantity);
   const name = parsed.name.trim();
   const stamp = toIsoDateTime(now);
 
@@ -86,25 +76,20 @@ export function estimatedPlanOf(
     quantity,
     per,
     unitLabel,
-    draft: {
-      name: name === "" ? "貼り付けの品目" : name,
-      unitLabel,
-      gramsPerUnit: gram ? amount : gramsPerUnitOf(unitLabel),
-      per,
-      source: "estimated",
-      basis: { label: "貼り付けの値（1単位あたり）", unitsPerBasis: 1 },
-      category: guessCategory(name),
-      note: `貼り付けから推定 ${toCalendarDate(now)}`,
-      // 呼び名は付けない。推定の名前で呼び名を増やすと、以後の照合が曖昧になる
-      aliases: [],
-      variantGroupId: null,
-      variantLabel: null,
-      useCount: 0,
-      lastUsedAt: null,
-      archived: false,
-      createdAt: stamp,
-      updatedAt: stamp,
-    },
+    // 呼び名は付けない。推定の名前で呼び名を増やすと、以後の照合が曖昧になる
+    draft: newFood(
+      {
+        name: name === "" ? "貼り付けの品目" : name,
+        unitLabel,
+        gramsPerUnit: gram ? amount : gramsPerUnitOf(unitLabel),
+        per,
+        source: "estimated",
+        basis: { label: "貼り付けの値（1単位あたり）", unitsPerBasis: 1 },
+        category: guessCategory(name),
+        note: `貼り付けから推定 ${toCalendarDate(now)}`,
+      },
+      stamp,
+    ),
   };
 }
 
@@ -175,13 +160,64 @@ export function buildEntryView(
     food: null,
     estimated: null,
     quantity: 1,
-    per: { kcal: null, proteinG: null, fatG: null, carbG: null, saltG: null },
+    per: emptyNutrition(),
     unitLabel: "",
     notes: [],
     usesMasterValues: false,
     status: resolution.status,
     manual: false,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* 記録する行 / 未処理で預ける行の振り分け                                */
+/* ------------------------------------------------------------------ */
+
+/** 振り分ける 1 項目。時刻は呼ぶ側が決める（テキスト記録は行の時刻 or 時刻欄、取り込みは行の時刻） */
+export interface PlanItem {
+  parsed: ParsedItem;
+  view: EntryView;
+  /** 'HH:mm' */
+  time: string;
+}
+
+/**
+ * プレビューの各項目を、記録する行（entries）と未処理で預ける行（pending）に振り分ける。
+ * 原則1: マスタの食品も推定の下書きも無い項目（解決できなかったもの）は、栄養値を付けずに原文のまま預ける。
+ * 預ける理由は 2 つ（保存される PendingText.reason の文字列）:
+ *   - 見つからなかった（missing）→「見つかりませんでした」
+ *   - 候補はあるが選べていない →「候補から選べていません」
+ * テキスト記録シートと取り込みシートで同じ振り分けを使う。並びは項目の並びのまま。
+ */
+export function planEntries(items: readonly PlanItem[]): {
+  entries: QuickEntryPlan[];
+  pending: QuickPendingPlan[];
+} {
+  const entries: QuickEntryPlan[] = [];
+  const pending: QuickPendingPlan[] = [];
+  for (const { parsed, view, time } of items) {
+    if (view.food === null && view.estimated === null) {
+      pending.push({
+        raw: parsed.raw,
+        reason:
+          view.status === "missing"
+            ? "見つかりませんでした"
+            : "候補から選べていません",
+        time,
+      });
+    } else {
+      entries.push({
+        food: view.food,
+        draft: view.estimated?.draft ?? null,
+        quantity: view.quantity,
+        time,
+        raw: parsed.raw,
+        manual: view.manual,
+        learnText: parsed.name,
+      });
+    }
+  }
+  return { entries, pending };
 }
 
 /* ------------------------------------------------------------------ */

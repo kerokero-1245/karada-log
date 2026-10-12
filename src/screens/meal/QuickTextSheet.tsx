@@ -21,17 +21,18 @@ import { TimeField } from "../../components/TimeField";
 import { Badge, Button, Note } from "../../components/ui";
 import { useLiveQuery } from "../../lib/useLiveQuery";
 import { formatLogDateShort, hasTime, nowTime } from "../../lib/date";
-import { buildEntryView } from "../../lib/importText";
+import { buildEntryView, planEntries } from "../../lib/importText";
 import type { EntryView } from "../../lib/importText";
 import { formatQuantity } from "../../lib/mealView";
 import { UNKNOWN_MARK } from "../../lib/format";
-import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import {
+  fmtNum,
+  hasUnknownCore,
+  scaleNutrition,
+  sumNutrition,
+} from "../../lib/nutrition";
 import { commitQuickText } from "../../lib/quickRecord";
-import type {
-  QuickCommitResult,
-  QuickEntryPlan,
-  QuickPendingPlan,
-} from "../../lib/quickRecord";
+import type { QuickCommitResult } from "../../lib/quickRecord";
 import {
   QUICK_STATUS_LABELS,
   groupKeyOf,
@@ -145,32 +146,13 @@ export function QuickTextSheet({
     .map((row) => row.resolution.parsed.logDate)
     .filter((date): date is LogDate => date !== null && date !== logDate);
 
-  const entries: QuickEntryPlan[] = [];
-  const pending: QuickPendingPlan[] = [];
-  for (const row of rows) {
-    const parsed = row.resolution.parsed;
-    const itemTime = parsed.time ?? time;
-    if (row.view.food === null && row.view.estimated === null) {
-      pending.push({
-        raw: parsed.raw,
-        reason:
-          row.view.status === "missing"
-            ? "見つかりませんでした"
-            : "候補から選べていません",
-        time: itemTime,
-      });
-    } else {
-      entries.push({
-        food: row.view.food,
-        draft: row.view.estimated?.draft ?? null,
-        quantity: row.view.quantity,
-        time: itemTime,
-        raw: parsed.raw,
-        manual: row.view.manual,
-        learnText: parsed.name,
-      });
-    }
-  }
+  const { entries, pending } = planEntries(
+    rows.map((row) => ({
+      parsed: row.resolution.parsed,
+      view: row.view,
+      time: row.resolution.parsed.time ?? time,
+    })),
+  );
 
   const total = sumNutrition(
     rows
@@ -471,12 +453,7 @@ function PreviewRow({
   const food = view.food;
   const resolved = food !== null || view.estimated !== null;
   const value = resolved ? scaleNutrition(view.per, view.quantity) : null;
-  const hasUnknown =
-    value !== null &&
-    (value.kcal === null ||
-      value.proteinG === null ||
-      value.fatG === null ||
-      value.saltG === null);
+  const hasUnknown = value !== null && hasUnknownCore(value);
 
   return (
     <li className="py-2">

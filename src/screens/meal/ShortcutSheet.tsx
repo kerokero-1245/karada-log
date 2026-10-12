@@ -7,7 +7,7 @@
  */
 import { useState } from "react";
 import { db } from "../../db/db";
-import type { Food, LogDate, Nutrition, ShortcutSet } from "../../db/types";
+import type { Food, LogDate, ShortcutSet } from "../../db/types";
 import { Sheet } from "../../components/Sheet";
 import { TimeField } from "../../components/TimeField";
 import { Badge, Button, Note } from "../../components/ui";
@@ -16,7 +16,7 @@ import { hasTime, nowTime } from "../../lib/date";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { addMealEntries } from "../../lib/meals";
 import { formatQuantity } from "../../lib/mealView";
-import { fmtNum, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import { fmtNum, plannedNutrition, plannedTotal } from "../../lib/nutrition";
 import { fmtKcal, fmtKcalItem } from "../../lib/formatKcal";
 
 export function ShortcutSheet({
@@ -50,16 +50,14 @@ export function ShortcutSheet({
       food,
       index,
       checked: checked[index] ?? false,
-      value: food ? scaleNutrition(food.per, item.quantity) : null,
+      value: plannedNutrition(food, item.quantity),
     };
   });
   type Row = (typeof rows)[number];
   const selected = rows.filter(
     (row): row is Row & { food: Food } => row.checked && row.food !== undefined,
   );
-  const total = sumNutrition(
-    selected.map((row) => row.value).filter((v): v is Nutrition => v !== null),
-  );
+  const total = plannedTotal(selected.map((row) => row.value));
 
   const toggle = (index: number) =>
     setChecked((prev) =>

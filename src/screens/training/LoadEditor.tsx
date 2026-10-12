@@ -7,8 +7,7 @@
  */
 import type { BarType, LoadSpec, Progression } from "../../db/types";
 import { BAR_LABELS, BAR_WEIGHT_KG } from "../../db/types";
-import { round2 } from "../../lib/number";
-import { describeLoad } from "../../lib/weight";
+import { describeLoad, toBarbell } from "../../lib/weight";
 import { NumberField } from "../../components/NumberField";
 
 const BAR_TYPES: BarType[] = ["ez", "short"];
@@ -107,16 +106,7 @@ export function LoadEditor({
               <button
                 key={type}
                 type="button"
-                onClick={() =>
-                  onChange({
-                    style: "barbell",
-                    barType: type,
-                    plateKgPerSide: Math.max(
-                      0,
-                      round2((load.totalKg - BAR_WEIGHT_KG[type]) / 2),
-                    ),
-                  })
-                }
+                onClick={() => onChange(toBarbell(load.totalKg, type))}
                 className="min-h-11 rounded-full border border-amber-400 bg-white px-3 text-sm font-bold text-amber-900"
               >
                 {BAR_LABELS[type]}で入力する

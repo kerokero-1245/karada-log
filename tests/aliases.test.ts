@@ -18,6 +18,7 @@ test("aliases.aliasesOf: 呼び名を返す。aliases を持たない古い記�
   const [zavas] = catalogFixture();
   assert.deepEqual(aliasesOf(zavas), ["ザバス", "ザバスミルク"]);
   // 旧バージョンのレコード（aliases を持たない）。型の上では Food ではないが、実体はこの形で残っている
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- aliases を rest で落として、旧レコードの形を作るために分割している
   const { aliases: _unused, ...legacy } = foodFixture();
   assert.equal("aliases" in legacy, false);
   // @ts-expect-error aliases の無い旧レコードを、わざと渡す

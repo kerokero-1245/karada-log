@@ -35,7 +35,7 @@ jobs:
       - name: 整形の検査（Prettier）
         run: npm run format:check
 
-      - name: Lint（oxlint）
+      - name: 静的解析（ESLint）
         run: npm run lint
 
       - name: テスト（node --test）

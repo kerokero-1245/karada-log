@@ -40,6 +40,7 @@ export function RestoreCard() {
     setStaged(null);
     if (!file) return;
 
+    // eslint-disable-next-line no-useless-assignment -- 初期値 "" は読まれない（try で代入し、catch は return する）。let text: string; に直すと minify 後のビルド出力が変わるので、lint の移行では直していない
     let text = "";
     try {
       text = await file.text();

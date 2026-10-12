@@ -59,6 +59,7 @@ function planFixture(overrides: Partial<QuickEntryPlan> = {}): QuickEntryPlan {
 
 /** 推定食品の下書き（id なし） */
 function draftFixture(name: string): Omit<Food, "id"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- id を rest で落として、id なしの下書きを作るために分割している
   const { id: _id, ...draft } = foodFixture({ name, source: "estimated" });
   return draft;
 }

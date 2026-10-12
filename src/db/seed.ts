@@ -733,6 +733,7 @@ export async function seedIfEmpty(): Promise<void> {
 
       /* --- 種目マスタ --- */
       const exercises: Exercise[] = EXERCISE_SEEDS.map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- key は登録用の識別子で、DB の種目には持たせない。rest で落とすために分割している
         ({ key: _key, ...rest }) => rest,
       );
       const exerciseIds = (

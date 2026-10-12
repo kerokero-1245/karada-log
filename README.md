@@ -4,6 +4,8 @@
 
 デモ: https://kerokero-1245.github.io/karada-log/
 
+作り方の規則と、この repo で違うこと: [DESIGN.md](DESIGN.md#この-repo-での適用)
+
 <img src="docs/screenshots/top.png" width="280" alt="karada-log の「今日」画面。カロリー・たんぱく質・脂質・塩分の進捗バーと、テキストで記録する入力欄が並んでいる">
 
 ## できること
@@ -41,7 +43,7 @@
 - **データ保存**: Dexie 4 で IndexedDB に保存します。画面の更新は Dexie の `liveQuery` を使った自作フックで行います
 - **写真の読み取り**: `@anthropic-ai/sdk` でブラウザから Claude API を直接呼び出します
 - **PWA**: `vite-plugin-pwa` が Web App Manifest とサービスワーカー（Workbox）を生成し、ビルド成果物をプリキャッシュします。更新は `autoUpdate` で自動的に反映されます
-- **Lint**: oxlint
+- **Lint**: ESLint（`eslint.config.mjs`）
 - **整形**: Prettier（既定の設定）。`npm run format` で整形し、`npm run format:check` で検査します
 - **デプロイ**: GitHub Actions で `main` への push ごとに、整形の検査・lint・テスト・ビルドをこの順に回し、すべて通ったときだけ GitHub Pages に公開します。PR でも同じ検査を回します（公開はしません）
 
@@ -51,10 +53,10 @@
 npm run dev           # 開発サーバーを起動
 npm run build         # 型チェックと本番ビルド（dist/ に出力）
 npm run preview       # ビルド結果をローカルで確認
-npm run lint          # oxlint を実行
+npm run lint          # ESLint を実行
 npm run format        # Prettier で整形する（ファイルを書き換える）
 npm run format:check  # 整形されているかを検査する（CI と同じ。書き換えない）
-npm test              # 単体テスト（Node 22.18 以降の node --test。追加の依存なし）
+npm test              # 単体テスト（Node 24（`.nvmrc`）の node --test。追加の依存なし）
 ```
 
 ## ライセンス

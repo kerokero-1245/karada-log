@@ -26,7 +26,7 @@ jobs:
       - name: Node 24 を用意
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
 
       - name: 依存関係をインストール

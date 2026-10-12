@@ -63,7 +63,7 @@ export function EntryValueLine({ value }: { value: Nutrition }) {
       <NutritionLine value={value} />
       {hasUnknownCore(value) && (
         <span className="ml-1 text-slate-500">
-          （「{UNKNOWN_MARK}」は未確認）
+          {`（「${UNKNOWN_MARK}」は未確認）`}
         </span>
       )}
     </p>

@@ -153,7 +153,7 @@ export function ExportCard({ settings }: { settings: Settings }) {
           {formatRange(range)}（{rangeDayCount(range)}日間）
         </p>
         <Note>
-          週は{weekStartLabel(settings.weekStartsOn)}、1日の区切りは朝
+          {`週は${weekStartLabel(settings.weekStartsOn)}、1日の区切りは朝`}
           {settings.dayBoundaryHour}時です。
         </Note>
       </div>

@@ -124,6 +124,8 @@ export function DevDataSection() {
           <ul className="divide-y divide-slate-100">
             {(foods ?? []).map((food) => {
               const aliases = aliasesOf(food);
+              const aliasText =
+                aliases.length > 0 ? aliases.join(" / ") : UNKNOWN_MARK;
               return (
                 <li key={food.id} className="py-2">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -153,8 +155,7 @@ export function DevDataSection() {
                     入力時: {food.basis.label}
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-500">
-                    呼び名:{" "}
-                    {aliases.length > 0 ? aliases.join(" / ") : UNKNOWN_MARK}
+                    呼び名: {aliasText}
                   </div>
                 </li>
               );

@@ -1,6 +1,6 @@
 /**
  * 「設定」タブ。
- * 目標値は読み取り専用で表示する（編集はまだ）。
+ * 目標値は読み取り専用で表示する。体組成の目標ラインだけは「目標の編集」（GoalCard）で変えられる。
  * 旧 App.tsx の確認ページは <details>「データ確認（開発用）」（DevDataSection）として残してある。
  */
 import type { Settings } from "../../db/types";
@@ -13,6 +13,7 @@ import { UNKNOWN_MARK, fmtStored } from "../../lib/format";
 import { DevDataSection } from "../dev/DevDataSection";
 import { ApiKeyCard } from "./ApiKeyCard";
 import { ExportCard } from "./ExportCard";
+import { GoalCard } from "./GoalCard";
 import { ImportCard } from "./ImportCard";
 import { RestoreCard } from "./RestoreCard";
 
@@ -78,9 +79,11 @@ export function SettingsScreen({ settings }: { settings: Settings }) {
           />
         </dl>
         <Note>
-          値の編集はまだできません。ダッシュボードの目標はここの値を読んでいます。
+          目標ラインは下の「目標の編集」で変えられます。ほかの値の編集はまだできません。ダッシュボードの目標はここの値を読んでいます。
         </Note>
       </Card>
+
+      <GoalCard settings={settings} />
 
       <ApiKeyCard settings={settings} />
 

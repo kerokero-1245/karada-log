@@ -620,3 +620,71 @@ export function buildBoneDensity(values: BoneFormValues): {
     },
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* 目標ライン（設定の「目標の編集」）                                       */
+/* ------------------------------------------------------------------ */
+
+const TARGET_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export interface GoalFormValues {
+  fatMassKg: string;
+  leanMassKg: string;
+  targetDate: string;
+}
+
+/** 今の目標ラインの値で開く */
+export function emptyGoalForm(goal: GoalLine): GoalFormValues {
+  return {
+    fatMassKg: String(goal.fatMassKg),
+    leanMassKg: String(goal.leanMassKg),
+    targetDate: goal.targetDate,
+  };
+}
+
+/** 期日から作る表示名（'2026-12-05' → '2026年12月5日'） */
+function goalLabelOf(targetDate: string): string {
+  const [y, m, d] = targetDate.split("-").map(Number);
+  return `${y}年${m}月${d}日`;
+}
+
+/**
+ * 目標ラインの入力を保存の形にする。範囲は体組成のフォームの脂肪量・除脂肪量と同じ。
+ * 表示名（label）は期日が変わらなければ今のものを残し、変わったら期日から作る
+ */
+export function buildGoalLine(
+  values: GoalFormValues,
+  current: GoalLine,
+): { errors: string[]; goal: GoalLine | null } {
+  const errors: string[] = [];
+  const [fatMassKg, leanMassKg] = (["fatMassKg", "leanMassKg"] as const).map(
+    (key) => {
+      const rule = BODY_MAIN_FIELDS.find((f) => f.key === key);
+      if (rule === undefined) throw new Error(`no rule: ${key}`);
+      return parseRuled(
+        values[key],
+        { ...rule, label: `目標の${rule.label}` },
+        errors,
+        true,
+      );
+    },
+  );
+  const targetDate = values.targetDate.trim();
+  if (!TARGET_DATE_PATTERN.test(targetDate))
+    errors.push("期日を入れてください");
+  if (errors.length > 0 || fatMassKg === null || leanMassKg === null)
+    return { errors, goal: null };
+  // キーの並びは型（GoalLine）と同じ
+  return {
+    errors,
+    goal: {
+      fatMassKg,
+      leanMassKg,
+      targetDate,
+      label:
+        targetDate === current.targetDate
+          ? current.label
+          : goalLabelOf(targetDate),
+    },
+  };
+}

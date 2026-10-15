@@ -15,6 +15,8 @@ import {
   bodyTrend,
   buildBodyComposition,
   buildBoneDensity,
+  buildGoalLine,
+  emptyGoalForm,
   emptyBodyForm,
   emptyBoneForm,
   formatMeasure,
@@ -508,4 +510,63 @@ test("bodyComposition.trainingStartNote: 数えたトレの開始時刻が仮置
   // 測定より後の仮置きは数えない / 測定日時が空なら添えない
   assert.equal(trainingStartNote([estimated], "2026-10-03T07:00"), "");
   assert.equal(trainingStartNote([estimated], ""), "");
+});
+
+/* 目標ライン（設定の「目標の編集」） ---------------------------------------- */
+
+test("bodyComposition.emptyGoalForm: 今の目標ラインの値で開く", () => {
+  assert.deepEqual(emptyGoalForm(settingsFixture().goal), {
+    fatMassKg: "12",
+    leanMassKg: "55",
+    targetDate: "2026-12-31",
+  });
+});
+
+test("bodyComposition.buildGoalLine: 脂肪量・除脂肪量・期日を目標ラインにする。期日が変わらなければ表示名はそのまま", () => {
+  const current = settingsFixture().goal;
+  const values = emptyGoalForm(current);
+  values.fatMassKg = " 14.2 ";
+  values.leanMassKg = "58.6";
+  const same = buildGoalLine(values, current);
+  assert.deepEqual(same.errors, []);
+  assert.deepEqual(same.goal, {
+    fatMassKg: 14.2,
+    leanMassKg: 58.6,
+    targetDate: "2026-12-31",
+    label: "年末",
+  });
+  // キーの並びは保存データの形（GoalLine）と同じ
+  assert.deepEqual(Object.keys(same.goal ?? {}), Object.keys(current));
+  // 期日を変えたら表示名は期日から作る
+  values.targetDate = "2026-12-05";
+  assert.deepEqual(buildGoalLine(values, current).goal, {
+    fatMassKg: 14.2,
+    leanMassKg: 58.6,
+    targetDate: "2026-12-05",
+    label: "2026年12月5日",
+  });
+  // 保存する値は小数第 2 位で丸める
+  values.fatMassKg = "14.125";
+  assert.equal(buildGoalLine(values, current).goal?.fatMassKg, 14.13);
+});
+
+test("bodyComposition.buildGoalLine: 空欄・数値でない・範囲の外・期日なしは保存しない", () => {
+  const current = settingsFixture().goal;
+  const result = buildGoalLine(
+    { fatMassKg: "", leanMassKg: "5", targetDate: "" },
+    current,
+  );
+  assert.equal(result.goal, null);
+  assert.deepEqual(result.errors, [
+    "目標の脂肪量を入れてください",
+    "目標の除脂肪量は10〜200kgの範囲で入れてください",
+    "期日を入れてください",
+  ]);
+  assert.deepEqual(
+    buildGoalLine(
+      { fatMassKg: "1O", leanMassKg: "58", targetDate: "2026-12-05" },
+      current,
+    ).errors,
+    ["目標の脂肪量は数値で入れてください"],
+  );
 });

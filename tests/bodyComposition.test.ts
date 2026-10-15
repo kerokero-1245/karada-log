@@ -11,14 +11,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  BONE_REQUIRED_ONE,
   bodyTrend,
   buildBodyComposition,
   buildBoneDensity,
   emptyBodyForm,
   emptyBoneForm,
   formatMeasure,
+  daysSinceTrainingText,
   groupByDevice,
+  isFormChanged,
   isPoorCondition,
+  normalizeDevice,
   sortNewestFirst,
 } from "../src/lib/bodyComposition.ts";
 import type { BodyComposition, MeasurementWarning } from "../src/db/types.ts";
@@ -150,7 +154,8 @@ test("bodyComposition.formatMeasure: 未確認は —、kcal は桁区切りの�
 /* フォーム ----------------------------------------------------------- */
 
 function filledForm() {
-  const values = emptyBodyForm("2026-10-05T07:30", null);
+  const values = emptyBodyForm(null);
+  values.measuredAt = "2026-10-05T07:30";
   values.device = "TANITA MC-980";
   values.place = "ジム";
   values.weightKg = "70.4";
@@ -171,16 +176,16 @@ function filledForm() {
   return values;
 }
 
-test("bodyComposition.emptyBodyForm: 機種と場所は前回の測定から引き継ぎ、数値は空欄", () => {
-  const empty = emptyBodyForm("2026-10-05T07:30", null);
-  assert.equal(empty.measuredAt, "2026-10-05T07:30");
+test("bodyComposition.emptyBodyForm: 測定日時は空で開く（今の時刻を入れない）。機種と場所は前回の測定から引き継ぎ、数値は空欄", () => {
+  const empty = emptyBodyForm(null);
+  assert.equal(empty.measuredAt, "");
   assert.equal(empty.device, "");
   assert.equal(empty.fatMassKg, "");
   assert.deepEqual(Object.keys(empty.segments), SEGMENT_KEYS);
   const next = emptyBodyForm(
-    "2026-10-05T07:30",
     body(1, "2026-09-15T10:10", { device: "InBody 270", place: "体育館" }),
   );
+  assert.equal(next.measuredAt, "");
   assert.equal(next.device, "InBody 270");
   assert.equal(next.place, "体育館");
   assert.equal(next.weightKg, "");
@@ -245,7 +250,7 @@ test("bodyComposition.buildBodyComposition: 3 日未満のトレは警告つき�
 });
 
 test("bodyComposition.buildBodyComposition: 必須（測定日時・機種・脂肪量・除脂肪量）が欠けたら保存しない", () => {
-  const values = emptyBodyForm("", null);
+  const values = emptyBodyForm(null);
   const result = buildBodyComposition(values, [], { minRestDays: 3 });
   assert.equal(result.record, null);
   assert.deepEqual(result.errors, [
@@ -282,7 +287,7 @@ test("bodyComposition.buildBodyComposition: 数値でない・範囲の外は保
   );
 });
 
-test("bodyComposition.buildBoneDensity: 骨密度の入力を保存の形にする。必須は測定日時と機種", () => {
+test("bodyComposition.buildBoneDensity: 骨密度の入力を保存の形にする。必須は測定日時と機種（と、数値か判定ランクのどれか 1 つ）", () => {
   const values = emptyBoneForm("2026-10-05T07:20", null);
   values.device = " CM-200 ";
   values.place = "薬局";
@@ -314,4 +319,119 @@ test("bodyComposition.buildBoneDensity: 骨密度の入力を保存の形にす�
     "機種を入れてください（機種ごとに分けて並べます）",
     "%YAMは10〜200%の範囲で入れてください",
   ]);
+});
+
+test("bodyComposition.buildBoneDensity: SOS・%YAM・%AGE・判定ランクがどれも空なら保存しない（どれか 1 つで保存できる）", () => {
+  const values = emptyBoneForm("2026-10-05T07:20", null);
+  values.device = "CM-200";
+  const none = buildBoneDensity(values);
+  assert.equal(none.record, null);
+  assert.deepEqual(none.errors, [BONE_REQUIRED_ONE]);
+  assert.equal(
+    BONE_REQUIRED_ONE,
+    "SOS・%YAM・%AGE・判定ランクのどれか 1 つを入れてください",
+  );
+  // 空白だけは空とみなす
+  values.rank = "  ";
+  assert.deepEqual(buildBoneDensity(values).errors, [BONE_REQUIRED_ONE]);
+  for (const key of ["sosMps", "yamPercent", "agePercent", "rank"] as const) {
+    const one = emptyBoneForm("2026-10-05T07:20", null);
+    one.device = "CM-200";
+    one[key] = key === "rank" ? "B" : key === "sosMps" ? "1540" : "88";
+    assert.deepEqual(buildBoneDensity(one).errors, [], key);
+  }
+  // 範囲外の値だけなら、その欄のエラーだけを出す（「どれか 1 つ」は重ねない）
+  const bad = emptyBoneForm("2026-10-05T07:20", null);
+  bad.device = "CM-200";
+  bad.yamPercent = "300";
+  assert.deepEqual(buildBoneDensity(bad).errors, [
+    "%YAMは10〜200%の範囲で入れてください",
+  ]);
+});
+
+/* 機種名の照合・入力の確かめ ------------------------------------------- */
+
+test("bodyComposition.normalizeDevice: 全角半角（NFKC）と連続する空白をそろえる。大文字小文字はそのまま", () => {
+  assert.equal(normalizeDevice(" TANITA  MC-980 "), "TANITA MC-980");
+  assert.equal(normalizeDevice("ＴＡＮＩＴＡ　ＭＣ－９８０"), "TANITA MC-980");
+  assert.equal(normalizeDevice("TANITA\tMC-980"), "TANITA MC-980");
+  assert.equal(normalizeDevice("tanita mc-980"), "tanita mc-980");
+});
+
+test("bodyComposition.groupByDevice: 全角・連続空白の表記ゆれは同じ機種にまとめる。保存されている値は書き換えない", () => {
+  const rows = [
+    body(1, "2026-09-15T10:10", { device: "TANITA MC-980" }),
+    body(2, "2026-09-29T08:00", { device: "TANITA  MC-980" }),
+    body(3, "2026-10-05T08:00", { device: "ＴＡＮＩＴＡ　ＭＣ－９８０" }),
+    body(4, "2026-10-06T08:00", { device: "tanita mc-980" }),
+  ];
+  const groups = groupByDevice(rows);
+  assert.deepEqual(
+    groups.map((g) => [g.device, g.rows.map((r) => r.id)]),
+    [
+      ["tanita mc-980", [4]],
+      ["TANITA MC-980", [1, 2, 3]],
+    ],
+  );
+  assert.equal(groups[1].rows[1].device, "TANITA  MC-980");
+  assert.equal(groups[1].rows[2].device, "ＴＡＮＩＴＡ　ＭＣ－９８０");
+});
+
+test("bodyComposition.buildBodyComposition: 脂肪量が体重×体脂肪率と、脂肪量+除脂肪量が体重と 1kg を超えて違えば確かめを出す（保存は止めない）", () => {
+  // 70.4 × 19.2% = 13.52 / 13.5 + 56.9 = 70.4 → 確かめなし
+  assert.deepEqual(
+    buildBodyComposition(filledForm(), [], { minRestDays: 3 }).checks,
+    [],
+  );
+  // 脂肪量と除脂肪量の取り違え
+  const swapped = filledForm();
+  swapped.fatMassKg = "56.9";
+  swapped.leanMassKg = "13.5";
+  const result = buildBodyComposition(swapped, [], { minRestDays: 3 });
+  assert.deepEqual(result.errors, []);
+  assert.ok(result.record);
+  assert.deepEqual(result.checks, [
+    "脂肪量 56.9kg が、体重×体脂肪率（13.52kg）と 1kg より大きく違います",
+  ]);
+  // 足して体重にならない
+  const off = filledForm();
+  off.leanMassKg = "55.8";
+  assert.deepEqual(buildBodyComposition(off, [], { minRestDays: 3 }).checks, [
+    "脂肪量と除脂肪量の合計 69.3kg が、体重 70.4kg と 1kg より大きく違います",
+  ]);
+  // ちょうど 1kg の差は確かめを出さない
+  const edge = filledForm();
+  edge.leanMassKg = "55.9";
+  assert.deepEqual(
+    buildBodyComposition(edge, [], { minRestDays: 3 }).checks,
+    [],
+  );
+  // 体重か体脂肪率が空なら比べない
+  const noWeight = filledForm();
+  noWeight.weightKg = "";
+  noWeight.fatMassKg = "56.9";
+  assert.deepEqual(
+    buildBodyComposition(noWeight, [], { minRestDays: 3 }).checks,
+    [],
+  );
+});
+
+test("bodyComposition.daysSinceTrainingText: 測定日時が空・不正なら計算できない旨、トレが無ければ（記録なし）、あれば日数", () => {
+  assert.equal(daysSinceTrainingText("", null), "測定日時を入れると計算します");
+  assert.equal(
+    daysSinceTrainingText("2026-10-05", null),
+    "測定日時を入れると計算します",
+  );
+  assert.equal(daysSinceTrainingText("2026-10-05T07:30", null), "（記録なし）");
+  assert.equal(daysSinceTrainingText("2026-10-05T07:30", 0), "0日");
+  assert.equal(daysSinceTrainingText("2026-10-05T07:30", 4), "4日");
+});
+
+test("bodyComposition.isFormChanged: 開いたときの値から 1 か所でも変われば入力あり", () => {
+  const initial = emptyBodyForm(null);
+  assert.equal(isFormChanged(initial, emptyBodyForm(null)), false);
+  assert.equal(isFormChanged(initial, { ...initial, note: "x" }), true);
+  const segment = emptyBodyForm(null);
+  segment.segments.trunk.fatKg = "7";
+  assert.equal(isFormChanged(initial, segment), true);
 });

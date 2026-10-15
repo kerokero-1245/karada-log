@@ -1,8 +1,9 @@
 /**
  * 骨密度: 記録ボタン（開くとフォーム）と一覧（新しい順）。
  * 体組成とは機種も測り方も違うので別に持つ。減量中は下がりやすいので経過を追う。
+ * フォームの入力があるかどうかを onDirtyChange で知らせる（表示やタブの切り替えの前に確認するため）。
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BoneDensity } from "../../db/types";
 import { addBoneDensity, deleteBoneDensity } from "../../db/body";
 import { Button, Card, EmptyState, ErrorText, Note } from "../../components/ui";
@@ -13,6 +14,8 @@ import {
   buildBoneDensity,
   emptyBoneForm,
   formatMeasure,
+  isFormChanged,
+  normalizeDevice,
   sortNewestFirst,
 } from "../../lib/bodyComposition";
 import type { BoneFormValues } from "../../lib/bodyComposition";
@@ -22,12 +25,16 @@ import { UNKNOWN_MARK } from "../../lib/format";
 import { useBoneDensities } from "../../lib/queries";
 import { FormErrors, MeasureFields, NoteField } from "./MeasureFields";
 
-export function BoneSection() {
+export function BoneSection({
+  onDirtyChange,
+}: {
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const bones = useBoneDensities();
   const [formOpen, setFormOpen] = useState(false);
   if (bones === undefined) return null;
   const newestFirst = sortNewestFirst(bones);
-  const devices = [...new Set(bones.map((b) => b.device.trim()))];
+  const devices = [...new Set(bones.map((b) => normalizeDevice(b.device)))];
 
   return (
     <>
@@ -36,6 +43,7 @@ export function BoneSection() {
           last={newestFirst[0] ?? null}
           devices={devices}
           onClose={() => setFormOpen(false)}
+          onDirtyChange={onDirtyChange}
         />
       ) : (
         <Button
@@ -59,14 +67,22 @@ function BoneForm({
   last,
   devices,
   onClose,
+  onDirtyChange,
 }: {
   last: BoneDensity | null;
   devices: string[];
   onClose: () => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
-  const [values, setValues] = useState<BoneFormValues>(() =>
+  const [initial] = useState<BoneFormValues>(() =>
     emptyBoneForm(nowIso(), last),
   );
+  const [values, setValues] = useState<BoneFormValues>(initial);
+  const dirty = isFormChanged(initial, values);
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);

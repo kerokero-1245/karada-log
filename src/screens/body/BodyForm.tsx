@@ -1,10 +1,13 @@
 /**
  * 体組成の記録フォーム。
  * 空欄は「未確認」として null で保存する（0 にしない）。必須は 測定日時・機種・脂肪量・除脂肪量。
+ * 測定日時は空で開く（今の時刻を既定にしない。トレの後に記録すると 0 日として印が付いてしまうため）。
+ * 値どうしが合わないとき（取り違えなど）は確かめを出すが、保存は止めない。
+ * 入力があるかどうかを onDirtyChange で知らせる（タブや表示の切り替えの前に確認するため）。
  * 最後のトレからの日数は、入力中の測定日時とトレーニングの記録から計算して出す（lib/measurement.ts）。
  * 条件が悪くても保存は止めない（印を付けて残す）。
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BodyComposition, TrainingSession } from "../../db/types";
 import { SEGMENT_KEYS, SEGMENT_LABELS } from "../../db/types";
 import { addBodyComposition } from "../../db/body";
@@ -17,14 +20,16 @@ import {
   SALT_RULE,
   SEGMENT_FIELDS,
   buildBodyComposition,
+  daysSinceTrainingText,
   emptyBodyForm,
+  isFormChanged,
   isPoorCondition,
 } from "../../lib/bodyComposition";
 import type {
   BodyFormValues,
   SegmentFieldKey,
 } from "../../lib/bodyComposition";
-import { formatDateTime, nowIso } from "../../lib/date";
+import { formatDateTime } from "../../lib/date";
 import { errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { FormErrors, MeasureFields, NoteField } from "./MeasureFields";
 
@@ -34,16 +39,22 @@ export function BodyForm({
   devices,
   minRestDays,
   onClose,
+  onDirtyChange,
 }: {
   sessions: TrainingSession[];
   last: BodyComposition | null;
   devices: string[];
   minRestDays: number;
   onClose: () => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
-  const [values, setValues] = useState<BodyFormValues>(() =>
-    emptyBodyForm(nowIso(), last),
-  );
+  const [initial] = useState<BodyFormValues>(() => emptyBodyForm(last));
+  const [values, setValues] = useState<BodyFormValues>(initial);
+  const dirty = isFormChanged(initial, values);
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -81,7 +92,7 @@ export function BodyForm({
     }
   };
 
-  const { conditions, warnings } = result;
+  const { conditions, warnings, checks } = result;
   const poor = isPoorCondition({ warnings });
 
   return (
@@ -118,6 +129,21 @@ export function BodyForm({
             ))}
           </div>
         </section>
+
+        {checks.length > 0 && (
+          <div data-testid="body-checks">
+            <Notice tone="amber">
+              <p className="font-bold">
+                値を確かめてください（このままでも保存できます）
+              </p>
+              <ul className="mt-0.5 space-y-0.5">
+                {checks.map((check) => (
+                  <li key={check}>・{check}</li>
+                ))}
+              </ul>
+            </Notice>
+          </div>
+        )}
 
         <section>
           <h3 className="text-xs font-bold text-slate-600">部位別</h3>
@@ -177,9 +203,10 @@ export function BodyForm({
           >
             最後のトレから{" "}
             <b className="tabular-nums">
-              {conditions.daysSinceLastTraining === null
-                ? "（記録なし）"
-                : `${conditions.daysSinceLastTraining}日`}
+              {daysSinceTrainingText(
+                values.measuredAt,
+                conditions.daysSinceLastTraining,
+              )}
             </b>
             {conditions.lastTrainingAt !== null && (
               <span className="ml-1 text-xs text-slate-500">

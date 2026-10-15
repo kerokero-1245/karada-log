@@ -7,6 +7,8 @@
  *  - 測定条件は「最後のトレからの日数」で見る。計算は lib/measurement.ts の evaluateConditions に任せる
  *    （測定時刻より後のトレは数えない）。条件が悪くても保存は止めず、印を付けて区別する。
  *  - 空欄は null で保存する（0 で埋めない）。
+ *  - 機種名は全角半角（NFKC）と連続する空白をそろえて比べる（normalizeDevice）。保存されている値は書き換えない。
+ *  - 測定日時は空で開き、入れるまで保存しない（今の時刻を既定にすると、トレの後に記録したとき 0 日になる）。
  *
  * ★ ここは純関数だけ。DB も React も触らない。★ 保存は db/body.ts。
  */
@@ -58,20 +60,29 @@ export function sortNewestFirst<
   );
 }
 
+/**
+ * 機種名を比べるための形。全角英数・全角空白を半角に（NFKC）、続く空白を 1 つに、前後の空白を落とす。
+ * 大文字と小文字はそろえない（型番の表記は機種の表示どおりに入れる前提）
+ */
+export function normalizeDevice(device: string): string {
+  return device.normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
 export interface DeviceGroup {
+  /** normalizeDevice した機種名 */
   device: string;
   /** 古い順 */
   rows: BodyComposition[];
 }
 
 /**
- * 機種ごとに分ける。機種名の前後の空白は同じ機種とみなす。
+ * 機種ごとに分ける。normalizeDevice でそろえた名前が同じなら同じ機種とみなす（行の device は書き換えない）。
  * グループの並びは、最新の測定が新しい機種から（今使っている機種が上に来る）。
  */
 export function groupByDevice(rows: BodyComposition[]): DeviceGroup[] {
   const byDevice = new Map<string, BodyComposition[]>();
   for (const row of rows) {
-    const device = row.device.trim();
+    const device = normalizeDevice(row.device);
     const list = byDevice.get(device) ?? [];
     list.push(row);
     byDevice.set(device, list);
@@ -319,9 +330,11 @@ export type BodyFormValues = Record<BodyMainKey, string> & {
   note: string;
 };
 
-/** 空のフォーム。機種と場所は前回の測定から引き継ぐ（機種の表記ゆれを作らないため） */
+/**
+ * 空のフォーム。測定日時は空（入れるまで保存しない）。
+ * 機種と場所は前回の測定から引き継ぐ（機種の表記ゆれを作らないため）
+ */
 export function emptyBodyForm(
-  measuredAt: IsoDateTime,
   last: Pick<BodyComposition, "device" | "place"> | null,
 ): BodyFormValues {
   const segments = Object.fromEntries(
@@ -331,7 +344,7 @@ export function emptyBodyForm(
     ]),
   ) as Record<SegmentKey, Record<SegmentFieldKey, string>>;
   return {
-    measuredAt,
+    measuredAt: "",
     place: last?.place ?? "",
     device: last?.device ?? "",
     weightKg: "",
@@ -351,12 +364,59 @@ export function emptyBodyForm(
 
 export interface BodyFormResult {
   errors: string[];
+  /**
+   * 値どうしが合わないときの確かめ（脂肪量と体重×体脂肪率、脂肪量+除脂肪量と体重）。
+   * 取り違え・打ち間違いの気付きのためで、保存は止めない
+   */
+  checks: string[];
   /** 測定条件（入力の途中でも出す。最後のトレからの日数の表示に使う） */
   conditions: MeasurementConditions;
   warnings: MeasurementWarning[];
   /** エラーが無いときだけ埋まる */
   record: Omit<BodyComposition, "id"> | null;
 }
+
+/** 値どうしの差をこれより大きければ確かめを出す（kg）。機種の表示の丸めで出る差より十分大きく */
+const CONSISTENCY_TOLERANCE_KG = 1;
+
+function consistencyChecks(main: Record<BodyMainKey, number | null>): string[] {
+  const checks: string[] = [];
+  const { weightKg, bodyFatPercent, fatMassKg, leanMassKg } = main;
+  if (weightKg !== null && bodyFatPercent !== null && fatMassKg !== null) {
+    const expected = round2((weightKg * bodyFatPercent) / 100);
+    if (round2(Math.abs(fatMassKg - expected)) > CONSISTENCY_TOLERANCE_KG)
+      checks.push(
+        `脂肪量 ${formatNumber(fatMassKg)}kg が、体重×体脂肪率（${formatNumber(expected)}kg）と ${CONSISTENCY_TOLERANCE_KG}kg より大きく違います`,
+      );
+  }
+  if (weightKg !== null && fatMassKg !== null && leanMassKg !== null) {
+    const sum = round2(fatMassKg + leanMassKg);
+    if (round2(Math.abs(sum - weightKg)) > CONSISTENCY_TOLERANCE_KG)
+      checks.push(
+        `脂肪量と除脂肪量の合計 ${formatNumber(sum)}kg が、体重 ${formatNumber(weightKg)}kg と ${CONSISTENCY_TOLERANCE_KG}kg より大きく違います`,
+      );
+  }
+  return checks;
+}
+
+/** フォームに出す「最後のトレから」の値。測定日時が入るまでは計算しない */
+export function daysSinceTrainingText(
+  measuredAt: string,
+  days: number | null,
+): string {
+  if (!MEASURED_AT_PATTERN.test(measuredAt))
+    return "測定日時を入れると計算します";
+  return days === null ? "（記録なし）" : `${days}日`;
+}
+
+/** フォームの入力があるか（開いたときの値から変わったか）。離れる前の確認に使う */
+export function isFormChanged<T>(initial: T, current: T): boolean {
+  return JSON.stringify(initial) !== JSON.stringify(current);
+}
+
+/** 入力中のフォームから離れる前の確認文 */
+export const LEAVE_FORM_CONFIRM =
+  "入力中の測定を破棄して移りますか？（保存していない内容は消えます）";
 
 export function buildBodyComposition(
   values: BodyFormValues,
@@ -407,7 +467,10 @@ export function buildBodyComposition(
     { minRestDays: options.minRestDays },
   );
 
-  if (errors.length > 0) return { errors, conditions, warnings, record: null };
+  const checks = consistencyChecks(main);
+
+  if (errors.length > 0)
+    return { errors, checks, conditions, warnings, record: null };
 
   // キーの並びは型（BodyComposition）と同じ。JSON バックアップの行のキー順になる
   const record: Omit<BodyComposition, "id"> = {
@@ -441,7 +504,7 @@ export function buildBodyComposition(
     extra: {},
     note: values.note.trim(),
   };
-  return { errors, conditions, warnings, record };
+  return { errors, checks, conditions, warnings, record };
 }
 
 /* ------------------------------------------------------------------ */
@@ -480,6 +543,10 @@ export function emptyBoneForm(
   };
 }
 
+/** 骨密度で、数値と判定ランクがどれも空のときのエラー */
+export const BONE_REQUIRED_ONE =
+  "SOS・%YAM・%AGE・判定ランクのどれか 1 つを入れてください";
+
 export function buildBoneDensity(values: BoneFormValues): {
   errors: string[];
   record: Omit<BoneDensity, "id"> | null;
@@ -495,6 +562,11 @@ export function buildBoneDensity(values: BoneFormValues): {
       parseRuled(values[field.key], field, errors),
     ]),
   ) as Record<BoneNumberKey, number | null>;
+  const allEmpty = [
+    ...BONE_FIELDS.map((f) => values[f.key]),
+    values.rank,
+  ].every((text) => text.trim() === "");
+  if (allEmpty) errors.push(BONE_REQUIRED_ONE);
   if (errors.length > 0) return { errors, record: null };
   return {
     errors,

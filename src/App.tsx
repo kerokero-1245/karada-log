@@ -1,11 +1,13 @@
 /**
  * 起動時に初期データを1回だけ投入し、ボトムナビでタブを切り替える。
  * ルーターは使わない（画面数が少なく、URL を共有する用途もないため）。
+ * 「からだ」タブのフォームに入力があるうちに別のタブへ移るときは、確かめてから移る。
  */
 import { useEffect, useState } from "react";
 import { db } from "./db/db";
 import { ensureSeed } from "./lib/ensureSeed";
 import { useLiveQuery } from "./lib/useLiveQuery";
+import { LEAVE_FORM_CONFIRM } from "./lib/bodyComposition";
 import { errorMessage } from "./lib/errors";
 import { ErrorText } from "./components/ui";
 import { BottomNav } from "./components/BottomNav";
@@ -18,6 +20,7 @@ import { SettingsScreen } from "./screens/settings/SettingsScreen";
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("today");
+  const [bodyDirty, setBodyDirty] = useState(false);
   const [seeded, setSeeded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const settings = useLiveQuery(() => db.settings.get(1), []);
@@ -36,6 +39,17 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  const changeTab = (next: TabKey) => {
+    if (
+      tab === "body" &&
+      next !== "body" &&
+      bodyDirty &&
+      !window.confirm(LEAVE_FORM_CONFIRM)
+    )
+      return;
+    setTab(next);
+  };
 
   if (error) {
     return (
@@ -57,7 +71,9 @@ export default function App() {
     <div className="bg-slate-100">
       {tab === "today" && <TodayScreen settings={settings} />}
       {tab === "training" && <TrainingScreen settings={settings} />}
-      {tab === "body" && <BodyScreen settings={settings} />}
+      {tab === "body" && (
+        <BodyScreen settings={settings} onDirtyChange={setBodyDirty} />
+      )}
       {tab === "week" && (
         <PlaceholderScreen
           title="週のまとめ"
@@ -65,7 +81,7 @@ export default function App() {
         />
       )}
       {tab === "settings" && <SettingsScreen settings={settings} />}
-      <BottomNav tab={tab} onChange={setTab} />
+      <BottomNav tab={tab} onChange={changeTab} />
     </div>
   );
 }

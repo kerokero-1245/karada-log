@@ -15,7 +15,13 @@ import { BodyForm } from "./BodyForm";
 import { BodyList } from "./BodyList";
 import { BodyTrendChart } from "./BodyTrendChart";
 
-export function BodySection({ settings }: { settings: Settings }) {
+export function BodySection({
+  settings,
+  onDirtyChange,
+}: {
+  settings: Settings;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const bodies = useBodyCompositions();
   const sessions = useAllTrainingSessions();
   const [formOpen, setFormOpen] = useState(false);
@@ -35,6 +41,7 @@ export function BodySection({ settings }: { settings: Settings }) {
           devices={groups.map((g) => g.device)}
           minRestDays={settings.measurementMinRestDays}
           onClose={() => setFormOpen(false)}
+          onDirtyChange={onDirtyChange}
         />
       ) : (
         <Button

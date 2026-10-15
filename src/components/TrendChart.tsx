@@ -5,6 +5,8 @@
  * reference（目標ラインなど）を渡すと、破線の水平線を重ね、その説明は図の上（題の下）に文字で出す
  * （線の上に文字を置くと、点や線と重なって読めなくなるため）。
  * padRight は最新の値の文字（「55.9kg」など）の置き場の幅。桁の多い値を出すときに広げる。
+ * minSpan は縦の範囲の最小幅（trendRange の minSpan）。渡さなければ広げない。
+ * 縦軸の数字（最大・最小）は点の左端より左に置き、2 つの間隔が文字の高さより狭いときは最大だけ出す。
  * 点が 0 個のときの表示は呼ぶ側で出す（ここは 1 個以上の点を描く）。
  */
 import { formatFixed, formatNumber } from "../lib/number";
@@ -23,6 +25,10 @@ const COLORS = {
 const W = 320;
 const H = 132;
 const PAD = { left: 36, right: 40, top: 14, bottom: 26 };
+/** 縦軸の数字の大きさ（px）。最大・最小の数字の間隔がこれより狭いと重なる */
+const AXIS_FONT = 10;
+/** 縦軸の数字の右端と描画域の左端の間（点の半径 4.5 と線の太さの半分 1 より広く） */
+const AXIS_GAP = 8;
 
 export function TrendChart({
   title,
@@ -32,6 +38,7 @@ export function TrendChart({
   reference,
   testId,
   padRight = PAD.right,
+  minSpan,
 }: {
   title: string;
   /** 点の 2 種類の凡例（「● 規定に到達 ○ 据え置き」など） */
@@ -41,11 +48,13 @@ export function TrendChart({
   reference?: TrendReference;
   testId: string;
   padRight?: number;
+  minSpan?: number;
 }) {
   const values = data.map((d) => d.value);
   const { lo, hi } = trendRange(
     values,
     reference === undefined ? [] : [reference.value],
+    { minSpan },
   );
   const plotW = W - PAD.left - padRight;
   const plotH = H - PAD.top - PAD.bottom;
@@ -63,6 +72,8 @@ export function TrendChart({
   const last = data[data.length - 1];
   const maxV = Math.max(...values);
   const minV = Math.min(...values);
+  // 最大と最小の数字が重なるほど近ければ、最小の数字は出さない（線は残す）
+  const showMinLabel = Math.abs(y(minV) - y(maxV)) >= AXIS_FONT;
   const ariaPoints = data
     .map((d) => `${d.label} ${formatNumber(d.value)}${unit}`)
     .join("、");
@@ -98,15 +109,17 @@ export function TrendChart({
                 stroke={COLORS.grid}
                 strokeWidth={1}
               />
-              <text
-                x={PAD.left - 4}
-                y={y(v) + 3}
-                textAnchor="end"
-                fontSize={10}
-                fill={COLORS.axisText}
-              >
-                {formatNumber(v)}
-              </text>
+              {(i === 0 || showMinLabel) && (
+                <text
+                  x={PAD.left - AXIS_GAP}
+                  y={y(v) + 3}
+                  textAnchor="end"
+                  fontSize={AXIS_FONT}
+                  fill={COLORS.axisText}
+                >
+                  {formatNumber(v)}
+                </text>
+              )}
             </g>
           ),
         )}

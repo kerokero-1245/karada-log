@@ -112,6 +112,8 @@ test("bodyComposition.bodyTrend: 脂肪量・除脂肪量の点と目標ライ�
   assert.equal(fat.title, "脂肪量の推移");
   assert.equal(fat.unit, "kg");
   assert.deepEqual(fat.reference, { value: 12, label: "目標（年末）12kg" });
+  // 縦の範囲の最小幅（0.1kg の差が急落に見えないように 2kg より狭くしない）
+  assert.equal(fat.minSpan, 2);
   assert.deepEqual(fat.points, [
     {
       label: "9/15（火）",

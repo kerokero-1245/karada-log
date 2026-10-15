@@ -4,7 +4,6 @@
 import { useState } from "react";
 import type { Settings } from "../../db/types";
 import { Button, Card, EmptyState, Note } from "../../components/ui";
-import { TrendChart } from "../../components/TrendChart";
 import {
   BODY_METRICS,
   bodyTrend,
@@ -14,6 +13,7 @@ import {
 import { useAllTrainingSessions, useBodyCompositions } from "../../lib/queries";
 import { BodyForm } from "./BodyForm";
 import { BodyList } from "./BodyList";
+import { BodyTrendChart } from "./BodyTrendChart";
 
 export function BodySection({ settings }: { settings: Settings }) {
   const bodies = useBodyCompositions();
@@ -59,15 +59,10 @@ export function BodySection({ settings }: { settings: Settings }) {
                     {metric.label}の記録がまだありません。
                   </p>
                 ) : (
-                  <TrendChart
+                  <BodyTrendChart
                     key={metric.key}
-                    title={trend.title}
-                    legend="● 条件よし ○ 条件が悪い"
-                    unit={trend.unit}
-                    points={trend.points}
-                    reference={trend.reference}
+                    trend={trend}
                     testId={`body-chart-${metric.key}`}
-                    padRight={56}
                   />
                 );
               })}

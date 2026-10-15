@@ -27,10 +27,13 @@ export interface TrendReference {
 /**
  * 縦の範囲。点が 1 つでも崩れないように、幅が 0 なら上下に 1 ずつ、それ以外は幅の 15% を足す。
  * extra（基準線の値）も範囲に含める。点から離れていても線が枠の外に出ないように。
+ * minSpan（任意）を渡すと、範囲がそれより狭いときは中央を保ったまま minSpan まで広げる
+ * （体組成の 0.1kg の差が描画域いっぱいの急落に見えないように）。渡さなければ広げない（トレの推移）。
  */
 export function trendRange(
   values: number[],
   extra: number[] = [],
+  options: { minSpan?: number } = {},
 ): { lo: number; hi: number } {
   const all = [...values, ...extra];
   let lo = Math.min(...all);
@@ -42,6 +45,12 @@ export function trendRange(
     const pad = (hi - lo) * 0.15;
     lo -= pad;
     hi += pad;
+  }
+  const minSpan = options.minSpan ?? 0;
+  if (hi - lo < minSpan) {
+    const mid = (hi + lo) / 2;
+    lo = mid - minSpan / 2;
+    hi = mid + minSpan / 2;
   }
   return { lo, hi };
 }

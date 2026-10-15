@@ -92,11 +92,19 @@ export const BODY_METRICS: { key: BodyMetric; label: string }[] = [
   { key: "leanMassKg", label: "除脂肪量" },
 ];
 
+/**
+ * 体組成の推移グラフの縦の範囲の最小幅（kg）。機種の表示の誤差ほどの差（0.1kg）が
+ * 描画域いっぱいの急落に見えないように、これより狭くしない
+ */
+export const BODY_TREND_MIN_SPAN_KG = 2;
+
 export interface BodyTrend {
   title: string;
   unit: string;
   points: TrendPoint[];
   reference: TrendReference;
+  /** 縦の範囲の最小幅（TrendChart の minSpan） */
+  minSpan: number;
 }
 
 /** 1 機種ぶん（古い順）の推移。値の無い回は飛ばす。条件が悪い回は白抜き */
@@ -129,6 +137,7 @@ export function bodyTrend(
       value: goal[metric],
       label: `目標（${goal.label}）${formatNumber(goal[metric])}kg`,
     },
+    minSpan: BODY_TREND_MIN_SPAN_KG,
   };
 }
 

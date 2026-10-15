@@ -15,6 +15,7 @@
 - **純関数は DB と React を触らない**: 計算・整形・解釈は純関数にして、`tests/` で `node --test` する。DB を読み書きする処理は別のファイルに分けて（食品の追加は `src/db/foods.ts`、画面が読む問い合わせは `src/lib/queries.ts`）、純関数のテストが DB なしで回るようにする。
 - **テスト**: 書き出しもテストの対象にする。
 - **失敗の表示**: 利用者に読ませる本文は固定の日本語にする（`lib/errors.ts` の `failureText`。例: 「保存できませんでした。もう一度お試しください。」）。例外のメッセージ（`errorMessage`）は本文に混ぜず、`components/ui.tsx` の `ErrorText`・`ErrorDetail` で末尾に小さく添える。写真の読み取り（Claude API）の失敗だけ、`photoErrorMessage` で日本語に直した文を本文にする。
+- **体組成（F5）**: 機種が違う測定は同じグラフに並べない（`lib/bodyComposition.ts` の `groupByDevice` で機種ごとに分ける）。グラフの主役は体重ではなく脂肪量と除脂肪量で、目標ラインは設定の `goal` から取る（数値を画面に直書きしない）。測定条件は「前日のトレの有無」ではなく「最後のトレからの日数」で持ち、同じ日のトレは測定時刻より前のものだけを数える（時刻で比べる。`lib/measurement.ts`）。`measurementMinRestDays` 日未満などの悪い条件でも記録は止めず、白抜きの点と「⚠ 条件が悪い」で区別する。推移グラフの描画はトレと共通の `components/TrendChart.tsx` を使う。
 - 変えてはいけない保存の形と書き出しの形は [守る境界（変えない）](#守る境界変えない)、数字の桁と丸めは [数値の整形と丸め](#数値の整形と丸め) にまとめてある。
 
 ### 記録の例
@@ -24,7 +25,7 @@
 ## 守る境界（変えない）
 
 - IndexedDB: DB 名 `"karada-log"`、`db.version(1)` と `db.version(2)` の stores 文字列と upgrade 処理。
-- 保存データ: Food・MealEntry・PendingText・ShortcutSet・DayMeta・TrainingSession・SessionExercise・SetRecord・Settings のプロパティ名と、新規作成時のキーの順（JSON バックアップの行のキー順になる）。
+- 保存データ: Food・MealEntry・PendingText・ShortcutSet・DayMeta・TrainingSession・SessionExercise・SetRecord・BodyComposition・BoneDensity・Settings のプロパティ名と、新規作成時のキーの順（JSON バックアップの行のキー順になる）。
 - Markdown の書き出し（`buildMarkdown` の出力とファイル名 `karada-log-YYYYMMDD-YYYYMMDD.md`）と、JSON バックアップ（`app` / `formatVersion` / `exportedAt` / `seedVersion` / `tables`。設定から API キーを除く）。
 - localStorage のキー `"karada-log.firstRunGuide"` と値 `"dismissed"`。
 - Claude API への要求の形（`src/lib/vision.ts` のモデル・max_tokens・effort・fallbacks と beta・system 文・schema）。モデルを変えるのは `VISION_MODEL` とそのテストの期待値だけ。

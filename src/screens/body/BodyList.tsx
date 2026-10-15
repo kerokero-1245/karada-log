@@ -13,13 +13,14 @@ import {
   BODY_MAIN_FIELDS,
   MEAL_HOURS_RULE,
   POOR_CONDITION_MARK,
+  deleteConfirmText,
   SALT_RULE,
   formatMeasure,
   isPoorCondition,
   trainingStartNote,
 } from "../../lib/bodyComposition";
 import { formatDateTime } from "../../lib/date";
-import { errorMessage } from "../../lib/errors";
+import { DELETE_FAILED, errorMessage } from "../../lib/errors";
 
 export function BodyList({
   rows,
@@ -32,12 +33,7 @@ export function BodyList({
 
   const remove = async (row: BodyComposition) => {
     if (row.id === undefined) return;
-    if (
-      !window.confirm(
-        `${formatDateTime(row.measuredAt)} の測定を削除しますか？`,
-      )
-    )
-      return;
+    if (!window.confirm(deleteConfirmText(row.measuredAt))) return;
     setError(null);
     try {
       await deleteBodyComposition(row.id);
@@ -48,7 +44,7 @@ export function BodyList({
 
   return (
     <Card title="測定の一覧（新しい順）">
-      {error && <ErrorText label="削除できませんでした">{error}</ErrorText>}
+      {error && <ErrorText label={DELETE_FAILED}>{error}</ErrorText>}
       <ul className="divide-y divide-slate-100" data-testid="body-list">
         {rows.map((row) => {
           const poor = isPoorCondition(row);

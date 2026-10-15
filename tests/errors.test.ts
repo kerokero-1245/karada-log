@@ -6,7 +6,12 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { errorMessage, failureText, SAVE_FAILED } from "../src/lib/errors.ts";
+import {
+  DELETE_FAILED,
+  errorMessage,
+  failureText,
+  SAVE_FAILED,
+} from "../src/lib/errors.ts";
 import { photoErrorMessage } from "../src/lib/photoError.ts";
 
 test("errors.errorMessage: Error は message、それ以外は String() の結果", () => {
@@ -45,5 +50,13 @@ test("errors.failureText: 本文は「○○。もう一度お試しください
   assert.equal(
     failureText("読み込みに失敗しました"),
     "読み込みに失敗しました。もう一度お試しください。",
+  );
+});
+
+test("errors.DELETE_FAILED: 削除に失敗したときの見出し。本文は failureText でやり直しの案内を続ける", () => {
+  assert.equal(DELETE_FAILED, "削除できませんでした");
+  assert.equal(
+    failureText(DELETE_FAILED),
+    "削除できませんでした。もう一度お試しください。",
   );
 });

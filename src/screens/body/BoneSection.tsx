@@ -12,6 +12,7 @@ import { NumberInput } from "../../components/NumberInput";
 import {
   BONE_FIELDS,
   buildBoneDensity,
+  deleteConfirmText,
   emptyBoneForm,
   formatMeasure,
   isFormChanged,
@@ -20,7 +21,7 @@ import {
 } from "../../lib/bodyComposition";
 import type { BoneFormValues } from "../../lib/bodyComposition";
 import { formatDateTime, nowIso } from "../../lib/date";
-import { errorMessage, SAVE_FAILED } from "../../lib/errors";
+import { DELETE_FAILED, errorMessage, SAVE_FAILED } from "../../lib/errors";
 import { UNKNOWN_MARK } from "../../lib/format";
 import { useBoneDensities } from "../../lib/queries";
 import { FormErrors, MeasureFields, NoteField } from "./MeasureFields";
@@ -165,12 +166,7 @@ function BoneList({ rows }: { rows: BoneDensity[] }) {
   const [error, setError] = useState<string | null>(null);
   const remove = async (row: BoneDensity) => {
     if (row.id === undefined) return;
-    if (
-      !window.confirm(
-        `${formatDateTime(row.measuredAt)} の測定を削除しますか？`,
-      )
-    )
-      return;
+    if (!window.confirm(deleteConfirmText(row.measuredAt))) return;
     setError(null);
     try {
       await deleteBoneDensity(row.id);
@@ -180,7 +176,7 @@ function BoneList({ rows }: { rows: BoneDensity[] }) {
   };
   return (
     <Card title="測定の一覧（新しい順）">
-      {error && <ErrorText label="削除できませんでした">{error}</ErrorText>}
+      {error && <ErrorText label={DELETE_FAILED}>{error}</ErrorText>}
       <ul className="divide-y divide-slate-100" data-testid="bone-list">
         {rows.map((row) => (
           <li key={row.id} className="py-2">

@@ -27,7 +27,7 @@ import type {
   TrainingSession,
 } from "../db/types";
 import { SEGMENT_KEYS, SEGMENT_LABELS } from "../db/types";
-import { formatLogDateShort, timeOf } from "./date";
+import { formatDateTime, formatLogDateShort, timeOf } from "./date";
 import { ESTIMATED_START_NOTE, UNKNOWN_MARK } from "./format";
 import { fmtKcal } from "./formatKcal";
 import { evaluateConditions, lastTrainingBefore } from "./measurement";
@@ -187,6 +187,11 @@ export function bodyTrend(
     },
     minSpan: BODY_TREND_MIN_SPAN_KG,
   };
+}
+
+/** 測定（体組成・骨密度）を削除する前の確認文 */
+export function deleteConfirmText(measuredAt: IsoDateTime): string {
+  return `${formatDateTime(measuredAt)} の測定を削除しますか？（元に戻せません）`;
 }
 
 /**

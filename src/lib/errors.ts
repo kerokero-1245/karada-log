@@ -20,6 +20,9 @@ export function errorMessage(e: unknown): string {
 /** 保存に失敗したときの見出し（ErrorText の label） */
 export const SAVE_FAILED = "保存できませんでした";
 
+/** 削除に失敗したときの見出し（ErrorText の label） */
+export const DELETE_FAILED = "削除できませんでした";
+
 /**
  * 失敗の本文（固定の日本語）。何が失敗したか（label）に、やり直しの案内を続ける。
  * 例: 「保存できませんでした。もう一度お試しください。」

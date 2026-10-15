@@ -21,6 +21,7 @@ import {
   emptyBoneForm,
   formatMeasure,
   daysSinceTrainingText,
+  deleteConfirmText,
   groupByDevice,
   isFormChanged,
   isPoorCondition,
@@ -568,5 +569,40 @@ test("bodyComposition.buildGoalLine: 空欄・数値でない・範囲の外・�
       current,
     ).errors,
     ["目標の脂肪量は数値で入れてください"],
+  );
+});
+
+/* 丸め・設定の配線・削除の確認 ------------------------------------------- */
+
+test('bodyComposition.buildBodyComposition: 保存する値は小数第 2 位で丸める（"13.125" → 13.13）', () => {
+  const values = filledForm();
+  values.fatMassKg = "13.125";
+  values.segments.trunk.fatPercent = "21.555";
+  values.previousDaySaltG = "2.345";
+  const record = buildBodyComposition(values, [], { minRestDays: 3 }).record;
+  assert.ok(record);
+  assert.equal(record.fatMassKg, 13.13);
+  assert.equal(record.segmentFat.trunk.fatPercent, 21.56);
+  assert.equal(record.conditions.previousDaySaltG, 2.35);
+});
+
+test("bodyComposition.buildBodyComposition: 空ける日数は設定（minRestDays）に従う。2 日なら 2 日前のトレは警告しない", () => {
+  const sessions = [sessionFixture({ startedAt: "2026-10-03T19:00" })];
+  const two = buildBodyComposition(filledForm(), sessions, { minRestDays: 2 });
+  assert.equal(two.conditions.daysSinceLastTraining, 2);
+  assert.deepEqual(two.warnings, []);
+  const three = buildBodyComposition(filledForm(), sessions, {
+    minRestDays: 3,
+  });
+  assert.deepEqual(
+    three.warnings.map((w) => w.code),
+    ["training_gap_lt3"],
+  );
+});
+
+test("bodyComposition.deleteConfirmText: 削除の確認文は元に戻せないことを書く", () => {
+  assert.equal(
+    deleteConfirmText("2026-10-05T07:30"),
+    "2026/10/05（月） 07:30 の測定を削除しますか？（元に戻せません）",
   );
 });

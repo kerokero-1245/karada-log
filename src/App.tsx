@@ -13,6 +13,7 @@ import type { TabKey } from "./components/BottomNav";
 import { TodayScreen } from "./screens/TodayScreen";
 import { PlaceholderScreen } from "./screens/PlaceholderScreen";
 import { TrainingScreen } from "./screens/training/TrainingScreen";
+import { BodyScreen } from "./screens/body/BodyScreen";
 import { SettingsScreen } from "./screens/settings/SettingsScreen";
 
 export default function App() {
@@ -56,12 +57,7 @@ export default function App() {
     <div className="bg-slate-100">
       {tab === "today" && <TodayScreen settings={settings} />}
       {tab === "training" && <TrainingScreen settings={settings} />}
-      {tab === "body" && (
-        <PlaceholderScreen
-          title="からだ"
-          plan="体組成・骨密度の記録と、脂肪量・除脂肪量の移り変わりのグラフ。"
-        />
-      )}
+      {tab === "body" && <BodyScreen settings={settings} />}
       {tab === "week" && (
         <PlaceholderScreen
           title="週のまとめ"

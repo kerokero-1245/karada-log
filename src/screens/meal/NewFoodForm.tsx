@@ -11,7 +11,6 @@
  * 「ラベルを撮る」ボタンは、APIキーが設定されているときだけ出す。
  */
 import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import type { Food } from "../../db/types";
 import { FOOD_CATEGORIES } from "../../db/types";
 import { addFood } from "../../db/foods";
@@ -25,7 +24,8 @@ import {
   ErrorText,
   Panel,
 } from "../../components/ui";
-import { FieldLabel } from "../../components/Field";
+import { Field } from "../../components/Field";
+import { NumberInput } from "../../components/NumberInput";
 import {
   BASIS_OPTIONS,
   NUTRIENT_FIELDS,
@@ -315,54 +315,5 @@ export function NewFoodForm({
         {saveError && <ErrorText label={SAVE_FAILED}>{saveError}</ErrorText>}
       </div>
     </Sheet>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  note,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  /** 入力欄の下に出す補足 */
-  note?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block">
-      <FieldLabel hint={hint}>{label}</FieldLabel>
-      <span className="mt-1 block">{children}</span>
-      {note && (
-        <span className="mt-1 block text-[11px] text-slate-400">{note}</span>
-      )}
-    </label>
-  );
-}
-
-function NumberInput({
-  value,
-  onChange,
-  suffix,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  suffix?: string;
-}) {
-  return (
-    <span className="flex items-center gap-1">
-      <input
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-12 w-full min-w-0 rounded-lg border border-slate-300 px-3 text-base tabular-nums"
-      />
-      {/* 単位の幅をそろえて、「kcal」と「g」の欄で入力欄の幅がずれないようにする */}
-      {suffix && (
-        <span className="w-8 shrink-0 text-xs text-slate-500">{suffix}</span>
-      )}
-    </span>
   );
 }

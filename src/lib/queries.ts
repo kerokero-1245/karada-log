@@ -29,6 +29,27 @@ export function useShortcutSets() {
   return useLiveQuery(() => db.shortcutSets.orderBy("order").toArray(), []);
 }
 
+/** 体組成の全件（測定日時の古い順。読み込み前は undefined） */
+export function useBodyCompositions() {
+  return useLiveQuery(
+    () => db.bodyCompositions.orderBy("measuredAt").toArray(),
+    [],
+  );
+}
+
+/** 骨密度の全件（測定日時の古い順。読み込み前は undefined） */
+export function useBoneDensities() {
+  return useLiveQuery(
+    () => db.boneDensities.orderBy("measuredAt").toArray(),
+    [],
+  );
+}
+
+/** トレーニングの全件（体組成の測定条件「最後のトレからの日数」の計算に使う。読み込み前は undefined） */
+export function useAllTrainingSessions() {
+  return useLiveQuery(() => db.trainingSessions.toArray(), []);
+}
+
 /**
  * その日（論理日付）の記録・トレーニングと、そこから決まるもの。
  * 日の区分（手動 > トレの有無 > 休養日）・その日のカロリー目標・摂取の合計（記録されたものだけ）。

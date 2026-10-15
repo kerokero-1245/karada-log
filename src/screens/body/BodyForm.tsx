@@ -99,7 +99,8 @@ export function BodyForm({
         <section>
           <h3 className="text-xs font-bold text-slate-600">主な項目</h3>
           <Note>
-            空欄のままにすると「未確認」として保存します。0 にはしません。
+            空欄のままにすると「未確認」として保存します。0
+            にはしません。四肢骨格筋量は腕と脚の筋肉量の合計で、機種の表示どおりに入れます。
           </Note>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {BODY_MAIN_FIELDS.map((field) => (

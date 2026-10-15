@@ -121,7 +121,8 @@ function BoneForm({
           </Field>
         </div>
         <Note>
-          空欄のままにすると「未確認」として保存します。0 にはしません。
+          空欄のままにすると「未確認」として保存します。0
+          にはしません。%YAMは若い成人の平均と比べた割合、%AGEは同じ年代の平均と比べた割合です。
         </Note>
         <NoteField value={values.note} onChange={(v) => set("note", v)} />
         {submitted && <FormErrors errors={result.errors} />}

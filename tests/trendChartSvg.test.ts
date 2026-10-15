@@ -156,6 +156,8 @@ test("BodyTrendChart: 体組成のグラフは目標の破線を描き、条件�
   assert.match(svg, /data-testid="body-chart-fatMassKg-reference"/);
   assert.match(svg, /stroke-dasharray="4 3"/);
   assert.match(svg, /破線: 目標（年末）12kg/);
+  // 凡例は「条件よし」と言い切らない（印が無いだけ）
+  assert.match(svg, /● 印なし ○ 条件が悪い/);
   assert.deepEqual(
     dots(svg).map((d) => d[2]),
     [HOLLOW, LINE],

@@ -24,7 +24,10 @@ import {
   isPoorCondition,
   normalizeDevice,
   sortNewestFirst,
+  trainingStartNote,
+  withCurrentConditions,
 } from "../src/lib/bodyComposition.ts";
+import { ESTIMATED_START_NOTE } from "../src/lib/format.ts";
 import type { BodyComposition, MeasurementWarning } from "../src/db/types.ts";
 import { SEGMENT_KEYS } from "../src/db/types.ts";
 import { bodyFixture, sessionFixture, settingsFixture } from "./helpers.ts";
@@ -316,7 +319,7 @@ test("bodyComposition.buildBoneDensity: 骨密度の入力を保存の形にす�
   assert.equal(failed.record, null);
   assert.deepEqual(failed.errors, [
     "測定日時を入れてください",
-    "機種を入れてください（機種ごとに分けて並べます）",
+    "機種を入れてください",
     "%YAMは10〜200%の範囲で入れてください",
   ]);
 });
@@ -434,4 +437,75 @@ test("bodyComposition.isFormChanged: 開いたときの値から 1 か所でも�
   const segment = emptyBodyForm(null);
   segment.segments.trunk.fatKg = "7";
   assert.equal(isFormChanged(initial, segment), true);
+});
+
+/* 一覧の測定条件（今のトレの記録から計算し直す） ---------------------------- */
+
+test("bodyComposition.withCurrentConditions: 最後のトレからの日数と印は、保存した値ではなく今のトレの記録から計算し直す（保存した行は変えない）", () => {
+  // 保存したときは測定の 0 日前にトレがあった（悪い条件の印つき）
+  const saved = body(1, "2026-10-05T07:30", {
+    conditions: {
+      previousDaySaltG: 2.5,
+      lastTrainingAt: "2026-10-05T06:00",
+      daysSinceLastTraining: 0,
+      hoursSinceLastMeal: 3,
+      note: "朝",
+    },
+    warnings: [gap],
+  });
+  // そのトレを取り消した後
+  const [now] = withCurrentConditions([saved], [], 3);
+  assert.equal(now.conditions.daysSinceLastTraining, null);
+  assert.equal(now.conditions.lastTrainingAt, null);
+  assert.equal(now.conditions.note, "朝");
+  assert.deepEqual(now.warnings, []);
+  assert.equal(isPoorCondition(now), false);
+  // 保存した行はそのまま
+  assert.equal(saved.conditions.daysSinceLastTraining, 0);
+  assert.deepEqual(saved.warnings, [gap]);
+
+  // 今は 2 日前にトレがある（3 日未満の印）。測定より後のトレは数えない
+  const [again] = withCurrentConditions(
+    [body(2, "2026-10-05T07:30")],
+    [
+      sessionFixture({ id: 1, startedAt: "2026-10-03T19:00" }),
+      sessionFixture({ id: 2, startedAt: "2026-10-05T18:00" }),
+    ],
+    3,
+  );
+  assert.equal(again.conditions.daysSinceLastTraining, 2);
+  assert.deepEqual(
+    again.warnings.map((w) => w.code),
+    ["training_gap_lt3"],
+  );
+  // 空ける日数の設定に従う
+  const [relaxed] = withCurrentConditions(
+    [body(2, "2026-10-05T07:30")],
+    [sessionFixture({ startedAt: "2026-10-03T19:00" })],
+    2,
+  );
+  assert.deepEqual(relaxed.warnings, []);
+});
+
+test("bodyComposition.trainingStartNote: 数えたトレの開始時刻が仮置きなら「（開始時刻は仮置き）」を添える", () => {
+  assert.equal(ESTIMATED_START_NOTE, "（開始時刻は仮置き）");
+  const estimated = sessionFixture({
+    startedAt: "2026-10-03T07:30",
+    startedAtIsEstimated: true,
+  });
+  assert.equal(
+    trainingStartNote([estimated], "2026-10-05T07:30"),
+    ESTIMATED_START_NOTE,
+  );
+  // 後から実測のトレがあれば、そちらを数えるので添えない
+  assert.equal(
+    trainingStartNote(
+      [estimated, sessionFixture({ id: 2, startedAt: "2026-10-04T19:00" })],
+      "2026-10-05T07:30",
+    ),
+    "",
+  );
+  // 測定より後の仮置きは数えない / 測定日時が空なら添えない
+  assert.equal(trainingStartNote([estimated], "2026-10-03T07:00"), "");
+  assert.equal(trainingStartNote([estimated], ""), "");
 });

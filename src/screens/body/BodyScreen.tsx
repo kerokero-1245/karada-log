@@ -51,7 +51,7 @@ export function BodyScreen({
         <ScreenHeader>
           <h1 className="text-xl font-bold">からだ</h1>
           <p className="mt-1 text-xs text-slate-300">
-            機種が違う測定は並べて比べません。
+            体組成のグラフは機種ごとに分けます。違う機種の値は比べないでください。
           </p>
           <div className="mt-3 flex gap-2" role="group" aria-label="表示">
             {VIEWS.map((item) => (

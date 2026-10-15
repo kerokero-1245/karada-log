@@ -24,6 +24,7 @@ import {
   emptyBodyForm,
   isFormChanged,
   isPoorCondition,
+  trainingStartNote,
 } from "../../lib/bodyComposition";
 import type {
   BodyFormValues,
@@ -210,8 +211,9 @@ export function BodyForm({
             </b>
             {conditions.lastTrainingAt !== null && (
               <span className="ml-1 text-xs text-slate-500">
-                （{formatDateTime(conditions.lastTrainingAt)}{" "}
-                のトレ。測定より後のトレは数えません）
+                （{formatDateTime(conditions.lastTrainingAt)} のトレ
+                {trainingStartNote(sessions, values.measuredAt)}
+                。測定より後のトレは数えません）
               </span>
             )}
           </p>

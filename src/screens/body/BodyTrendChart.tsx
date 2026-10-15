@@ -16,7 +16,7 @@ export function BodyTrendChart({
   return (
     <TrendChart
       title={trend.title}
-      legend="● 条件よし ○ 条件が悪い"
+      legend="● 印なし ○ 条件が悪い"
       unit={trend.unit}
       points={trend.points}
       reference={trend.reference}

@@ -8,6 +8,8 @@
  *    （測定時刻より後のトレは数えない）。条件が悪くても保存は止めず、印を付けて区別する。
  *  - 空欄は null で保存する（0 で埋めない）。
  *  - 機種名は全角半角（NFKC）と連続する空白をそろえて比べる（normalizeDevice）。保存されている値は書き換えない。
+ *  - 一覧とグラフの「最後のトレからの日数」と印は、保存した値ではなく今のトレの記録から計算し直す
+ *    （withCurrentConditions。トレを後から取り消した・足したときに追従させる）。保存した行は書き換えない。
  *  - 測定日時は空で開き、入れるまで保存しない（今の時刻を既定にすると、トレの後に記録したとき 0 日になる）。
  *
  * ★ ここは純関数だけ。DB も React も触らない。★ 保存は db/body.ts。
@@ -26,9 +28,9 @@ import type {
 } from "../db/types";
 import { SEGMENT_KEYS, SEGMENT_LABELS } from "../db/types";
 import { formatLogDateShort, timeOf } from "./date";
-import { UNKNOWN_MARK } from "./format";
+import { ESTIMATED_START_NOTE, UNKNOWN_MARK } from "./format";
 import { fmtKcal } from "./formatKcal";
-import { evaluateConditions } from "./measurement";
+import { evaluateConditions, lastTrainingBefore } from "./measurement";
 import { formatNumber, round2 } from "./number";
 import type { TrendPoint, TrendReference } from "./trendChart";
 
@@ -66,6 +68,41 @@ export function sortNewestFirst<
  */
 export function normalizeDevice(device: string): string {
   return device.normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * 測定条件と警告を、今のトレの記録から計算し直した行（表示用の写し。元の行は変えない）。
+ * 前日の塩分・食後経過時間・メモは保存した値を使う
+ */
+export function withCurrentConditions(
+  rows: BodyComposition[],
+  sessions: TrainingSession[],
+  minRestDays: number,
+): BodyComposition[] {
+  return rows.map((row) => {
+    const { conditions, warnings } = evaluateConditions(
+      {
+        measuredAt: row.measuredAt,
+        previousDaySaltG: row.conditions.previousDaySaltG,
+        hoursSinceLastMeal: row.conditions.hoursSinceLastMeal,
+        note: row.conditions.note,
+      },
+      sessions,
+      { minRestDays },
+    );
+    return { ...row, conditions, warnings };
+  });
+}
+
+/** 数えたトレ（測定より前の最後のトレ）の開始時刻が仮置きなら、その注記。それ以外は空 */
+export function trainingStartNote(
+  sessions: TrainingSession[],
+  measuredAt: string,
+): string {
+  if (!MEASURED_AT_PATTERN.test(measuredAt)) return "";
+  return lastTrainingBefore(sessions, measuredAt)?.startedAtIsEstimated
+    ? ESTIMATED_START_NOTE
+    : "";
 }
 
 export interface DeviceGroup {
@@ -554,8 +591,7 @@ export function buildBoneDensity(values: BoneFormValues): {
   const errors: string[] = [];
   const measuredAt = checkMeasuredAt(values.measuredAt, errors);
   const device = values.device.trim();
-  if (device === "")
-    errors.push("機種を入れてください（機種ごとに分けて並べます）");
+  if (device === "") errors.push("機種を入れてください");
   const numbers = Object.fromEntries(
     BONE_FIELDS.map((field) => [
       field.key,

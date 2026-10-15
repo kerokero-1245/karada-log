@@ -1,9 +1,11 @@
 /**
  * 体組成の一覧（新しい順）。条件が悪い回は「⚠」の印と理由を出す。
+ * rows の測定条件と警告は、呼ぶ側が今のトレの記録から計算し直したもの（withCurrentConditions）。
+ * 数えたトレの開始時刻が仮置きなら「（開始時刻は仮置き）」を添える。
  * 行を開くと、部位別と測定条件まで見られる。削除は確認してから。
  */
 import { useState } from "react";
-import type { BodyComposition } from "../../db/types";
+import type { BodyComposition, TrainingSession } from "../../db/types";
 import { SEGMENT_KEYS, SEGMENT_LABELS } from "../../db/types";
 import { deleteBodyComposition } from "../../db/body";
 import { Badge, Card, ErrorText, Row } from "../../components/ui";
@@ -14,11 +16,18 @@ import {
   SALT_RULE,
   formatMeasure,
   isPoorCondition,
+  trainingStartNote,
 } from "../../lib/bodyComposition";
 import { formatDateTime } from "../../lib/date";
 import { errorMessage } from "../../lib/errors";
 
-export function BodyList({ rows }: { rows: BodyComposition[] }) {
+export function BodyList({
+  rows,
+  sessions,
+}: {
+  rows: BodyComposition[];
+  sessions: TrainingSession[];
+}) {
   const [error, setError] = useState<string | null>(null);
 
   const remove = async (row: BodyComposition) => {
@@ -68,6 +77,7 @@ export function BodyList({ rows }: { rows: BodyComposition[] }) {
               </p>
               <p className="text-xs text-slate-500">
                 最後のトレから {days === null ? "（記録なし）" : `${days}日`}
+                {trainingStartNote(sessions, row.measuredAt)}
               </p>
               {row.warnings.length > 0 && (
                 <ul className="mt-1 space-y-0.5 text-xs">

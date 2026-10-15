@@ -10,6 +10,12 @@
  */
 export const UNKNOWN_MARK = "—";
 
+/**
+ * 開始時刻が未記録で仮置きのトレ（TrainingSession.startedAtIsEstimated）に添える注記。
+ * 書き出しのトレの見出しと、体組成の「最後のトレから」の日数で同じ文字を使う。
+ */
+export const ESTIMATED_START_NOTE = "（開始時刻は仮置き）";
+
 const STORED = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 20 });
 
 /**

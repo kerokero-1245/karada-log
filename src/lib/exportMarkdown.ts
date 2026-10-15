@@ -45,7 +45,7 @@ import {
 } from "./date";
 import type { DateRange } from "./exportRange";
 import { formatRange, rangeDayCount } from "./exportRange";
-import { UNKNOWN_MARK } from "./format";
+import { ESTIMATED_START_NOTE, UNKNOWN_MARK } from "./format";
 import { buildBars, dayTargetKcal, formatAmount } from "./goals";
 import { entryNutrition, formatQuantity } from "./mealView";
 import { hasUnknownCore, sumNutrition } from "./nutrition";
@@ -409,7 +409,7 @@ function entryRow(entry: MealEntry): string[] {
 function trainingBlock(entry: ExportSession): string {
   const session = entry.session;
   const head = `#### トレーニング ${MENU_LABELS[session.menu]} ${timeOf(session.startedAt)} 開始${
-    session.startedAtIsEstimated ? "（開始時刻は仮置き）" : ""
+    session.startedAtIsEstimated ? ESTIMATED_START_NOTE : ""
   }`;
 
   const lines = [head, ""];

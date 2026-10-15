@@ -1,5 +1,6 @@
 /**
  * 体組成: 記録ボタン（開くとフォーム）・機種ごとの推移・一覧（新しい順）。
+ * 推移と一覧の「最後のトレからの日数」と印は、今のトレの記録から計算し直したもの（withCurrentConditions）。
  */
 import { useState } from "react";
 import type { Settings } from "../../db/types";
@@ -9,6 +10,7 @@ import {
   bodyTrend,
   groupByDevice,
   sortNewestFirst,
+  withCurrentConditions,
 } from "../../lib/bodyComposition";
 import { useAllTrainingSessions, useBodyCompositions } from "../../lib/queries";
 import { BodyForm } from "./BodyForm";
@@ -28,8 +30,13 @@ export function BodySection({
 
   if (bodies === undefined || sessions === undefined) return null;
 
-  const newestFirst = sortNewestFirst(bodies);
-  const groups = groupByDevice(bodies);
+  const current = withCurrentConditions(
+    bodies,
+    sessions,
+    settings.measurementMinRestDays,
+  );
+  const newestFirst = sortNewestFirst(current);
+  const groups = groupByDevice(current);
 
   return (
     <>
@@ -81,7 +88,9 @@ export function BodySection({
         ))
       )}
 
-      {newestFirst.length > 0 && <BodyList rows={newestFirst} />}
+      {newestFirst.length > 0 && (
+        <BodyList rows={newestFirst} sessions={sessions} />
+      )}
     </>
   );
 }
